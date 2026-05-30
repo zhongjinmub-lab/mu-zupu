@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -23,6 +23,7 @@
           <button class="nav-item" data-view="licenses">授权</button>
           <button class="nav-item" data-view="usage">订单</button>
           <button class="nav-item" data-view="analytics">分析</button>
+          <button class="nav-item" data-view="webhooks">Webhook</button>
           <button class="nav-item" data-view="settings">设置</button>
         </nav>
         <div class="header-actions">
@@ -59,9 +60,6 @@
 
         <section id="workspace" class="workspace hidden">
           <section class="view active" data-view-panel="overview">
-            <div class="admin-notice">
-              当前授权版本存在最新版本 V6.18.9，请尽快升级使用 <a href="#settings" data-view-link="settings">立即升级</a>
-            </div>
             <div class="dashboard-layout">
               <div class="dashboard-main">
                 <div class="grid overview-grid">
@@ -229,7 +227,7 @@
                 </section>
                 <section class="panel compact-panel">
                   <div class="panel-head"><h3>服务状态</h3><button id="checkHealthBtn" class="button small secondary" type="button">检查</button></div>
-                  <pre id="healthBox" class="codebox">等待检查</pre>
+                  <div id="healthBox" class="status-summary">等待检查</div>
                 </section>
                 <section class="panel compact-panel">
                   <h3>接受邀请</h3>
@@ -237,7 +235,7 @@
                     <input name="token" required placeholder="粘贴邀请 token" />
                     <button class="button" type="submit">接受</button>
                   </form>
-                  <pre id="acceptInvitationResult" class="codebox">等待提交</pre>
+                  <div id="acceptInvitationResult" class="status-summary">等待提交</div>
                 </section>
               </aside>
             </div>
@@ -266,7 +264,7 @@
                 <input name="question" required placeholder="输入要问知识库的问题" />
                 <button class="button" type="submit">提问</button>
               </form>
-              <pre id="askResult" class="codebox">等待提问</pre>
+              <div id="askResult" class="answer-summary">等待提问</div>
             </section>
 
             <div class="grid two">
@@ -358,7 +356,7 @@
                 <input name="message" required placeholder="输入测试消息" />
                 <button class="button" type="submit">发送</button>
               </form>
-              <pre id="agentChatResult" class="codebox">等待发送</pre>
+              <div id="agentChatResult" class="answer-summary">等待发送</div>
             </section>
 
             <section class="panel">
@@ -390,7 +388,7 @@
                 <div id="conversationList" class="list"></div>
                 <div id="messageList" class="list"></div>
               </div>
-              <pre id="agentConversationResult" class="codebox">等待发送</pre>
+              <div id="agentConversationResult" class="answer-summary">等待发送</div>
             </section>
           </section>
 
@@ -427,7 +425,7 @@
                   <h3>当前订阅</h3>
                   <button id="loadSubscriptionBtn" class="button small secondary" type="button">刷新</button>
                 </div>
-                <pre id="subscriptionBox" class="codebox">等待加载</pre>
+                <div id="subscriptionBox" class="status-summary">等待加载</div>
               </section>
               <section class="panel">
                 <div class="panel-head">
@@ -519,12 +517,61 @@
             </section>
           </section>
 
+          <section class="view" data-view-panel="webhooks">
+            <div class="grid two">
+              <form id="webhookForm" class="panel form-grid">
+                <h3>Webhook 配置</h3>
+                <label>名称<input name="name" required placeholder="支付与授权通知" /></label>
+                <label>接收地址<input name="url" required placeholder="https://example.com/webhook" /></label>
+                <label>签名密钥<input name="secret" placeholder="可选，用于 HMAC 签名" /></label>
+                <label>事件
+                  <select name="events" multiple size="5">
+                    <option value="webhook.test" selected>Webhook 测试</option>
+                    <option value="order.paid" selected>订单支付成功</option>
+                    <option value="license.activated" selected>License 激活</option>
+                    <option value="license.revoked" selected>License 吊销</option>
+                    <option value="agent.chat.finished" selected>Agent 会话完成</option>
+                  </select>
+                </label>
+                <label>状态
+                  <select name="status">
+                    <option value="active">启用</option>
+                    <option value="disabled">停用</option>
+                  </select>
+                </label>
+                <button class="button" type="submit">创建 Webhook</button>
+              </form>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>Webhook 列表</h3>
+                  <button id="loadWebhooksBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="webhookList" class="list"></div>
+              </section>
+            </div>
+            <section class="panel">
+              <div class="panel-head">
+                <h3>投递记录</h3>
+                <button id="loadWebhookDeliveriesBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <div id="webhookDeliveryList" class="list"></div>
+            </section>
+          </section>
+
           <section class="view" data-view-panel="settings">
             <form id="settingsForm" class="panel form-grid">
               <h3>API 连接</h3>
               <label>API Base<input id="apiBaseInput" required /></label>
               <button class="button" type="submit">保存</button>
             </form>
+            <section class="panel">
+              <h3>API 限流策略</h3>
+              <div class="rate-limit-grid">
+                <article><strong>租户 API</strong><span>同一租户每分钟 120 次</span></article>
+                <article><strong>用户 API</strong><span>同一用户每分钟 60 次</span></article>
+                <article><strong>登录注册</strong><span>同一 IP 每分钟 20 次</span></article>
+              </div>
+            </section>
           </section>
         </section>
       </main>

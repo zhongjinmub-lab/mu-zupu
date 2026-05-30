@@ -10,15 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mu-agent-saas/internal/module/tenant"
+	"mu-agent-saas/internal/module/webhook"
 	"mu-agent-saas/pkg/response"
 )
 
 type Handler struct {
-	Repo Repository
+	Repo  Repository
+	Hooks webhook.Service
 }
 
 func NewHandler(repo Repository) Handler {
 	return Handler{Repo: repo}
+}
+
+func NewHandlerWithWebhook(repo Repository, hooks webhook.Service) Handler {
+	return Handler{Repo: repo, Hooks: hooks}
 }
 
 func (h Handler) ListPlans(c *gin.Context) {
@@ -153,6 +159,18 @@ func (h Handler) CreatePaymentOrder(c *gin.Context) {
 	if err != nil {
 		writeBillingHTTPError(c, err)
 		return
+	}
+	if item.Status == "paid" {
+		h.Hooks.Emit(c.Request.Context(), t.ID, webhook.EventOrderPaid, map[string]any{
+			"payment_order_id":  item.ID,
+			"business_order_id": item.BusinessOrderID,
+			"pay_no":            item.PayNo,
+			"channel":           item.Channel,
+			"amount_cents":      item.AmountCents,
+			"currency":          item.Currency,
+			"transaction_id":    item.TransactionID,
+			"paid_at":           item.PaidAt,
+		})
 	}
 	response.OK(c, item)
 }

@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE = `${window.location.origin}/saas-api/api/v1`;
+﻿const DEFAULT_API_BASE = `${window.location.origin}/saas-api/api/v1`;
 
 const state = {
   apiBase: localStorage.getItem("mu.apiBase") || DEFAULT_API_BASE,
@@ -39,6 +39,8 @@ const state = {
     limit: "50",
   },
   invitations: [],
+  webhooks: [],
+  webhookDeliveries: [],
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -276,6 +278,188 @@ function renderAnalytics() {
       </article>
     `).join("") || empty("暂无最近操作");
   }
+}
+
+function renderHealthSummary(result) {
+  const el = $("#healthBox");
+  if (!el) return;
+  if (!result) {
+    el.textContent = "等待检查";
+    return;
+  }
+  if (result.error) {
+    el.innerHTML = `
+      <article class="status-row danger">
+        <strong>检查失败</strong>
+        <span>${escapeHtml(result.error)}</span>
+      </article>
+      <article class="status-row">
+        <strong>检查时间</strong>
+        <span>${escapeHtml(formatDateTime(result.checked_at))}</span>
+      </article>
+    `;
+    return;
+  }
+  const readyStatus = result.ready?.status || "unknown";
+  const healthStatus = result.health?.status || "unknown";
+  const serviceName = result.health?.service || "未返回服务名称";
+  const tenant = currentTenant();
+  el.innerHTML = `
+    <article class="status-row">
+      <strong>就绪状态</strong>
+      <span>${readyStatus === "ready" ? "已就绪" : escapeHtml(readyStatus)}</span>
+    </article>
+    <article class="status-row">
+      <strong>健康状态</strong>
+      <span>${healthStatus === "ok" ? "正常" : escapeHtml(healthStatus)}</span>
+    </article>
+    <article class="status-row">
+      <strong>服务名称</strong>
+      <span>${escapeHtml(serviceName)}</span>
+    </article>
+    <article class="status-row">
+      <strong>当前租户</strong>
+      <span>${escapeHtml(tenant?.name || "未选择")}</span>
+    </article>
+    <article class="status-row">
+      <strong>检查时间</strong>
+      <span>${escapeHtml(formatDateTime(result.checked_at))}</span>
+    </article>
+  `;
+}
+
+function renderSubscriptionSummary(item, error = "") {
+  const el = $("#subscriptionBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article class="status-row danger">
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  if (!item) {
+    el.textContent = "等待加载";
+    return;
+  }
+  const source = item.metadata?.source === "auto_free" ? "系统自动开通免费版" : item.metadata?.source || "系统记录";
+  el.innerHTML = `
+    <article class="status-row">
+      <strong>套餐名称</strong>
+      <span>${escapeHtml(item.plan_name || item.plan_code || "未命名套餐")}</span>
+    </article>
+    <article class="status-row">
+      <strong>套餐编码</strong>
+      <span>${escapeHtml(item.plan_code || "-")}</span>
+    </article>
+    <article class="status-row">
+      <strong>订阅状态</strong>
+      <span>${item.status === "active" ? "生效中" : escapeHtml(item.status || "-")}</span>
+    </article>
+    <article class="status-row">
+      <strong>开始时间</strong>
+      <span>${escapeHtml(formatDateTime(item.started_at))}</span>
+    </article>
+    <article class="status-row">
+      <strong>到期时间</strong>
+      <span>${escapeHtml(formatDateTime(item.expired_at, "长期有效"))}</span>
+    </article>
+    <article class="status-row">
+      <strong>自动续费</strong>
+      <span>${item.auto_renew ? "已开启" : "未开启"}</span>
+    </article>
+    <article class="status-row">
+      <strong>开通来源</strong>
+      <span>${escapeHtml(source)}</span>
+    </article>
+  `;
+}
+
+function renderAnswerSummary(selector, result, error = "") {
+  const el = $(selector);
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article class="answer-block danger">
+        <h4>请求失败</h4>
+        <p>${escapeHtml(error)}</p>
+      </article>
+    `;
+    return;
+  }
+  if (!result) {
+    el.textContent = "等待结果";
+    return;
+  }
+  const references = result.references || [];
+  const meta = [
+    result.conversation_id ? `会话：${result.conversation_id}` : "",
+    result.knowledge_base_id ? `知识库：${result.knowledge_base_id}` : "",
+    result.history_used !== undefined ? `使用历史：${Number(result.history_used || 0).toLocaleString()} 条` : "",
+    result.generation_model ? `生成模型：${result.generation_model}` : "",
+    result.generation_source ? `生成来源：${result.generation_source}` : "",
+  ].filter(Boolean);
+  el.innerHTML = `
+    <article class="answer-block">
+      <h4>回答内容</h4>
+      <p>${escapeHtml(result.answer || "暂无回答")}</p>
+    </article>
+    ${meta.length ? `<div class="answer-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : ""}
+    <article class="answer-block">
+      <h4>引用资料</h4>
+      <div class="reference-list">
+        ${references.map((item, index) => `
+          <section class="reference-item">
+            <strong>${index + 1}. ${escapeHtml(item.title || item.document_id || "未命名资料")}</strong>
+            <span>匹配分：${Number(item.score || 0).toFixed(4)}</span>
+            <p>${escapeHtml((item.content || "").slice(0, 260))}</p>
+          </section>
+        `).join("") || `<div class="item item-meta">暂无引用资料</div>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderAcceptInvitationResult(result, error = "") {
+  const el = $("#acceptInvitationResult");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article class="status-row danger">
+        <strong>接受失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  if (!result) {
+    el.textContent = "等待提交";
+    return;
+  }
+  el.innerHTML = `
+    <article class="status-row">
+      <strong>接受结果</strong>
+      <span>已加入租户</span>
+    </article>
+    <article class="status-row">
+      <strong>租户名称</strong>
+      <span>${escapeHtml(result.name || "未命名租户")}</span>
+    </article>
+    <article class="status-row">
+      <strong>租户编码</strong>
+      <span>${escapeHtml(result.code || "-")}</span>
+    </article>
+    <article class="status-row">
+      <strong>成员角色</strong>
+      <span>${escapeHtml(result.role_code || "-")}</span>
+    </article>
+    <article class="status-row">
+      <strong>租户状态</strong>
+      <span>${result.status === "active" ? "正常" : escapeHtml(result.status || "-")}</span>
+    </article>
+  `;
 }
 
 function renderOverviewInsights() {
@@ -740,6 +924,55 @@ function renderInvitations() {
   renderMetrics();
 }
 
+function eventLabel(eventType) {
+  return {
+    "webhook.test": "Webhook 测试",
+    "order.paid": "订单支付成功",
+    "license.activated": "License 激活",
+    "license.revoked": "License 吊销",
+    "agent.chat.finished": "Agent 会话完成",
+  }[eventType] || eventType || "-";
+}
+
+function renderWebhooks() {
+  const el = $("#webhookList");
+  if (!el) return;
+  el.innerHTML = state.webhooks.map((item) => `
+    <article class="item">
+      <div class="item-title">
+        <strong>${escapeHtml(item.name)}</strong>
+        <span class="badge ${item.status === "disabled" ? "warn" : ""}">${item.status === "active" ? "启用" : "停用"}</span>
+      </div>
+      <div class="item-meta">${escapeHtml(item.url)}</div>
+      <div class="item-meta">订阅事件：${(item.events || []).map(eventLabel).map(escapeHtml).join("、") || "未配置"}</div>
+      <div class="item-actions">
+        <button class="button small secondary" data-webhook-test="${escapeHtml(item.id)}">测试发送</button>
+        <button class="button small secondary" data-webhook-toggle="${escapeHtml(item.id)}">${item.status === "active" ? "停用" : "启用"}</button>
+        <button class="button small danger" data-webhook-delete="${escapeHtml(item.id)}">删除</button>
+      </div>
+    </article>
+  `).join("") || empty("暂无 Webhook 配置");
+}
+
+function renderWebhookDeliveries() {
+  const el = $("#webhookDeliveryList");
+  if (!el) return;
+  el.innerHTML = state.webhookDeliveries.map((item) => {
+    const ok = item.status === "success";
+    return `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(eventLabel(item.event_type))}</strong>
+          <span class="badge ${ok ? "" : "danger"}">${ok ? "成功" : "失败"}</span>
+        </div>
+        <div class="item-meta">目标：${escapeHtml(item.target_url)} / HTTP ${item.http_status || "-"}</div>
+        <div class="item-meta">耗时：${Number(item.duration_ms || 0).toLocaleString()} ms / 重试：${Number(item.retry_count || 0).toLocaleString()} 次 / ${formatDateTime(item.created_at)}</div>
+        ${item.error_message ? `<div class="item-meta danger-text">错误：${escapeHtml(item.error_message)}</div>` : ""}
+      </article>
+    `;
+  }).join("") || empty("暂无投递记录");
+}
+
 async function loadTenants() {
   const data = await api("/tenants", { tenant: false });
   state.tenants = data.items || [];
@@ -910,7 +1143,7 @@ async function loadUsage() {
 
 async function loadSubscription() {
   state.subscription = await api("/billing/subscription");
-  $("#subscriptionBox").textContent = pretty(state.subscription);
+  renderSubscriptionSummary(state.subscription);
   renderMetrics();
 }
 
@@ -1019,6 +1252,95 @@ async function loadInvitations() {
   renderMetrics();
 }
 
+async function loadWebhooks() {
+  if (!state.tenantId) return;
+  const data = await api("/webhooks");
+  state.webhooks = data.items || [];
+  renderWebhooks();
+}
+
+async function loadWebhookDeliveries() {
+  if (!state.tenantId) return;
+  const data = await api("/webhook-deliveries?limit=50");
+  state.webhookDeliveries = data.items || [];
+  renderWebhookDeliveries();
+}
+
+function streamHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  if (state.tenantId) headers["X-Tenant-ID"] = state.tenantId;
+  return headers;
+}
+
+async function streamAgentConversation(agentID, body) {
+  const resultEl = $("#agentConversationResult");
+  resultEl.innerHTML = `
+    <div class="answer-main"><strong>流式回答</strong><p id="streamAnswerText"></p></div>
+    <div id="streamReferenceList" class="reference-list"></div>
+  `;
+  const answerEl = $("#streamAnswerText");
+  const referenceEl = $("#streamReferenceList");
+  const response = await fetch(`${state.apiBase}/agents/${agentID}/chat/stream`, {
+    method: "POST",
+    headers: streamHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!response.ok || !response.body) {
+    let message = `HTTP ${response.status}`;
+    try {
+      const payload = await response.json();
+      message = payload.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalPayload = null;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() || "";
+    for (const part of parts) {
+      const event = parseSSE(part);
+      if (!event) continue;
+      if (event.event === "delta") {
+        answerEl.textContent += event.data?.content || "";
+      } else if (event.event === "reference") {
+        const ref = event.data || {};
+        referenceEl.insertAdjacentHTML("beforeend", `<article class="reference-item"><strong>${escapeHtml(ref.title || "引用片段")}</strong><span>相关度：${Number(ref.score || 0).toFixed(3)}</span></article>`);
+      } else if (event.event === "done") {
+        finalPayload = event.data;
+      } else if (event.event === "error") {
+        throw new Error(event.data?.message || "流式会话失败");
+      }
+    }
+  }
+  if (finalPayload?.conversation_id) {
+    state.selectedConversationId = finalPayload.conversation_id;
+  }
+  toast("流式会话已完成");
+}
+
+function parseSSE(chunk) {
+  const lines = chunk.split("\n");
+  let event = "message";
+  const dataLines = [];
+  for (const line of lines) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+  }
+  if (!dataLines.length) return null;
+  try {
+    return { event, data: JSON.parse(dataLines.join("\n")) };
+  } catch {
+    return { event, data: { content: dataLines.join("\n") } };
+  }
+}
+
 async function refreshAll() {
   if (!state.token) {
     renderShell();
@@ -1042,6 +1364,8 @@ async function refreshAll() {
     loadMembers(),
     loadAuditLogs(),
     loadInvitations(),
+    loadWebhooks(),
+    loadWebhookDeliveries(),
   ]);
   renderShell();
 }
@@ -1056,6 +1380,7 @@ function switchView(name) {
     licenses: ["授权", "租户 License 生命周期管理"],
     usage: ["用量与订单", "订阅、配额、支付和回调审计"],
     analytics: ["数据分析", "租户资产、经营状态、用量趋势和风险洞察"],
+    webhooks: ["Webhook", "外部系统通知、测试发送和投递记录"],
     settings: ["连接", "管理台 API 连接配置"],
   };
   setText("viewTitle", titles[name][0]);
@@ -1093,6 +1418,8 @@ function bindEvents() {
       loadMembers(),
       loadAuditLogs(),
       loadInvitations(),
+      loadWebhooks(),
+      loadWebhookDeliveries(),
     ]);
     renderTenants();
   });
@@ -1131,11 +1458,11 @@ function bindEvents() {
     try {
       const [ready, health] = await Promise.all([api("/ready", { tenant: false }), api("/health", { tenant: false })]);
       state.health = { status: ready?.status || health?.status || "ready", checked_at: new Date().toISOString(), ready, health };
-      $("#healthBox").textContent = pretty({ ready, health, tenant: currentTenant() });
+      renderHealthSummary(state.health);
       renderMetrics();
     } catch (err) {
       state.health = { status: "error", checked_at: new Date().toISOString(), message: err.message };
-      $("#healthBox").textContent = err.message;
+      renderHealthSummary({ error: err.message, checked_at: state.health.checked_at });
       renderMetrics();
     }
   });
@@ -1168,10 +1495,10 @@ function bindEvents() {
         method: "POST",
         body: { question: data.question, top_k: 5, candidate_k: 25, min_score: 0 },
       });
-      $("#askResult").textContent = pretty(result);
+      renderAnswerSummary("#askResult", result);
       await loadUsage();
     } catch (err) {
-      $("#askResult").textContent = err.message;
+      renderAnswerSummary("#askResult", null, err.message);
     }
   });
 
@@ -1290,10 +1617,10 @@ function bindEvents() {
     if (data.knowledge_base_id) body.knowledge_base_id = data.knowledge_base_id;
     try {
       const result = await api(`/agents/${data.agent_id}/test-chat`, { method: "POST", body });
-      $("#agentChatResult").textContent = pretty(result);
+      renderAnswerSummary("#agentChatResult", result);
       await loadUsage();
     } catch (err) {
-      $("#agentChatResult").textContent = err.message;
+      renderAnswerSummary("#agentChatResult", null, err.message);
     }
   });
 
@@ -1325,12 +1652,34 @@ function bindEvents() {
     try {
       const result = await api(`/agents/${data.agent_id}/chat`, { method: "POST", body });
       state.selectedConversationId = result.conversation_id;
-      $("#agentConversationResult").textContent = pretty(result);
+      renderAnswerSummary("#agentConversationResult", result);
       event.currentTarget.elements.message.value = "";
       await Promise.allSettled([loadConversations(), loadUsage()]);
       toast(`多轮会话已回复，使用历史 ${result.history_used || 0} 条`);
     } catch (err) {
-      $("#agentConversationResult").textContent = err.message;
+      renderAnswerSummary("#agentConversationResult", null, err.message);
+    }
+  });
+
+  $("#streamConversationBtn").addEventListener("click", async () => {
+    const form = $("#agentConversationForm");
+    const data = formData(form);
+    const body = {
+      conversation_id: state.selectedConversationId,
+      message: data.message,
+      history_limit: 20,
+      min_score: 0,
+    };
+    if (data.knowledge_base_id) body.knowledge_base_id = data.knowledge_base_id;
+    try {
+      if (!data.agent_id || !data.message) {
+        throw new Error("请选择智能体并输入消息");
+      }
+      await streamAgentConversation(data.agent_id, body);
+      form.elements.message.value = "";
+      await Promise.allSettled([loadConversations(), loadUsage()]);
+    } catch (err) {
+      renderAnswerSummary("#agentConversationResult", null, err.message);
     }
   });
 
@@ -1414,11 +1763,35 @@ function bindEvents() {
     const data = formData(event.currentTarget);
     try {
       const result = await api("/tenant-invitations/accept", { method: "POST", body: data, tenant: false });
-      $("#acceptInvitationResult").textContent = pretty(result);
+      renderAcceptInvitationResult(result);
       await loadTenants();
       toast("邀请已接受");
     } catch (err) {
-      $("#acceptInvitationResult").textContent = err.message;
+      renderAcceptInvitationResult(null, err.message);
+    }
+  });
+
+  $("#webhookForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = formData(event.currentTarget);
+    const events = Array.from(event.currentTarget.elements.events.selectedOptions).map((option) => option.value);
+    try {
+      await api("/webhooks", {
+        method: "POST",
+        body: {
+          name: data.name,
+          url: data.url,
+          secret: data.secret,
+          status: data.status,
+          events,
+        },
+      });
+      event.currentTarget.reset();
+      Array.from(event.currentTarget.elements.events.options).forEach((option) => { option.selected = true; });
+      await loadWebhooks();
+      toast("Webhook 已创建");
+    } catch (err) {
+      toast(err.message);
     }
   });
 
@@ -1438,11 +1811,13 @@ function bindEvents() {
   $("#loadAnalyticsBtn").addEventListener("click", () => loadAnalytics().then(() => toast("分析已刷新")).catch((err) => toast(err.message)));
   $("#loadMembersBtn").addEventListener("click", () => loadMembers().catch((err) => toast(err.message)));
   $("#loadInvitationsBtn").addEventListener("click", () => loadInvitations().catch((err) => toast(err.message)));
+  $("#loadWebhooksBtn").addEventListener("click", () => loadWebhooks().catch((err) => toast(err.message)));
+  $("#loadWebhookDeliveriesBtn").addEventListener("click", () => loadWebhookDeliveries().catch((err) => toast(err.message)));
   $("#loadSubscriptionBtn").addEventListener("click", async () => {
     try {
       await loadSubscription();
     } catch (err) {
-      $("#subscriptionBox").textContent = err.message;
+      renderSubscriptionSummary(null, err.message);
     }
   });
 
@@ -1493,6 +1868,9 @@ function bindEvents() {
     const documentChunksId = target.dataset?.documentChunks;
     const fileDownloadId = target.dataset?.fileDownload;
     const documentArchiveId = target.dataset?.documentArchive;
+    const webhookTestId = target.dataset?.webhookTest;
+    const webhookToggleId = target.dataset?.webhookToggle;
+    const webhookDeleteId = target.dataset?.webhookDelete;
     const conversationSelectId = target.closest("[data-conversation-select]")?.dataset.conversationSelect;
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const viewLink = target.closest("[data-view-link]")?.dataset.viewLink;
@@ -1538,7 +1916,24 @@ function bindEvents() {
         await loadDocumentDetail(documentChunksId, true);
         toast("文档 Chunk 已加载");
       }
-      if (publishId) {
+      if (webhookTestId) {
+        const delivery = await api(`/webhooks/${webhookTestId}/test`, { method: "POST", body: {} });
+        await loadWebhookDeliveries();
+        toast(delivery.status === "success" ? "Webhook 测试发送成功" : "Webhook 测试发送失败");
+      }
+      if (webhookToggleId) {
+        const item = state.webhooks.find((hook) => hook.id === webhookToggleId);
+        if (!item) throw new Error("Webhook 不存在");
+        await api(`/webhooks/${webhookToggleId}`, { method: "PUT", body: { status: item.status === "active" ? "disabled" : "active" } });
+        await loadWebhooks();
+        toast("Webhook 状态已更新");
+      }
+      if (webhookDeleteId) {
+        if (!window.confirm("确认删除该 Webhook 配置？")) return;
+        await api(`/webhooks/${webhookDeleteId}`, { method: "DELETE" });
+        await Promise.allSettled([loadWebhooks(), loadWebhookDeliveries()]);
+        toast("Webhook 已删除");
+      }      if (publishId) {
         await api(`/agents/${publishId}/publish`, { method: "POST" });
         await loadAgents();
       }

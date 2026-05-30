@@ -21,6 +21,7 @@ import (
 	"mu-agent-saas/internal/module/kb"
 	"mu-agent-saas/internal/module/license"
 	"mu-agent-saas/internal/module/tenant"
+	"mu-agent-saas/internal/module/webhook"
 	"mu-agent-saas/pkg/database"
 	"mu-agent-saas/pkg/response"
 	"mu-agent-saas/pkg/storage"
@@ -65,9 +66,12 @@ func NewApp(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	authHandler := auth.NewHandler(auth.NewService(authRepo, jwtSvc))
+	rateLimiter := middleware.NewMemoryRateLimiter(time.Minute)
 	private := v1.Group("")
 	private.Use(auth.AuthMiddleware(jwtSvc, authRepo))
-	auth.RegisterRoutes(v1, private, authHandler)
+	authPublic := v1.Group("")
+	authPublic.Use(rateLimiter.IP(20))
+	auth.RegisterRoutes(authPublic, private, authHandler)
 
 	tenantRepo := tenant.NewRepository(db)
 	tenantHandler := tenant.NewHandler(tenantRepo)
@@ -75,6 +79,7 @@ func NewApp(cfg config.Config) (*App, error) {
 
 	tenantScoped := private.Group("")
 	tenantScoped.Use(tenant.ContextMiddleware(tenantRepo))
+	tenantScoped.Use(rateLimiter.TenantAndUser(120, 60))
 	tenantScoped.Use(tenant.AuditMiddleware(tenantRepo))
 	tenant.RegisterTenantScopedRoutes(tenantScoped, tenantHandler)
 	storageClient, err := storage.NewMinIO(storage.Config{
@@ -127,16 +132,19 @@ func NewApp(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	billingRepo := billing.NewRepository(db)
+	webhookRepo := webhook.NewRepository(db)
+	webhookService := webhook.NewService(webhookRepo)
 	analytics.RegisterRoutes(tenantScoped, analytics.NewHandler(analytics.NewRepository(db)))
-	billing.RegisterRoutes(tenantScoped, billing.NewHandler(billingRepo))
+	billing.RegisterRoutes(tenantScoped, billing.NewHandlerWithWebhook(billingRepo, webhookService))
 	licenseVerifier, err := license.NewVerifierFromConfig(cfg.LicensePublicKeys)
 	if err != nil {
 		return nil, err
 	}
-	license.RegisterRoutes(tenantScoped, license.NewHandler(license.NewRepository(db), licenseVerifier))
+	license.RegisterRoutes(tenantScoped, license.NewHandlerWithWebhook(license.NewRepository(db), licenseVerifier, webhookService))
+	webhook.RegisterRoutes(tenantScoped, webhook.NewHandler(webhookRepo, webhookService))
 	filemodule.RegisterRoutes(tenantScoped, filemodule.NewHandler(filemodule.NewRepository(db), storageClient, cfg.UploadMaxBytes, billingRepo))
 	kb.RegisterRoutesWithHandler(tenantScoped, kb.NewHandlerWithStorageAndGeneration(db, storageClient, embedder, generator, billingRepo))
-	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntime(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo))
+	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntimeAndWebhook(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo, webhookService))
 	return &App{Router: r, DB: db}, nil
 }
 

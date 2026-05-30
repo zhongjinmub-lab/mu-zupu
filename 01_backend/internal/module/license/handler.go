@@ -9,16 +9,22 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"mu-agent-saas/internal/module/tenant"
+	"mu-agent-saas/internal/module/webhook"
 	"mu-agent-saas/pkg/response"
 )
 
 type Handler struct {
 	Repo     Repository
 	Verifier Verifier
+	Hooks    webhook.Service
 }
 
 func NewHandler(repo Repository, verifier Verifier) Handler {
 	return Handler{Repo: repo, Verifier: verifier}
+}
+
+func NewHandlerWithWebhook(repo Repository, verifier Verifier, hooks webhook.Service) Handler {
+	return Handler{Repo: repo, Verifier: verifier, Hooks: hooks}
 }
 
 func (h Handler) List(c *gin.Context) {
@@ -134,14 +140,15 @@ func (h Handler) Activate(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, 50072, err.Error())
 		return
 	}
+	h.Hooks.Emit(c.Request.Context(), t.ID, webhook.EventLicenseActivated, licenseWebhookPayload(item))
 	response.OK(c, item)
 }
 
 func (h Handler) Revoke(c *gin.Context) {
-	h.changeStatus(c, h.Repo.Revoke)
+	h.changeStatus(c, h.Repo.Revoke, webhook.EventLicenseRevoked)
 }
 
-func (h Handler) changeStatus(c *gin.Context, fn func(ctx context.Context, tenantID, licenseID string) (License, error)) {
+func (h Handler) changeStatus(c *gin.Context, fn func(ctx context.Context, tenantID, licenseID string) (License, error), eventType string) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
@@ -156,5 +163,18 @@ func (h Handler) changeStatus(c *gin.Context, fn func(ctx context.Context, tenan
 		response.Error(c, http.StatusInternalServerError, 50072, err.Error())
 		return
 	}
+	if eventType != "" {
+		h.Hooks.Emit(c.Request.Context(), t.ID, eventType, licenseWebhookPayload(item))
+	}
 	response.OK(c, item)
+}
+
+func licenseWebhookPayload(item License) map[string]any {
+	return map[string]any{
+		"license_id":   item.ID,
+		"license_no":   item.LicenseNo,
+		"license_type": item.LicenseType,
+		"status":       item.Status,
+		"expired_at":   item.ExpiredAt,
+	}
 }

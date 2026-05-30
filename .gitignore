@@ -1,6 +1,7 @@
 ﻿# 本地构建与交付产物
 01_backend/dist/
 01_backend/deploy_dist/
+dist-frontend-*.tar.gz
 02_frontend/dist-*.tar.gz
 02_frontend/ui-*.png
 *.bak
