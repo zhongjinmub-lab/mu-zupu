@@ -16,7 +16,7 @@ mu:{env}:{module}:{tenant_id}:{biz_key}
 |---|---|---|---|---|
 | 认证 | mu:{env}:auth:global:access:{jti} | string | 2h | Access Token 状态 |
 | 认证 | mu:{env}:auth:global:refresh:{jti} | string | 30d | Refresh Token 状态 |
-| 限流 | mu:{env}:rate:{tenant}:{scope}:{key} | string | 1m | API/会话/工具限流 |
+| 限流 | mu:{env}:rate:global:{scope}:{key} | string | 1m | API 限流，当前 scope 包含 tenant、user、ip |
 | 锁 | mu:{env}:lock:{tenant}:{resource}:{id} | string | 10s-5m | 分布式锁 |
 | 幂等 | mu:{env}:idem:{tenant}:{key} | string | 24h | 请求幂等 |
 | 租户 | mu:{env}:tenant:global:{tenant_id} | json | 10m | 租户信息缓存 |
@@ -38,3 +38,10 @@ mu:{env}:{module}:{tenant_id}:{biz_key}
 - 支付、订单、License、危险工具调用必须幂等；
 - 关键权限与额度最终以数据库为准；
 - 生产环境需监控 Redis 内存、命中率、慢命令和 Key 数量。
+
+## 4. 当前接入状态
+
+- `RATE_LIMIT_BACKEND=memory`：默认策略，使用进程内固定窗口限流，适合单实例或本地开发。
+- `RATE_LIMIT_BACKEND=redis`：使用 Redis `INCR` + `EXPIRE` 实现固定窗口限流，适合多实例部署。
+- Redis 限流异常时会自动回退到内存限流，避免 Redis 短时不可用导致业务 API 整体不可用。
+- 当前限流窗口默认 60 秒，可通过 `RATE_LIMIT_WINDOW_SECONDS` 调整。

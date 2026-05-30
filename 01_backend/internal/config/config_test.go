@@ -23,6 +23,11 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	t.Setenv("GENERATION_BASE_URL", "https://llm.example/v1")
 	t.Setenv("GENERATION_API_KEY", "chat-key")
 	t.Setenv("GENERATION_TIMEOUT_SECONDS", "17")
+	t.Setenv("RATE_LIMIT_BACKEND", "redis")
+	t.Setenv("RATE_LIMIT_WINDOW_SECONDS", "30")
+	t.Setenv("RATE_LIMIT_TENANT_PER_MINUTE", "240")
+	t.Setenv("RATE_LIMIT_USER_PER_MINUTE", "90")
+	t.Setenv("RATE_LIMIT_AUTH_IP_PER_MINUTE", "25")
 	t.Setenv("DOCUMENT_WORKER_INTERVAL_SECONDS", "3")
 	t.Setenv("DOCUMENT_WORKER_BATCH_SIZE", "9")
 	t.Setenv("LICENSE_PUBLIC_KEYS", `{"default":"pubkey"}`)
@@ -57,6 +62,12 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	}
 	if cfg.GenerationBaseURL != "https://llm.example/v1" || cfg.GenerationAPIKey != "chat-key" || cfg.GenerationTimeout != 17 {
 		t.Fatalf("generation http config = %#v", cfg)
+	}
+	if cfg.RateLimitBackend != "redis" || cfg.RateLimitWindowSeconds != 30 {
+		t.Fatalf("rate limit backend config = %#v", cfg)
+	}
+	if cfg.RateLimitTenantPerMinute != 240 || cfg.RateLimitUserPerMinute != 90 || cfg.RateLimitAuthIPPerMinute != 25 {
+		t.Fatalf("rate limit threshold config = %#v", cfg)
 	}
 	if cfg.DocumentWorkerIntervalSeconds != 3 || cfg.DocumentWorkerBatchSize != 9 {
 		t.Fatalf("document worker config = %#v", cfg)

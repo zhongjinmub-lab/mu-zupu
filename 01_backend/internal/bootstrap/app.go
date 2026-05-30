@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 
 	"mu-agent-saas/internal/config"
 	"mu-agent-saas/internal/embedding"
@@ -28,8 +29,9 @@ import (
 )
 
 type App struct {
-	Router *gin.Engine
-	DB     *pgxpool.Pool
+	Router      *gin.Engine
+	DB          *pgxpool.Pool
+	RedisClient *redis.Client
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -66,11 +68,26 @@ func NewApp(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	authHandler := auth.NewHandler(auth.NewService(authRepo, jwtSvc))
-	rateLimiter := middleware.NewMemoryRateLimiter(time.Minute)
+	rateLimitWindow := time.Duration(cfg.RateLimitWindowSeconds) * time.Second
+	memoryRateLimiter := middleware.NewMemoryRateLimiter(rateLimitWindow)
+	rateLimiter := middleware.NewRateLimiter(memoryRateLimiter, memoryRateLimiter)
+	var redisClient *redis.Client
+	if strings.EqualFold(strings.TrimSpace(cfg.RateLimitBackend), "redis") {
+		redisClient = redis.NewClient(&redis.Options{
+			Addr:         cfg.RedisAddr,
+			Password:     cfg.RedisPass,
+			DB:           cfg.RedisDB,
+			DialTimeout:  300 * time.Millisecond,
+			ReadTimeout:  300 * time.Millisecond,
+			WriteTimeout: 300 * time.Millisecond,
+		})
+		rateLimitPrefix := "mu:" + cfg.Env + ":rate:global:"
+		rateLimiter = middleware.NewRateLimiter(middleware.NewRedisRateLimiter(redisClient, rateLimitWindow, rateLimitPrefix), memoryRateLimiter)
+	}
 	private := v1.Group("")
 	private.Use(auth.AuthMiddleware(jwtSvc, authRepo))
 	authPublic := v1.Group("")
-	authPublic.Use(rateLimiter.IP(20))
+	authPublic.Use(rateLimiter.IP(cfg.RateLimitAuthIPPerMinute))
 	auth.RegisterRoutes(authPublic, private, authHandler)
 
 	tenantRepo := tenant.NewRepository(db)
@@ -79,7 +96,7 @@ func NewApp(cfg config.Config) (*App, error) {
 
 	tenantScoped := private.Group("")
 	tenantScoped.Use(tenant.ContextMiddleware(tenantRepo))
-	tenantScoped.Use(rateLimiter.TenantAndUser(120, 60))
+	tenantScoped.Use(rateLimiter.TenantAndUser(cfg.RateLimitTenantPerMinute, cfg.RateLimitUserPerMinute))
 	tenantScoped.Use(tenant.AuditMiddleware(tenantRepo))
 	tenant.RegisterTenantScopedRoutes(tenantScoped, tenantHandler)
 	storageClient, err := storage.NewMinIO(storage.Config{
@@ -148,11 +165,14 @@ func NewApp(cfg config.Config) (*App, error) {
 	filemodule.RegisterRoutes(tenantScoped, filemodule.NewHandler(filemodule.NewRepository(db), storageClient, cfg.UploadMaxBytes, billingRepo))
 	kb.RegisterRoutesWithHandler(tenantScoped, kb.NewHandlerWithStorageAndGeneration(db, storageClient, embedder, generator, billingRepo))
 	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntimeAndWebhook(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo, webhookService))
-	return &App{Router: r, DB: db}, nil
+	return &App{Router: r, DB: db, RedisClient: redisClient}, nil
 }
 
 func (a *App) Close() {
 	if a != nil && a.DB != nil {
 		a.DB.Close()
+	}
+	if a != nil && a.RedisClient != nil {
+		_ = a.RedisClient.Close()
 	}
 }

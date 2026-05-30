@@ -436,3 +436,19 @@ Generation provider 配置：
 | PUT | /agents/{agent_id} | 更新当前租户 Agent 名称、描述、系统提示词和策略配置 | tenant writer |
 
 前端点击“编辑”后回填 Agent 表单；编码只读，提交保存后刷新 Agent 列表。已发布 Agent 更新后由后端回到 `draft`。
+
+## 2026-05-31 增量：可选 Redis API 限流
+
+后端限流中间件已支持内存与 Redis 两种后端，默认保持内存限流，便于本地开发和单实例部署；生产多实例可切换到 Redis。
+
+| 配置项 | 默认值 | 说明 |
+|---|---:|---|
+| `RATE_LIMIT_BACKEND` | `memory` | 可选 `memory` 或 `redis` |
+| `RATE_LIMIT_WINDOW_SECONDS` | `60` | 固定窗口长度，单位秒 |
+| `RATE_LIMIT_TENANT_PER_MINUTE` | `120` | 同一租户窗口内最大请求数 |
+| `RATE_LIMIT_USER_PER_MINUTE` | `60` | 同一用户窗口内最大请求数 |
+| `RATE_LIMIT_AUTH_IP_PER_MINUTE` | `20` | 登录/注册同一 IP 窗口内最大请求数 |
+
+启用 `RATE_LIMIT_BACKEND=redis` 后使用已有 `REDIS_ADDR`、`REDIS_PASS`、`REDIS_DB` 连接 Redis。Redis 计数异常时会自动回退到内存限流，避免 Redis 短时不可用导致业务接口整体不可用。
+
+触发限流时返回 HTTP `429`，响应仍使用统一结构，中文错误信息为“请求过于频繁，请稍后再试”。

@@ -12,6 +12,11 @@ type Config struct {
 	RedisAddr                     string
 	RedisPass                     string
 	RedisDB                       int
+	RateLimitBackend              string
+	RateLimitWindowSeconds        int
+	RateLimitTenantPerMinute      int
+	RateLimitUserPerMinute        int
+	RateLimitAuthIPPerMinute      int
 	JWTSecret                     string
 	JWTIssuer                     string
 	JWTTTLHours                   int
@@ -49,6 +54,11 @@ func Load() Config {
 		RedisAddr:                     env("REDIS_ADDR", "localhost:6379"),
 		RedisPass:                     env("REDIS_PASS", ""),
 		RedisDB:                       envInt("REDIS_DB", 0),
+		RateLimitBackend:              env("RATE_LIMIT_BACKEND", "memory"),
+		RateLimitWindowSeconds:        envInt("RATE_LIMIT_WINDOW_SECONDS", 60),
+		RateLimitTenantPerMinute:      envInt("RATE_LIMIT_TENANT_PER_MINUTE", 120),
+		RateLimitUserPerMinute:        envInt("RATE_LIMIT_USER_PER_MINUTE", 60),
+		RateLimitAuthIPPerMinute:      envInt("RATE_LIMIT_AUTH_IP_PER_MINUTE", 20),
 		JWTSecret:                     env("JWT_SECRET", ""),
 		JWTIssuer:                     env("JWT_ISSUER", "mu-agent-saas"),
 		JWTTTLHours:                   envInt("JWT_TTL_HOURS", 24),
