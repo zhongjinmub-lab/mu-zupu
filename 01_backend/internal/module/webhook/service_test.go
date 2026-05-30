@@ -82,3 +82,38 @@ func TestMaxRetryStopsScheduling(t *testing.T) {
 		t.Fatalf("expected no retry for success, got %s", next)
 	}
 }
+
+func TestDeliveryQueryNormalizeAndValidate(t *testing.T) {
+	query := DeliveryQuery{
+		TenantID:   " tenant-1 ",
+		EndpointID: " 11111111-1111-1111-1111-111111111111 ",
+		EventType:  " ORDER.PAID ",
+		Status:     " FAILED ",
+		Limit:      500,
+	}
+	query.Normalize()
+
+	if query.TenantID != "tenant-1" || query.EndpointID != "11111111-1111-1111-1111-111111111111" {
+		t.Fatalf("unexpected normalized ids: %#v", query)
+	}
+	if query.EventType != EventOrderPaid || query.Status != "failed" {
+		t.Fatalf("unexpected normalized filters: %#v", query)
+	}
+	if query.Limit != 50 {
+		t.Fatalf("expected default limit 50, got %d", query.Limit)
+	}
+	if err := query.Validate(); err != nil {
+		t.Fatalf("expected valid query, got %v", err)
+	}
+
+	query.Status = "unknown"
+	if err := query.Validate(); err == nil {
+		t.Fatal("expected invalid status error")
+	}
+
+	query.Status = "failed"
+	query.EndpointID = "bad-endpoint-id"
+	if err := query.Validate(); err == nil {
+		t.Fatal("expected invalid endpoint_id error")
+	}
+}

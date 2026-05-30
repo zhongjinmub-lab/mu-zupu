@@ -116,7 +116,19 @@ func (h Handler) ListDeliveries(c *gin.Context) {
 		return
 	}
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	items, err := h.Repo.ListDeliveries(c.Request.Context(), t.ID, c.Query("endpoint_id"), limit)
+	query := DeliveryQuery{
+		TenantID:   t.ID,
+		EndpointID: c.Query("endpoint_id"),
+		EventType:  c.Query("event_type"),
+		Status:     c.Query("status"),
+		Limit:      limit,
+	}
+	query.Normalize()
+	if err := query.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	items, err := h.Repo.ListDeliveries(c.Request.Context(), query)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, 50092, err.Error())
 		return

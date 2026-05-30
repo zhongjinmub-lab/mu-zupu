@@ -452,3 +452,16 @@ Generation provider 配置：
 启用 `RATE_LIMIT_BACKEND=redis` 后使用已有 `REDIS_ADDR`、`REDIS_PASS`、`REDIS_DB` 连接 Redis。Redis 计数异常时会自动回退到内存限流，避免 Redis 短时不可用导致业务接口整体不可用。
 
 触发限流时返回 HTTP `429`，响应仍使用统一结构，中文错误信息为“请求过于频繁，请稍后再试”。
+
+## 2026-05-31 增量：Webhook 投递记录筛选
+
+`GET /webhook-deliveries` 已支持在当前租户上下文内筛选投递记录。
+
+| 参数 | 说明 |
+|---|---|
+| `endpoint_id` | Webhook 配置 ID，可选，必须是合法 UUID |
+| `event_type` | 事件类型，可选，例如 `order.paid`、`license.activated` |
+| `status` | 投递状态，可选，支持 `success`、`failed` |
+| `limit` | 返回数量，默认 50，最大 200 |
+
+管理台 Webhook 页面已增加投递记录筛选栏，可按 Webhook、事件类型、状态和数量查看中文摘要结果。

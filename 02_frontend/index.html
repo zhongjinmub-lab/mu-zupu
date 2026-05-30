@@ -554,6 +554,39 @@
                 <h3>投递记录</h3>
                 <button id="loadWebhookDeliveriesBtn" class="button small secondary" type="button">刷新</button>
               </div>
+              <form id="webhookDeliveryFilterForm" class="filter-form compact">
+                <label>Webhook
+                  <select name="endpoint_id">
+                    <option value="">全部 Webhook</option>
+                  </select>
+                </label>
+                <label>事件
+                  <select name="event_type">
+                    <option value="">全部事件</option>
+                    <option value="webhook.test">Webhook 测试</option>
+                    <option value="order.paid">订单支付成功</option>
+                    <option value="license.activated">License 激活</option>
+                    <option value="license.revoked">License 吊销</option>
+                    <option value="agent.chat.finished">Agent 会话完成</option>
+                  </select>
+                </label>
+                <label>状态
+                  <select name="status">
+                    <option value="">全部状态</option>
+                    <option value="success">成功</option>
+                    <option value="failed">失败</option>
+                  </select>
+                </label>
+                <label>数量
+                  <select name="limit">
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                  </select>
+                </label>
+                <button class="button small secondary" type="submit">筛选</button>
+                <button id="resetWebhookDeliveryFilterBtn" class="button small ghost" type="button">重置</button>
+              </form>
               <div id="webhookDeliveryList" class="list"></div>
             </section>
           </section>

@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -140,24 +142,35 @@ RETURNING id::text, tenant_id::text, COALESCE(endpoint_id::text, ''), event_type
 	return r.scanDeliveryRow(ctx, q, item.TenantID, item.EndpointID, item.EventType, item.TargetURL, item.Status, item.HTTPStatus, string(body), item.ResponseBody, item.ErrorMessage, item.DurationMS, item.RetryCount, item.NextRetryAt)
 }
 
-func (r Repository) ListDeliveries(ctx context.Context, tenantID, endpointID string, limit int) ([]Delivery, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
+func (r Repository) ListDeliveries(ctx context.Context, query DeliveryQuery) ([]Delivery, error) {
+	query.Normalize()
+	if err := query.Validate(); err != nil {
+		return nil, err
 	}
-	args := []any{tenantID, limit}
-	filter := ""
-	if endpointID != "" {
-		filter = " AND endpoint_id = $3::uuid"
-		args = append(args, endpointID)
+	args := []any{query.TenantID}
+	filters := []string{"tenant_id = $1"}
+	if query.EndpointID != "" {
+		args = append(args, query.EndpointID)
+		filters = append(filters, fmt.Sprintf("endpoint_id = $%d::uuid", len(args)))
 	}
+	if query.EventType != "" {
+		args = append(args, query.EventType)
+		filters = append(filters, fmt.Sprintf("event_type = $%d", len(args)))
+	}
+	if query.Status != "" {
+		args = append(args, query.Status)
+		filters = append(filters, fmt.Sprintf("status = $%d", len(args)))
+	}
+	args = append(args, query.Limit)
+	limitArg := len(args)
 	q := `
 SELECT id::text, tenant_id::text, COALESCE(endpoint_id::text, ''), event_type, target_url, status,
        COALESCE(http_status, 0), request_body, COALESCE(response_body, ''), COALESCE(error_message, ''),
        duration_ms, retry_count, next_retry_at, last_attempt_at, created_at
 FROM webhook_deliveries
-WHERE tenant_id = $1` + filter + `
+WHERE ` + strings.Join(filters, " AND ") + `
 ORDER BY created_at DESC
-LIMIT $2`
+LIMIT $` + fmt.Sprint(limitArg)
 	rows, err := r.DB.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err

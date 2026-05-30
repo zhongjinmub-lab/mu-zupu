@@ -41,6 +41,12 @@ const state = {
   invitations: [],
   webhooks: [],
   webhookDeliveries: [],
+  webhookDeliveryFilters: {
+    endpoint_id: "",
+    event_type: "",
+    status: "",
+    limit: "50",
+  },
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -952,6 +958,9 @@ function renderWebhooks() {
       </div>
     </article>
   `).join("") || empty("暂无 Webhook 配置");
+  fillSelect("#webhookDeliveryFilterForm select[name='endpoint_id']", state.webhooks, "全部 Webhook", true);
+  const endpointFilter = $("#webhookDeliveryFilterForm select[name='endpoint_id']");
+  if (endpointFilter) endpointFilter.value = state.webhookDeliveryFilters.endpoint_id;
 }
 
 function renderWebhookDeliveries() {
@@ -1261,9 +1270,31 @@ async function loadWebhooks() {
 
 async function loadWebhookDeliveries() {
   if (!state.tenantId) return;
-  const data = await api("/webhook-deliveries?limit=50");
+  const data = await api(`/webhook-deliveries${webhookDeliveryQuery()}`);
   state.webhookDeliveries = data.items || [];
   renderWebhookDeliveries();
+}
+
+function webhookDeliveryFiltersFromForm() {
+  const form = $("#webhookDeliveryFilterForm");
+  if (!form) return state.webhookDeliveryFilters;
+  const data = formData(form);
+  state.webhookDeliveryFilters = {
+    endpoint_id: data.endpoint_id || "",
+    event_type: data.event_type || "",
+    status: data.status || "",
+    limit: data.limit || "50",
+  };
+  return state.webhookDeliveryFilters;
+}
+
+function webhookDeliveryQuery() {
+  const params = new URLSearchParams();
+  Object.entries(state.webhookDeliveryFilters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
 }
 
 function streamHeaders() {
@@ -1795,6 +1826,25 @@ function bindEvents() {
     }
   });
 
+  $("#webhookDeliveryFilterForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    webhookDeliveryFiltersFromForm();
+    loadWebhookDeliveries().catch((err) => toast(err.message));
+  });
+
+  $("#resetWebhookDeliveryFilterBtn").addEventListener("click", () => {
+    state.webhookDeliveryFilters = {
+      endpoint_id: "",
+      event_type: "",
+      status: "",
+      limit: "50",
+    };
+    const form = $("#webhookDeliveryFilterForm");
+    form.reset();
+    form.elements.limit.value = "50";
+    loadWebhookDeliveries().catch((err) => toast(err.message));
+  });
+
   $("#loadKbsBtn").addEventListener("click", () => loadKbs().catch((err) => toast(err.message)));
   $("#loadFilesBtn").addEventListener("click", () => loadFiles().catch((err) => toast(err.message)));
   $("#loadDocumentsBtn").addEventListener("click", () => loadDocuments().catch((err) => toast(err.message)));
@@ -1812,7 +1862,10 @@ function bindEvents() {
   $("#loadMembersBtn").addEventListener("click", () => loadMembers().catch((err) => toast(err.message)));
   $("#loadInvitationsBtn").addEventListener("click", () => loadInvitations().catch((err) => toast(err.message)));
   $("#loadWebhooksBtn").addEventListener("click", () => loadWebhooks().catch((err) => toast(err.message)));
-  $("#loadWebhookDeliveriesBtn").addEventListener("click", () => loadWebhookDeliveries().catch((err) => toast(err.message)));
+  $("#loadWebhookDeliveriesBtn").addEventListener("click", () => {
+    webhookDeliveryFiltersFromForm();
+    loadWebhookDeliveries().catch((err) => toast(err.message));
+  });
   $("#loadSubscriptionBtn").addEventListener("click", async () => {
     try {
       await loadSubscription();

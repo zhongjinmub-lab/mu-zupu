@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -46,6 +48,14 @@ type Delivery struct {
 	NextRetryAt   *time.Time     `json:"next_retry_at,omitempty"`
 	LastAttemptAt *time.Time     `json:"last_attempt_at,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`
+}
+
+type DeliveryQuery struct {
+	TenantID   string
+	EndpointID string
+	EventType  string
+	Status     string
+	Limit      int
 }
 
 type CreateEndpointRequest struct {
@@ -126,6 +136,31 @@ func (r UpdateEndpointRequest) Validate() error {
 	}
 	if r.Status != "" && r.Status != StatusActive && r.Status != StatusDisabled {
 		return errors.New("status must be active or disabled")
+	}
+	return nil
+}
+
+func (q *DeliveryQuery) Normalize() {
+	q.TenantID = strings.TrimSpace(q.TenantID)
+	q.EndpointID = strings.TrimSpace(q.EndpointID)
+	q.EventType = strings.ToLower(strings.TrimSpace(q.EventType))
+	q.Status = strings.ToLower(strings.TrimSpace(q.Status))
+	if q.Limit <= 0 || q.Limit > 200 {
+		q.Limit = 50
+	}
+}
+
+func (q DeliveryQuery) Validate() error {
+	if q.TenantID == "" {
+		return errors.New("tenant_id is required")
+	}
+	if q.EndpointID != "" {
+		if _, err := uuid.Parse(q.EndpointID); err != nil {
+			return errors.New("endpoint_id must be a valid uuid")
+		}
+	}
+	if q.Status != "" && q.Status != "success" && q.Status != "failed" {
+		return errors.New("status must be success or failed")
 	}
 	return nil
 }

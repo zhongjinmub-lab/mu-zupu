@@ -937,6 +937,11 @@ textarea:focus {
   margin-bottom: 12px;
 }
 
+.filter-form.compact {
+  grid-template-columns: repeat(4, minmax(140px, 1fr)) auto auto;
+  align-items: end;
+}
+
 .filter-form .button {
   min-height: 41px;
 }
@@ -1140,6 +1145,10 @@ textarea:focus {
   .analytics-metrics,
   .analytics-grid,
   .filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-form.compact {
     grid-template-columns: 1fr;
   }
 
