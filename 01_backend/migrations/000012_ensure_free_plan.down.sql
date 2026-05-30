@@ -1,0 +1,1 @@
+-- Data repair migration only. Keep the free plan because subscriptions may depend on it.

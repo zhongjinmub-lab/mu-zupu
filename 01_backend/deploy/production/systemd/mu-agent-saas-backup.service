@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup Mu Agent SaaS database and config
+
+[Service]
+Type=oneshot
+ExecStart=/opt/mu-agent-saas/scripts/backup.sh

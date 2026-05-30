@@ -1,0 +1,13 @@
+﻿# 本地构建与交付产物
+01_backend/dist/
+01_backend/deploy_dist/
+02_frontend/dist-*.tar.gz
+02_frontend/ui-*.png
+*.bak
+*.tmp
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

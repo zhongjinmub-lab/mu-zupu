@@ -1,0 +1,27 @@
+package agent
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"mu-agent-saas/internal/module/tenant"
+)
+
+func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
+	rg.GET("/agents", h.ListAgents)
+	rg.GET("/agents/:agent_id", h.GetAgent)
+	rg.GET("/agents/:agent_id/conversations", h.ListConversations)
+	rg.GET("/agents/:agent_id/conversations/:conversation_id/messages", h.ListMessages)
+	rg.GET("/agents/:agent_id/knowledge-bases", h.ListKnowledgeBases)
+
+	write := rg.Group("")
+	write.Use(tenant.RequireTenantWriter())
+	write.POST("/agents", h.CreateAgent)
+	write.PUT("/agents/:agent_id", h.UpdateAgent)
+	write.POST("/agents/:agent_id/publish", h.PublishAgent)
+	write.POST("/agents/:agent_id/rollback", h.RollbackAgent)
+	write.POST("/agents/:agent_id/test-chat", h.TestChat)
+	write.POST("/agents/:agent_id/chat", h.Chat)
+	write.DELETE("/agents/:agent_id", h.ArchiveAgent)
+	write.POST("/agents/:agent_id/knowledge-bases", h.BindKnowledgeBase)
+	write.DELETE("/agents/:agent_id/knowledge-bases/:kb_id", h.UnbindKnowledgeBase)
+}

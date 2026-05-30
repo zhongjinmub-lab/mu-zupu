@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能体族谱 SAAS 管理台</title>
+    <link rel="stylesheet" href="./assets/app.css" />
+  </head>
+  <body>
+    <div id="app" class="shell">
+      <header class="admin-header">
+        <div class="brand">
+          <div class="brand-mark">谱</div>
+          <div>
+            <h1>智能体族谱</h1>
+            <p>SAAS 总后台</p>
+          </div>
+        </div>
+        <nav class="nav" aria-label="主导航">
+          <button class="nav-item active" data-view="overview">首页</button>
+          <button class="nav-item" data-view="knowledge">知识库</button>
+          <button class="nav-item" data-view="agents">智能体</button>
+          <button class="nav-item" data-view="licenses">授权</button>
+          <button class="nav-item" data-view="usage">订单</button>
+          <button class="nav-item" data-view="analytics">分析</button>
+          <button class="nav-item" data-view="settings">设置</button>
+        </nav>
+        <div class="header-actions">
+          <button id="refreshBtn" class="header-button" type="button">刷新</button>
+          <label class="header-search"><input id="globalSearchInput" type="search" placeholder="搜索功能" /></label>
+          <select id="tenantSelect" aria-label="当前租户"></select>
+          <button id="logoutBtn" class="user-button" type="button">admin⌄</button>
+        </div>
+      </header>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h2 id="viewTitle">总览</h2>
+            <p id="viewSubtitle">租户、知识库、智能体和授权状态</p>
+          </div>
+        </header>
+
+        <section id="authPanel" class="auth-panel">
+          <div class="auth-copy">
+            <h2>登录管理台</h2>
+            <p>使用线上后端认证接口进入租户工作区。</p>
+          </div>
+          <form id="authForm" class="panel form-grid">
+            <label>邮箱<input id="emailInput" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
+            <label>密码<input id="passwordInput" type="password" autocomplete="current-password" required placeholder="至少 8 位" /></label>
+            <label>昵称<input id="nicknameInput" type="text" placeholder="管理员" /></label>
+            <div class="form-actions">
+              <button class="button" data-auth-action="login" type="submit">登录</button>
+              <button class="button secondary" data-auth-action="register" type="submit">注册</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="workspace" class="workspace hidden">
+          <section class="view active" data-view-panel="overview">
+            <div class="admin-notice">
+              当前授权版本存在最新版本 V6.18.9，请尽快升级使用 <a href="#settings" data-view-link="settings">立即升级</a>
+            </div>
+            <div class="dashboard-layout">
+              <div class="dashboard-main">
+                <div class="grid overview-grid">
+                  <section class="tenant-card panel">
+                    <div class="tenant-avatar">谱</div>
+                    <strong id="tenantSummaryName">当前租户</strong>
+                    <span id="tenantSummaryRole" class="badge">尊享版</span>
+                    <dl>
+                      <div><dt>租户编码</dt><dd id="tenantSummaryCode">-</dd></div>
+                      <div><dt>授权到期</dt><dd id="tenantSummaryExpiry">未加载</dd></div>
+                    </dl>
+                  </section>
+                  <section class="panel realtime-panel">
+                    <div class="panel-head">
+                      <h3>实时概况</h3>
+                      <span id="overviewUpdatedAt" class="item-meta"></span>
+                    </div>
+                    <div class="metrics flat">
+                      <article class="metric"><span>当前租户</span><strong id="tenantCount">0</strong><small>可用工作区</small></article>
+                      <article class="metric"><span>知识库</span><strong id="kbCount">0</strong><small>资料资产</small></article>
+                      <article class="metric"><span>智能体</span><strong id="agentCount">0</strong><small>自动问答</small></article>
+                      <article class="metric"><span>License</span><strong id="licenseCount">0</strong><small>授权记录</small></article>
+                    </div>
+                  </section>
+                </div>
+                <div class="grid two">
+                  <section class="panel data-panel">
+                    <h3>知识库数据</h3>
+                    <div class="metrics flat three">
+                      <article class="metric"><span>文件总数</span><strong id="fileCount">0</strong><small>已上传文件</small></article>
+                      <article class="metric"><span>文档总数</span><strong id="documentCount">0</strong><small>可检索文档</small></article>
+                      <article class="metric"><span>待向量化</span><strong id="pendingChunkCount">0</strong><small>Chunk 队列</small></article>
+                    </div>
+                  </section>
+                  <section class="panel data-panel">
+                    <h3>用户数据</h3>
+                    <div class="metrics flat two-cols">
+                      <article class="metric"><span>成员总数</span><strong id="memberCount">0</strong><small>当前租户成员</small></article>
+                      <article class="metric"><span>邀请总数</span><strong id="invitationCount">0</strong><small>待处理邀请</small></article>
+                    </div>
+                  </section>
+                </div>
+                <div class="grid two">
+                  <section class="panel ranking-panel">
+                    <div class="panel-head">
+                      <h3>知识库排行 TOP5 <span class="tab active">本月</span><span class="tab">全部</span></h3>
+                      <div class="item-actions">
+                        <button class="text-tab active" type="button">文档数</button>
+                        <button class="text-tab" type="button">文件数</button>
+                      </div>
+                    </div>
+                    <div class="table-wrap">
+                      <table class="rank-table">
+                        <thead><tr><th>TOP</th><th>知识库名称</th><th>编码</th><th>状态</th><th>文档数</th></tr></thead>
+                        <tbody id="kbRankBody"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <section class="panel ranking-panel">
+                    <div class="panel-head">
+                      <h3>智能体排行 TOP5 <span class="tab active">本月</span><span class="tab">全部</span></h3>
+                      <div class="item-actions">
+                        <button class="text-tab active" type="button">状态</button>
+                        <button class="text-tab" type="button">会话数</button>
+                      </div>
+                    </div>
+                    <div class="table-wrap">
+                      <table class="rank-table">
+                        <thead><tr><th>TOP</th><th>智能体名称</th><th>编码</th><th>状态</th><th>绑定数</th></tr></thead>
+                        <tbody id="agentRankBody"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                </div>
+                <div class="grid two">
+                  <section class="panel">
+                    <div class="panel-head">
+                      <h3>当前租户</h3>
+                      <button id="createTenantBtn" class="button small" type="button">新建租户</button>
+                    </div>
+                    <div id="tenantList" class="list"></div>
+                  </section>
+                  <section class="panel">
+                    <div class="panel-head">
+                      <h3>审计日志</h3>
+                      <button id="loadAuditLogsBtn" class="button small secondary" type="button">刷新</button>
+                    </div>
+                    <form id="auditFilterForm" class="filter-form">
+                      <input name="action" placeholder="action" />
+                      <input name="resource_type" placeholder="resource_type" />
+                      <input name="actor_user_id" placeholder="actor_user_id" />
+                      <input name="from" type="datetime-local" />
+                      <input name="to" type="datetime-local" />
+                      <select name="limit">
+                        <option value="20">20</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                      </select>
+                      <button class="button small" type="submit">筛选</button>
+                      <button id="exportAuditLogsBtn" class="button small secondary" type="button">导出 CSV</button>
+                    </form>
+                    <div class="pager-actions">
+                      <button id="auditPrevBtn" class="button small secondary" type="button" disabled>上一页</button>
+                      <span id="auditPagerInfo" class="item-meta">第 1 页</span>
+                      <button id="auditNextBtn" class="button small secondary" type="button" disabled>下一页</button>
+                    </div>
+                    <div id="auditLogList" class="list"></div>
+                  </section>
+                </div>
+                <div class="grid two">
+                  <section class="panel">
+                    <div class="panel-head">
+                      <h3>租户成员</h3>
+                      <button id="loadMembersBtn" class="button small secondary" type="button">刷新</button>
+                    </div>
+                    <form id="memberForm" class="inline-form">
+                      <input name="email" type="email" required placeholder="成员邮箱" />
+                      <select name="role_code">
+                        <option value="member">member</option>
+                        <option value="viewer">viewer</option>
+                        <option value="admin">admin</option>
+                      </select>
+                      <button class="button" type="submit">添加</button>
+                    </form>
+                    <div id="memberList" class="list"></div>
+                  </section>
+                  <section class="panel">
+                    <div class="panel-head">
+                      <h3>租户邀请</h3>
+                      <button id="loadInvitationsBtn" class="button small secondary" type="button">刷新</button>
+                    </div>
+                    <form id="invitationForm" class="inline-form">
+                      <input name="email" type="email" required placeholder="邀请邮箱" />
+                      <select name="role_code">
+                        <option value="member">member</option>
+                        <option value="viewer">viewer</option>
+                        <option value="admin">admin</option>
+                      </select>
+                      <button class="button" type="submit">邀请</button>
+                    </form>
+                    <div id="invitationList" class="list"></div>
+                  </section>
+                </div>
+              </div>
+              <aside class="dashboard-side">
+                <section class="side-card">
+                  <div class="side-icon blue">⚙</div>
+                  <div><strong>服务运行</strong><p id="serviceSummaryText">等待健康检查</p></div>
+                </section>
+                <section class="side-card">
+                  <div class="side-icon purple">⌁</div>
+                  <div><strong>待办处理</strong><p id="pendingSummaryText">等待系统数据</p></div>
+                </section>
+                <section class="side-card">
+                  <div class="side-icon orange">▣</div>
+                  <div><strong>经营状态</strong><p id="businessSummaryText">等待账单数据</p></div>
+                </section>
+                <section class="panel compact-panel news-panel">
+                  <div class="panel-head"><h3>实时动态</h3><a href="#overview" data-view-link="overview">更多</a></div>
+                  <ul id="activityFeedList" class="news-list activity-list"></ul>
+                </section>
+                <section class="panel compact-panel news-panel">
+                  <div class="panel-head"><h3>系统洞察</h3><a href="#usage" data-view-link="usage">账单</a></div>
+                  <ul id="systemInsightList" class="news-list insight-list"></ul>
+                </section>
+                <section class="panel compact-panel">
+                  <div class="panel-head"><h3>服务状态</h3><button id="checkHealthBtn" class="button small secondary" type="button">检查</button></div>
+                  <pre id="healthBox" class="codebox">等待检查</pre>
+                </section>
+                <section class="panel compact-panel">
+                  <h3>接受邀请</h3>
+                  <form id="acceptInvitationForm" class="inline-form vertical">
+                    <input name="token" required placeholder="粘贴邀请 token" />
+                    <button class="button" type="submit">接受</button>
+                  </form>
+                  <pre id="acceptInvitationResult" class="codebox">等待提交</pre>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="knowledge">
+            <div class="grid two">
+              <form id="kbForm" class="panel form-grid">
+                <h3>创建知识库</h3>
+                <label>名称<input name="name" required placeholder="族谱资料库" /></label>
+                <label>编码<input name="code" required placeholder="genealogy" /></label>
+                <button class="button" type="submit">创建知识库</button>
+              </form>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>知识库列表</h3>
+                  <button id="loadKbsBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="kbList" class="list"></div>
+              </section>
+            </div>
+            <section class="panel">
+              <h3>RAG 问答</h3>
+              <form id="askForm" class="inline-form">
+                <select name="kb_id" required></select>
+                <input name="question" required placeholder="输入要问知识库的问题" />
+                <button class="button" type="submit">提问</button>
+              </form>
+              <pre id="askResult" class="codebox">等待提问</pre>
+            </section>
+
+            <div class="grid two">
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>文件上传</h3>
+                  <button id="loadFilesBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <form id="fileUploadForm" class="inline-form">
+                  <input name="file" type="file" accept=".txt,.md,text/plain,text/markdown" required />
+                  <button class="button" type="submit">上传</button>
+                </form>
+                <div id="fileList" class="list"></div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>文档任务</h3>
+                  <button id="loadDocumentJobsBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <form id="documentJobForm" class="form-grid">
+                  <label>知识库<select name="kb_id" required></select></label>
+                  <label>文件<select name="file_id" required></select></label>
+                  <label>标题<input name="title" placeholder="默认使用文件名" /></label>
+                  <div class="form-actions">
+                    <button class="button" type="submit">创建任务</button>
+                    <button id="runDocumentJobsBtn" class="button secondary" type="button">执行任务</button>
+                  </div>
+                </form>
+                <div id="documentJobList" class="list"></div>
+              </section>
+            </div>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h3>待向量化 Chunk</h3>
+                <div class="item-actions">
+                  <button id="loadPendingChunksBtn" class="button small secondary" type="button">刷新</button>
+                  <button id="runEmbeddingBtn" class="button small" type="button">执行向量化</button>
+                </div>
+              </div>
+              <form id="pendingChunkFilterForm" class="inline-form">
+                <select name="kb_id" required></select>
+              </form>
+              <div id="pendingChunkList" class="list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h3>文档列表</h3>
+                <button id="loadDocumentsBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <form id="documentListFilterForm" class="inline-form">
+                <select name="kb_id" required></select>
+              </form>
+              <div id="documentList" class="list"></div>
+              <pre id="documentDetailBox" class="codebox">等待选择文档</pre>
+              <div id="documentChunkList" class="list"></div>
+            </section>
+          </section>
+
+          <section class="view" data-view-panel="agents">
+            <div class="grid two">
+              <form id="agentForm" class="panel form-grid">
+                <h3 id="agentFormTitle">创建智能体</h3>
+                <input name="agent_id" type="hidden" />
+                <label>名称<input name="name" required placeholder="族谱问答助手" /></label>
+                <label>编码<input name="code" required placeholder="genealogy_qa" /></label>
+                <label>描述<input name="description" placeholder="面向族谱资料的问答助手" /></label>
+                <label>系统提示词<textarea name="system_prompt" rows="4" placeholder="仅基于绑定知识库回答"></textarea></label>
+                <div class="form-actions">
+                  <button id="saveAgentBtn" class="button" type="submit">创建智能体</button>
+                  <button id="resetAgentFormBtn" class="button secondary" type="button">取消编辑</button>
+                </div>
+              </form>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>智能体列表</h3>
+                  <button id="loadAgentsBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="agentList" class="list"></div>
+              </section>
+            </div>
+            <section class="panel">
+              <h3>测试会话</h3>
+              <form id="agentChatForm" class="inline-form">
+                <select name="agent_id" required></select>
+                <select name="knowledge_base_id"></select>
+                <input name="message" required placeholder="输入测试消息" />
+                <button class="button" type="submit">发送</button>
+              </form>
+              <pre id="agentChatResult" class="codebox">等待发送</pre>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h3>知识库绑定</h3>
+                <button id="loadAgentBindingsBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <form id="agentBindingForm" class="inline-form">
+                <select name="agent_id" required></select>
+                <select name="knowledge_base_id" required></select>
+                <button class="button" type="submit">绑定</button>
+              </form>
+              <div id="agentBindingList" class="list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h3>多轮会话</h3>
+                <button id="loadConversationsBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <form id="agentConversationForm" class="inline-form">
+                <select name="agent_id" required></select>
+                <select name="knowledge_base_id"></select>
+                <input name="message" required placeholder="输入多轮消息" />
+                <button class="button" type="submit">发送</button>
+                <button id="newConversationBtn" class="button secondary" type="button">新会话</button>
+              </form>
+              <div class="grid two conversation-grid">
+                <div id="conversationList" class="list"></div>
+                <div id="messageList" class="list"></div>
+              </div>
+              <pre id="agentConversationResult" class="codebox">等待发送</pre>
+            </section>
+          </section>
+
+          <section class="view" data-view-panel="licenses">
+            <div class="grid two">
+              <form id="licenseForm" class="panel form-grid">
+                <h3>创建 License</h3>
+                <label>类型
+                  <select name="license_type">
+                    <option value="tenant">tenant</option>
+                    <option value="trial">trial</option>
+                    <option value="offline">offline</option>
+                  </select>
+                </label>
+                <label>到期时间<input name="expired_at" type="datetime-local" /></label>
+                <label>RAG 配额<input name="rag_requests" type="number" min="1" value="10000" /></label>
+                <label>Agent 消息配额<input name="agent_messages" type="number" min="1" value="10000" /></label>
+                <button class="button" type="submit">创建 License</button>
+              </form>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>License 列表</h3>
+                  <button id="loadLicensesBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="licenseList" class="list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="usage">
+            <div class="grid two">
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>当前订阅</h3>
+                  <button id="loadSubscriptionBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <pre id="subscriptionBox" class="codebox">等待加载</pre>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>用量汇总</h3>
+                  <button id="loadUsageBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="usageList" class="list"></div>
+              </section>
+            </div>
+
+            <div class="grid two">
+              <form id="orderForm" class="panel form-grid">
+                <h3>创建订单</h3>
+                <label>套餐编码<input name="plan_code" required value="free" /></label>
+                <label>金额分<input name="amount_cents" type="number" min="0" value="0" /></label>
+                <button class="button" type="submit">创建业务订单</button>
+              </form>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>订单列表</h3>
+                  <button id="loadOrdersBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="orderList" class="list"></div>
+              </section>
+            </div>
+
+            <div class="grid two">
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>支付单列表</h3>
+                  <button id="loadPaymentsBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="paymentList" class="list"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>回调审计</h3>
+                  <button id="loadPaymentEventsBtn" class="button small secondary" type="button">刷新</button>
+                </div>
+                <div id="paymentEventList" class="list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="analytics">
+            <section class="panel analytics-hero">
+              <div>
+                <h3>数据分析面板</h3>
+                <p>聚合当前租户的知识资产、智能体、订单支付、授权用量和运营风险。</p>
+              </div>
+              <button id="loadAnalyticsBtn" class="button small secondary" type="button">刷新分析</button>
+            </section>
+
+            <div class="metrics analytics-metrics">
+              <article class="metric"><span>知识库</span><strong id="analyticsKbCount">0</strong><small>当前租户资产库</small></article>
+              <article class="metric"><span>文档</span><strong id="analyticsDocumentCount">0</strong><small>可检索资料</small></article>
+              <article class="metric"><span>智能体</span><strong id="analyticsAgentCount">0</strong><small>自动问答入口</small></article>
+              <article class="metric"><span>收入</span><strong id="analyticsRevenue">0</strong><small>已支付订单 CNY</small></article>
+            </div>
+
+            <div class="grid two">
+              <section class="panel">
+                <div class="panel-head">
+                  <h3>资源结构</h3>
+                  <span id="analyticsGeneratedAt" class="item-meta"></span>
+                </div>
+                <div id="analyticsResourceGrid" class="analytics-grid"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head"><h3>运营风险</h3></div>
+                <div id="analyticsRiskList" class="list"></div>
+              </section>
+            </div>
+
+            <div class="grid two">
+              <section class="panel">
+                <div class="panel-head"><h3>订单与授权分布</h3></div>
+                <div id="analyticsBusinessList" class="analytics-bars"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head"><h3>近 7 天用量趋势</h3></div>
+                <div id="analyticsUsageTrend" class="analytics-bars"></div>
+              </section>
+            </div>
+
+            <section class="panel">
+              <div class="panel-head"><h3>最近操作</h3></div>
+              <div id="analyticsActionList" class="list"></div>
+            </section>
+          </section>
+
+          <section class="view" data-view-panel="settings">
+            <form id="settingsForm" class="panel form-grid">
+              <h3>API 连接</h3>
+              <label>API Base<input id="apiBaseInput" required /></label>
+              <button class="button" type="submit">保存</button>
+            </form>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="./assets/app.js"></script>
+  </body>
+</html>

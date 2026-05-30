@@ -1,0 +1,438 @@
+# 智能体族谱SAAS API 接口清单 v1.0
+
+统一前缀：`/api/v1`  
+鉴权方式：`Authorization: Bearer <token>`
+
+## 1. 通用响应
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {},
+  "request_id": "trace-id"
+}
+```
+
+## 2. 已落地接口
+
+| 方法 | 路径 | 说明 | 鉴权 |
+|---|---|---|---|
+| GET | /health | 健康检查，包含数据库连通性 | public |
+| GET | /ready | 就绪检查 | public |
+| POST | /auth/register | 注册并签发 JWT | public |
+| POST | /auth/login | 登录并签发 JWT | public |
+| GET | /auth/me | 当前用户 | user |
+| GET | /tenants | 当前用户租户列表 | user |
+| POST | /tenants | 创建租户 | user |
+| GET | /audit-logs/export | 导出当前租户审计日志 CSV，支持筛选条件 | tenant |
+| POST | /agents | 创建 Agent | tenant |
+| GET | /agents | 当前租户 Agent 列表 | tenant |
+| GET | /agents/{agent_id} | Agent 详情 | tenant |
+| PUT | /agents/{agent_id} | 更新 Agent，已发布 Agent 更新后回到 draft | tenant |
+| POST | /agents/{agent_id}/publish | 发布 Agent | tenant |
+| POST | /agents/{agent_id}/rollback | 回滚 Agent 到 draft | tenant |
+| POST | /agents/{agent_id}/test-chat | Agent 测试会话，基于绑定 KB 检索并生成回答 | tenant |
+| POST | /agents/{agent_id}/chat | Agent 多轮会话，支持 conversation_id 续聊 | tenant |
+| GET | /agents/{agent_id}/conversations | Agent 会话列表 | tenant |
+| GET | /agents/{agent_id}/conversations/{conversation_id}/messages | 会话消息列表 | tenant |
+| DELETE | /agents/{agent_id} | 归档 Agent | tenant |
+| POST | /agents/{agent_id}/knowledge-bases | 绑定当前租户 KB | tenant |
+| GET | /agents/{agent_id}/knowledge-bases | Agent 已绑定 KB 列表 | tenant |
+| DELETE | /agents/{agent_id}/knowledge-bases/{kb_id} | 解绑 Agent KB | tenant |
+| GET | /billing/plans | 可用套餐列表 | tenant |
+| GET | /billing/subscription | 当前租户订阅 | tenant |
+| GET | /billing/usage/summary | 当前租户用量汇总 | tenant |
+| POST | /orders | 创建当前租户业务订单 | tenant |
+| GET | /orders | 当前租户订单列表 | tenant |
+| POST | /payment-orders | 创建 mock 支付单 | tenant |
+| POST | /payments/{payment_id}/query | 查询当前租户支付单 | tenant |
+| POST | /payment-callbacks/{channel} | mock 支付回调 | tenant |
+| GET | /analytics/summary | 当前租户统计汇总，包含资源、经营、用量趋势、最近操作和风险 | tenant |
+| GET | /licenses | 当前租户 License 列表 | tenant |
+| POST | /licenses | 创建当前租户 License | tenant |
+| POST | /licenses/{license_id}/verify | 验证当前租户 License 离线签名和状态 | tenant |
+| POST | /licenses/{license_id}/activate | 激活当前租户 License | tenant |
+| POST | /licenses/{license_id}/revoke | 吊销当前租户 License | tenant |
+| POST | /files/upload | 上传文件到 MinIO/S3 | tenant |
+| GET | /files | 当前租户文件列表 | tenant |
+| GET | /kbs | 当前租户知识库列表 | tenant |
+| POST | /kbs | 创建知识库 | tenant |
+| POST | /kbs/{kb_id}/documents | 创建文档 | tenant |
+| POST | /kbs/{kb_id}/documents/from-file | 从已上传文本文件生成文档和切片 | tenant |
+| POST | /kbs/{kb_id}/documents/{document_id}/rebuild | 重建 file-backed 文档切片 | tenant |
+| POST | /kbs/{kb_id}/document-jobs | 创建文档解析/切片任务 | tenant |
+| GET | /kbs/{kb_id}/document-jobs | 查询文档任务列表 | tenant |
+| POST | /kbs/{kb_id}/document-jobs/run | 同步执行 pending/failed 文档任务 | tenant |
+| POST | /kbs/{kb_id}/chunks | 创建 chunk 并写入 embedding | tenant |
+| GET | /kbs/{kb_id}/chunks/pending | 查询待向量化 chunks | tenant |
+| PUT | /kbs/{kb_id}/chunks/{chunk_id}/embedding | 写回 chunk embedding | tenant |
+| POST | /kbs/{kb_id}/embedding/run | 使用当前 embedding provider 同步处理 pending chunks | tenant |
+| POST | /kbs/{kb_id}/search | 当前租户知识库检索 | tenant |
+| POST | /kbs/{kb_id}/ask | RAG 问答：问题向量化、混合检索、生成回答并返回引用 | tenant |
+| POST | /kb/search/vector | 知识库向量检索 | tenant |
+| POST | /kb/search/hybrid | 知识库混合检索 | tenant |
+
+## 3. MVP 规划接口
+
+### 3.1 认证与用户
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | /auth/register | 注册 |
+| POST | /auth/login | 登录 |
+| POST | /auth/refresh | 刷新 Token |
+| POST | /auth/logout | 退出 |
+| GET | /auth/me | 当前用户 |
+| GET | /users | 用户列表 |
+| POST | /users | 创建用户 |
+
+### 3.2 租户与权限
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /tenants | 租户列表 |
+| POST | /tenants | 创建租户 |
+| GET | /roles | 角色列表 |
+| POST | /roles | 创建角色 |
+| PUT | /roles/{id}/permissions | 分配权限 |
+
+### 3.3 Agent
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /agents | 智能体列表 |
+| POST | /agents | 创建智能体 |
+| GET | /agents/{id} | 智能体详情 |
+| PUT | /agents/{id} | 更新智能体 |
+| POST | /agents/{id}/publish | 发布版本 |
+| POST | /agents/{id}/rollback | 回滚版本 |
+| POST | /agents/{id}/test-chat | 测试会话 |
+| POST | /agents/{id}/chat | 多轮会话 |
+| GET | /agents/{id}/conversations | 会话列表 |
+| GET | /agents/{id}/conversations/{conversation_id}/messages | 消息列表 |
+
+当前已落地 Agent 基础管理、Agent-KB 绑定和测试会话接口：
+
+```json
+{
+  "name": "族谱问答助手",
+  "code": "genealogy_qa",
+  "description": "面向族谱知识库的问答 Agent",
+  "system_prompt": "仅基于绑定知识库回答。",
+  "model_config": {"model": "local-rag"},
+  "tool_policy": {},
+  "memory_policy": {}
+}
+```
+
+绑定知识库：
+
+```json
+{
+  "knowledge_base_id": "uuid",
+  "metadata": {"priority": 1}
+}
+```
+
+绑定前会校验当前 `X-Tenant-ID` 对 `knowledge_base_id` 有访问权限，不能跨租户绑定。
+
+测试会话：
+
+```json
+{
+  "message": "这个族谱知识库里有哪些关键信息？",
+  "knowledge_base_id": "uuid",
+  "top_k": 5,
+  "candidate_k": 25,
+  "min_score": 0.2,
+  "max_tokens": 1024,
+  "temperature": 0.2
+}
+```
+
+`knowledge_base_id` 可省略，省略时使用 Agent 第一个 active 绑定 KB。接口会创建 `conversations` 和两条 `messages`，并返回回答、引用片段和模型信息。
+
+多轮会话：
+
+```json
+{
+  "conversation_id": "可选，传入时续聊，不传时自动创建",
+  "message": "继续解释上一轮提到的审批规则",
+  "knowledge_base_id": "可选，省略时使用第一个 active 绑定 KB",
+  "history_limit": 20,
+  "top_k": 5,
+  "candidate_k": 25,
+  "min_score": 0
+}
+```
+
+`POST /agents/{id}/chat` 会校验当前租户对 Agent、会话和绑定 KB 的访问权限，读取最近历史消息参与生成，写入 user/assistant 两条消息，并返回 `conversation_id`、消息 ID、回答、引用片段与 `history_used`。会话和消息查询接口均按 `tenant_id + agent_id + conversation_id` 隔离。
+
+### 3.4 知识库
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | /files/upload | 上传文件 |
+| GET | /files | 文件列表 |
+| GET | /knowledge-bases | 知识库列表 |
+| POST | /knowledge-bases | 创建知识库 |
+| POST | /knowledge-bases/{id}/documents | 添加文档 |
+| POST | /documents/{id}/rebuild | 重建索引 |
+| POST | /knowledge-bases/{id}/search | 知识检索 |
+
+### 3.5 工具插件
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /plugins | 插件列表 |
+| POST | /plugins/{id}/enable | 启用插件 |
+| POST | /plugins/{id}/disable | 禁用插件 |
+| GET | /tools | 工具列表 |
+| POST | /tools/{id}/test | 测试工具 |
+| GET | /tool-call-logs | 工具调用日志 |
+
+### 3.6 订单与授权
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | /orders | 创建业务订单 |
+| GET | /orders | 订单列表 |
+| POST | /payment-orders | 创建支付单 |
+| POST | /payments/{channel}/callback | 支付回调 |
+| POST | /payments/{id}/query | 主动查单 |
+| GET | /licenses | License 列表 |
+| POST | /licenses | 创建 License |
+| POST | /licenses/{id}/activate | 激活 License |
+| POST | /licenses/{id}/revoke | 吊销 License |
+
+## 4. 检索请求要求
+
+## 3.7 套餐与用量
+
+当前已落地 MVP：
+
+- `GET /billing/plans`：返回 active 套餐，默认包含 `free` 套餐；
+- `GET /billing/subscription`：返回当前租户 active 订阅；若无订阅，自动创建 `free` 订阅；
+- `GET /billing/usage/summary?from=2026-05-01&to=2026-06-01`：按 metric 汇总当前租户用量。
+
+已自动记录的 metric：
+
+| metric | 触发点 | unit |
+|---|---|---|
+| `file_upload_bytes` | 文件上传成功 | bytes |
+| `embedding_chunks` | `/kbs/{kb_id}/embedding/run` 成功处理 chunk | chunks |
+| `rag_requests` | `/kbs/{kb_id}/ask` 成功 | requests |
+| `agent_messages` | `/agents/{id}/test-chat` 和 `/agents/{id}/chat` 成功 | messages |
+
+用量记录按 `tenant_id` 隔离，并保留 `subject_type`、`subject_id`、`request_id` 和 metadata，便于后续接入套餐额度拦截、计费和审计。
+
+套餐 quota 已接入硬限制 MVP：文件上传、`/kbs/{kb_id}/embedding/run`、`/kbs/{kb_id}/ask`、`/agents/{id}/test-chat` 和 `/agents/{id}/chat` 会在执行前检查当前 active 订阅的 quota；超过配额时返回 `402`，响应 message 以 `quota exceeded` 开头。
+
+订单/支付 MVP 已接入 mock 通道：
+
+- `POST /orders`：按 `plan_code` 创建业务订单；
+- `GET /orders`：列出当前租户订单；
+- `POST /payment-orders`：为 pending 业务订单创建 mock 支付单；
+- `POST /payments/{payment_id}/query`：查询当前租户支付单；
+- `POST /payment-callbacks/mock`：按 `pay_no` 幂等更新支付单，支付成功后将业务订单置为 `paid` 并创建订阅。
+
+## 3.8 License 授权
+
+当前已落地 License 生命周期 MVP：
+
+- `GET /licenses`：返回当前租户 License 列表；
+- `POST /licenses`：创建 License，`license_no` 可省略，服务端自动生成；
+- `POST /licenses/{license_id}/verify`：验证 License 的 Ed25519 离线签名、过期和吊销状态；
+- `POST /licenses/{license_id}/activate`：仅激活当前租户未吊销、未过期的 License；
+- `POST /licenses/{license_id}/revoke`：仅吊销当前租户 License。
+
+创建请求示例：
+
+```json
+{
+  "license_type": "tenant",
+  "subject": {"tenant_name": "示例租户"},
+  "limits": {"agent_messages": 10000, "rag_requests": 10000},
+  "expired_at": "2026-12-31T23:59:59+08:00"
+}
+```
+
+License 查询和状态变更均按 `tenant_id + license_id` 隔离；`public_key_id` 和 `signature` 使用服务端 `LICENSE_PUBLIC_KEYS` 中配置的 Ed25519 公钥验签，激活带签名 License 前会强制验签。
+
+## 4. 检索请求要求
+
+租户级接口必须包含：
+
+- `Authorization: Bearer <token>`
+- `X-Tenant-ID: <tenant_id>`
+
+向量检索和混合检索必须包含 `embedding`，维度必须为 1536。生产环境必须从登录态或服务端上下文获取 `tenant_id`，避免客户端伪造；`/kbs/{kb_id}/search` 从路径获取 `knowledge_base_id` 并校验当前租户权限。
+
+## 5. Embedding Provider 配置
+
+`/kbs/{kb_id}/embedding/run` 使用服务端环境变量配置的 provider：
+
+- `EMBEDDING_PROVIDER=local`：本地 deterministic provider，默认 `local-hash-1536`，用于 MVP 离线闭环；
+- `EMBEDDING_PROVIDER=openai_compatible` 或 `http`：请求 `EMBEDDING_BASE_URL + /embeddings`；
+- `EMBEDDING_MODEL`：外部请求 body 的 `model`；
+- `EMBEDDING_API_KEY`：通过 `Authorization: Bearer` 发送；
+- `EMBEDDING_TIMEOUT_SECONDS`：请求超时，默认 30 秒。
+
+所有 provider 返回的 embedding 维度都必须是 1536，否则拒绝写入 chunk。
+
+## 6. RAG 问答生成
+
+`POST /kbs/{kb_id}/ask` 使用当前租户上下文和路径中的 `kb_id` 做权限校验，然后执行：
+
+1. 使用服务端 `EMBEDDING_*` provider 将 `question` 转为 1536 维向量；
+2. 在当前 tenant/kb 内执行混合检索；
+3. 使用服务端 `GENERATION_*` provider 生成回答；
+4. 返回 `answer`、`references`、检索参数和模型信息。
+
+请求示例：
+
+```json
+{
+  "question": "这份知识库讲了什么？",
+  "top_k": 5,
+  "candidate_k": 25,
+  "min_score": 0.2,
+  "max_tokens": 1024,
+  "temperature": 0.2
+}
+```
+
+响应中的 `references` 包含命中的 `chunk_id`、`document_id`、`title`、`content` 和 `score`，便于前端展示引用来源。
+
+Generation provider 配置：
+
+- `GENERATION_PROVIDER=local`：本地回答草稿 provider，用于离线闭环验证；
+- `GENERATION_PROVIDER=openai_compatible` 或 `http`：请求 `GENERATION_BASE_URL + /chat/completions`；
+- `GENERATION_MODEL`：外部请求 body 的 `model`；
+- `GENERATION_API_KEY`：通过 `Authorization: Bearer` 发送；
+- `GENERATION_TIMEOUT_SECONDS`：请求超时，默认 60 秒。
+
+## 7. 文档切片重建
+
+`POST /kbs/{kb_id}/documents/{document_id}/rebuild` 仅支持由文件生成的文档：
+
+- 必须校验当前登录用户、`X-Tenant-ID`、`kb_id`、`document_id` 同属一个租户；
+- 读取原文件对象重新切片；
+- 旧 chunks 软删除，新 chunks 从 `chunk_no=1` 重新生成；
+- 新 chunks 的 `embedding_status=pending`，后续通过 `/kbs/{kb_id}/embedding/run` 写入 embedding。
+
+## 8. 文档任务队列
+
+`document_jobs` 是数据库任务队列，当前同时提供 API 同步 worker run 和后台常驻 `mu-agent-document-worker`：
+
+- `POST /kbs/{kb_id}/document-jobs`：创建任务；
+- `GET /kbs/{kb_id}/document-jobs?limit=50`：查询任务；
+- `POST /kbs/{kb_id}/document-jobs/run`：认领并执行当前 KB 下 pending/failed 任务。
+
+创建任务请求示例：
+
+```json
+{
+  "file_id": "uuid",
+  "job_type": "parse_chunk",
+  "title": "文档标题",
+  "max_chars": 1200,
+  "overlap_chars": 120
+}
+```
+
+`job_type=rebuild` 时必须传 `document_id`，且该文档必须是同租户同 KB 下由同一个 `file_id` 生成的文档。任务执行成功后会生成或重建 chunks，embedding 仍通过 `/kbs/{kb_id}/embedding/run` 写入。后台 worker 通过 `DOCUMENT_WORKER_INTERVAL_SECONDS` 和 `DOCUMENT_WORKER_BATCH_SIZE` 控制轮询频率与批大小。
+## 2026-05-28 增量：审计日志筛选分页
+
+`GET /audit-logs` 已支持在当前租户上下文内筛选与 cursor 分页。
+
+| 参数 | 说明 |
+|---|---|
+| `action` | 审计动作，例如 `http.post` |
+| `resource_type` | 资源类型，例如 `http_request` |
+| `actor_user_id` | 操作者用户 UUID |
+| `from` | 起始时间，RFC3339/RFC3339Nano 或 `YYYY-MM-DD` |
+| `to` | 结束时间，RFC3339/RFC3339Nano 或 `YYYY-MM-DD` |
+| `limit` | 每页数量，默认 50，最大 100 |
+| `cursor` | 下一页游标，使用上一页响应的 `next_cursor` |
+
+响应 `data`：
+
+```json
+{
+  "items": [],
+  "next_cursor": ""
+}
+```
+
+该接口必须携带 `Authorization: Bearer <token>` 和 `X-Tenant-ID: <tenant_id>`；服务端固定按当前租户隔离查询，不接受客户端覆盖 `tenant_id`。
+
+## 2026-05-28 增量：KB 文档详情与 Chunk 列表
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| GET | /kbs/{kb_id}/documents/{document_id} | 查询当前租户当前 KB 下的单个文档详情，返回 `document` 与 `file_id` | tenant |
+| GET | /kbs/{kb_id}/documents/{document_id}/chunks | 查询当前租户当前 KB 下单个文档的 chunks，按 `chunk_no` 升序返回 | tenant |
+
+两个接口都复用 `pkg/response`，并固定按 `tenant_id + kb_id + document_id` 校验隔离；跨租户、跨 KB 或不存在的文档返回 404。
+
+## 2026-05-29 增量：文件下载
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| GET | /files/{file_id}/download | 下载当前租户下已上传文件对象 | tenant |
+
+接口按 `tenant_id + file_id` 查询文件记录，并从对象存储读取 `object_key` 返回二进制流；跨租户或不存在的文件返回 404。
+
+## 2026-05-29 增量：KB 文档归档
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| DELETE | /kbs/{kb_id}/documents/{document_id} | 归档当前租户当前 KB 下的文档 | tenant writer |
+
+接口按 `tenant_id + kb_id + document_id` 软删除文档；同事务软删除该文档 chunks 和关联 document_jobs。原始上传文件记录与对象存储文件不删除。
+
+## 2026-05-29 增量：Agent 多轮会话管理台
+
+管理台已接入已落地的 Agent 多轮会话接口：
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| POST | /agents/{agent_id}/chat | 发送多轮会话消息，支持 `conversation_id` 续聊 | tenant writer |
+| GET | /agents/{agent_id}/conversations | 查询当前租户当前 Agent 会话列表 | tenant |
+| GET | /agents/{agent_id}/conversations/{conversation_id}/messages | 查询当前租户当前 Agent 当前会话消息 | tenant |
+
+前端发送成功后保留返回的 `conversation_id` 用于续聊，并刷新会话列表、消息列表和用量汇总。
+
+## 2026-05-29 增量：Agent 知识库绑定管理台
+
+管理台已接入已落地的 Agent-KB 绑定接口：
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| POST | /agents/{agent_id}/knowledge-bases | 绑定当前租户 KB 到当前 Agent | tenant writer |
+| GET | /agents/{agent_id}/knowledge-bases | 查询当前 Agent 已绑定 KB 列表 | tenant |
+| DELETE | /agents/{agent_id}/knowledge-bases/{kb_id} | 解绑当前 Agent KB | tenant writer |
+
+绑定前后端会校验当前租户对 KB 的访问权限；解绑按 `tenant_id + agent_id + kb_id` 隔离。
+
+## 2026-05-29 增量：Agent 归档管理台
+
+管理台已接入已落地的 Agent 归档接口：
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| DELETE | /agents/{agent_id} | 归档当前租户 Agent | tenant writer |
+
+前端归档前会要求确认；归档成功后刷新 Agent 列表，并清空/刷新当前绑定关系、会话列表和消息列表。
+
+## 2026-05-29 增量：Agent 编辑管理台
+
+管理台已接入已落地的 Agent 更新接口：
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| PUT | /agents/{agent_id} | 更新当前租户 Agent 名称、描述、系统提示词和策略配置 | tenant writer |
+
+前端点击“编辑”后回填 Agent 表单；编码只读，提交保存后刷新 Agent 列表。已发布 Agent 更新后由后端回到 `draft`。

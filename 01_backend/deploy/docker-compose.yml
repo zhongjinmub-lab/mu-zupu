@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mu-agent-postgres
+    environment:
+      POSTGRES_DB: mu_agent_saas
+      POSTGRES_USER: mu
+      POSTGRES_PASSWORD: mu_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+      - "-c"
+      - "effective_cache_size=2GB"
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: mu-agent-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: mu-agent-minio
+    environment:
+      MINIO_ROOT_USER: muadmin
+      MINIO_ROOT_PASSWORD: muadmin123456
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  pg_data:
+  redis_data:
+  minio_data:

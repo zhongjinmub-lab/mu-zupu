@@ -1,0 +1,67 @@
+package config
+
+import "testing"
+
+func TestLoadReadsJWTConfig(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("JWT_SECRET", "12345678901234567890123456789012")
+	t.Setenv("JWT_ISSUER", "test-issuer")
+	t.Setenv("JWT_TTL_HOURS", "2")
+	t.Setenv("STORAGE_ENDPOINT", "minio:9000")
+	t.Setenv("STORAGE_ACCESS_KEY", "access")
+	t.Setenv("STORAGE_SECRET_KEY", "secret")
+	t.Setenv("STORAGE_BUCKET", "files")
+	t.Setenv("STORAGE_USE_SSL", "true")
+	t.Setenv("UPLOAD_MAX_BYTES", "1024")
+	t.Setenv("EMBEDDING_PROVIDER", "local")
+	t.Setenv("EMBEDDING_MODEL", "test-embedding")
+	t.Setenv("EMBEDDING_BASE_URL", "https://embedding.example/v1")
+	t.Setenv("EMBEDDING_API_KEY", "test-key")
+	t.Setenv("EMBEDDING_TIMEOUT_SECONDS", "7")
+	t.Setenv("GENERATION_PROVIDER", "openai_compatible")
+	t.Setenv("GENERATION_MODEL", "test-chat")
+	t.Setenv("GENERATION_BASE_URL", "https://llm.example/v1")
+	t.Setenv("GENERATION_API_KEY", "chat-key")
+	t.Setenv("GENERATION_TIMEOUT_SECONDS", "17")
+	t.Setenv("DOCUMENT_WORKER_INTERVAL_SECONDS", "3")
+	t.Setenv("DOCUMENT_WORKER_BATCH_SIZE", "9")
+	t.Setenv("LICENSE_PUBLIC_KEYS", `{"default":"pubkey"}`)
+
+	cfg := Load()
+	if cfg.Env != "production" {
+		t.Fatalf("Env = %q", cfg.Env)
+	}
+	if cfg.JWTSecret != "12345678901234567890123456789012" {
+		t.Fatal("JWTSecret was not loaded from env")
+	}
+	if cfg.JWTIssuer != "test-issuer" {
+		t.Fatalf("JWTIssuer = %q", cfg.JWTIssuer)
+	}
+	if cfg.JWTTTLHours != 2 {
+		t.Fatalf("JWTTTLHours = %d", cfg.JWTTTLHours)
+	}
+	if cfg.StorageEndpoint != "minio:9000" || cfg.StorageBucket != "files" || !cfg.StorageUseSSL {
+		t.Fatalf("storage config = %#v", cfg)
+	}
+	if cfg.UploadMaxBytes != 1024 {
+		t.Fatalf("UploadMaxBytes = %d", cfg.UploadMaxBytes)
+	}
+	if cfg.EmbeddingProvider != "local" || cfg.EmbeddingModel != "test-embedding" {
+		t.Fatalf("embedding config = %#v", cfg)
+	}
+	if cfg.EmbeddingBaseURL != "https://embedding.example/v1" || cfg.EmbeddingAPIKey != "test-key" || cfg.EmbeddingTimeout != 7 {
+		t.Fatalf("embedding http config = %#v", cfg)
+	}
+	if cfg.GenerationProvider != "openai_compatible" || cfg.GenerationModel != "test-chat" {
+		t.Fatalf("generation config = %#v", cfg)
+	}
+	if cfg.GenerationBaseURL != "https://llm.example/v1" || cfg.GenerationAPIKey != "chat-key" || cfg.GenerationTimeout != 17 {
+		t.Fatalf("generation http config = %#v", cfg)
+	}
+	if cfg.DocumentWorkerIntervalSeconds != 3 || cfg.DocumentWorkerBatchSize != 9 {
+		t.Fatalf("document worker config = %#v", cfg)
+	}
+	if cfg.LicensePublicKeys != `{"default":"pubkey"}` {
+		t.Fatalf("LicensePublicKeys = %q", cfg.LicensePublicKeys)
+	}
+}
