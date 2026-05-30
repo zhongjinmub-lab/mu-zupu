@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -131,12 +132,12 @@ func (r Repository) CreateDelivery(ctx context.Context, item Delivery) (Delivery
 	const q = `
 INSERT INTO webhook_deliveries(
     tenant_id, endpoint_id, event_type, target_url, status, http_status, request_body,
-    response_body, error_message, duration_ms, retry_count
-) VALUES ($1, NULLIF($2, '')::uuid, $3, $4, $5, NULLIF($6, 0), $7::jsonb, NULLIF($8, ''), NULLIF($9, ''), $10, $11)
+    response_body, error_message, duration_ms, retry_count, next_retry_at, last_attempt_at
+) VALUES ($1, NULLIF($2, '')::uuid, $3, $4, $5, NULLIF($6, 0), $7::jsonb, NULLIF($8, ''), NULLIF($9, ''), $10, $11, $12, now())
 RETURNING id::text, tenant_id::text, COALESCE(endpoint_id::text, ''), event_type, target_url, status,
           COALESCE(http_status, 0), request_body, COALESCE(response_body, ''), COALESCE(error_message, ''),
-          duration_ms, retry_count, created_at`
-	return r.scanDeliveryRow(ctx, q, item.TenantID, item.EndpointID, item.EventType, item.TargetURL, item.Status, item.HTTPStatus, string(body), item.ResponseBody, item.ErrorMessage, item.DurationMS, item.RetryCount)
+          duration_ms, retry_count, next_retry_at, last_attempt_at, created_at`
+	return r.scanDeliveryRow(ctx, q, item.TenantID, item.EndpointID, item.EventType, item.TargetURL, item.Status, item.HTTPStatus, string(body), item.ResponseBody, item.ErrorMessage, item.DurationMS, item.RetryCount, item.NextRetryAt)
 }
 
 func (r Repository) ListDeliveries(ctx context.Context, tenantID, endpointID string, limit int) ([]Delivery, error) {
@@ -152,7 +153,7 @@ func (r Repository) ListDeliveries(ctx context.Context, tenantID, endpointID str
 	q := `
 SELECT id::text, tenant_id::text, COALESCE(endpoint_id::text, ''), event_type, target_url, status,
        COALESCE(http_status, 0), request_body, COALESCE(response_body, ''), COALESCE(error_message, ''),
-       duration_ms, retry_count, created_at
+       duration_ms, retry_count, next_retry_at, last_attempt_at, created_at
 FROM webhook_deliveries
 WHERE tenant_id = $1` + filter + `
 ORDER BY created_at DESC
@@ -171,6 +172,81 @@ LIMIT $2`
 		items = append(items, item)
 	}
 	return items, rows.Err()
+}
+
+func (r Repository) ClaimRetryJobs(ctx context.Context, limit int) ([]RetryJob, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	const q = `
+WITH due AS (
+    SELECT d.id
+    FROM webhook_deliveries d
+    JOIN webhook_endpoints e ON e.id = d.endpoint_id
+    WHERE d.status = 'failed'
+      AND d.next_retry_at IS NOT NULL
+      AND d.next_retry_at <= now()
+      AND e.status = 'active'
+      AND e.deleted_at IS NULL
+    ORDER BY d.next_retry_at ASC, d.created_at ASC
+    LIMIT $1
+    FOR UPDATE OF d SKIP LOCKED
+)
+UPDATE webhook_deliveries d
+SET next_retry_at = now() + interval '5 minutes',
+    last_attempt_at = now()
+FROM due, webhook_endpoints e
+WHERE d.id = due.id
+  AND e.id = d.endpoint_id
+RETURNING d.id::text, d.tenant_id::text, COALESCE(d.endpoint_id::text, ''), d.event_type, d.target_url, d.status,
+          COALESCE(d.http_status, 0), d.request_body, COALESCE(d.response_body, ''), COALESCE(d.error_message, ''),
+          d.duration_ms, d.retry_count, d.next_retry_at, d.last_attempt_at, d.created_at,
+          e.id::text, e.tenant_id::text, e.name, e.url, COALESCE(e.secret, ''), e.events, e.status, e.created_at, e.updated_at`
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	rows, err := tx.Query(ctx, q, limit)
+	if err != nil {
+		return nil, err
+	}
+	jobs := make([]RetryJob, 0)
+	for rows.Next() {
+		job, err := scanRetryJob(rows)
+		if err != nil {
+			rows.Close()
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	rows.Close()
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return jobs, nil
+}
+
+func (r Repository) UpdateDeliveryAttempt(ctx context.Context, deliveryID string, result Delivery) (Delivery, error) {
+	const q = `
+UPDATE webhook_deliveries
+SET status = $2,
+    http_status = NULLIF($3, 0),
+    response_body = NULLIF($4, ''),
+    error_message = NULLIF($5, ''),
+    duration_ms = $6,
+    retry_count = $7,
+    next_retry_at = $8,
+    last_attempt_at = now()
+WHERE id = $1
+RETURNING id::text, tenant_id::text, COALESCE(endpoint_id::text, ''), event_type, target_url, status,
+          COALESCE(http_status, 0), request_body, COALESCE(response_body, ''), COALESCE(error_message, ''),
+          duration_ms, retry_count, next_retry_at, last_attempt_at, created_at`
+	return r.scanDeliveryRow(ctx, q, deliveryID, result.Status, result.HTTPStatus, result.ResponseBody, result.ErrorMessage, result.DurationMS, result.RetryCount, result.NextRetryAt)
 }
 
 func (r Repository) scanEndpointRow(ctx context.Context, q string, args ...any) (Endpoint, error) {
@@ -226,7 +302,7 @@ func scanDelivery(rows pgx.Rows) (Delivery, error) {
 	var body []byte
 	if err := rows.Scan(
 		&item.ID, &item.TenantID, &item.EndpointID, &item.EventType, &item.TargetURL, &item.Status,
-		&item.HTTPStatus, &body, &item.ResponseBody, &item.ErrorMessage, &item.DurationMS, &item.RetryCount, &item.CreatedAt,
+		&item.HTTPStatus, &body, &item.ResponseBody, &item.ErrorMessage, &item.DurationMS, &item.RetryCount, &item.NextRetryAt, &item.LastAttemptAt, &item.CreatedAt,
 	); err != nil {
 		return Delivery{}, err
 	}
@@ -235,4 +311,54 @@ func scanDelivery(rows pgx.Rows) (Delivery, error) {
 		item.RequestBody = map[string]any{}
 	}
 	return item, nil
+}
+
+func scanRetryJob(rows pgx.Rows) (RetryJob, error) {
+	var delivery Delivery
+	var requestBody []byte
+	var endpoint Endpoint
+	var endpointEvents []byte
+	if err := rows.Scan(
+		&delivery.ID, &delivery.TenantID, &delivery.EndpointID, &delivery.EventType, &delivery.TargetURL, &delivery.Status,
+		&delivery.HTTPStatus, &requestBody, &delivery.ResponseBody, &delivery.ErrorMessage, &delivery.DurationMS, &delivery.RetryCount,
+		&delivery.NextRetryAt, &delivery.LastAttemptAt, &delivery.CreatedAt,
+		&endpoint.ID, &endpoint.TenantID, &endpoint.Name, &endpoint.URL, &endpoint.Secret, &endpointEvents, &endpoint.Status, &endpoint.CreatedAt, &endpoint.UpdatedAt,
+	); err != nil {
+		return RetryJob{}, err
+	}
+	_ = json.Unmarshal(requestBody, &delivery.RequestBody)
+	if delivery.RequestBody == nil {
+		delivery.RequestBody = map[string]any{}
+	}
+	_ = json.Unmarshal(endpointEvents, &endpoint.Events)
+	return RetryJob{
+		Delivery: delivery,
+		Endpoint: endpoint,
+		Event: Event{
+			Type:      delivery.EventType,
+			TenantID:  delivery.TenantID,
+			Payload:   eventPayload(delivery.RequestBody),
+			CreatedAt: eventCreatedAt(delivery.RequestBody, delivery.CreatedAt),
+		},
+	}, nil
+}
+
+func eventPayload(body map[string]any) map[string]any {
+	payload, ok := body["payload"].(map[string]any)
+	if !ok || payload == nil {
+		return map[string]any{}
+	}
+	return payload
+}
+
+func eventCreatedAt(body map[string]any, fallback time.Time) time.Time {
+	raw, _ := body["created_at"].(string)
+	if raw == "" {
+		return fallback
+	}
+	t, err := time.Parse(time.RFC3339Nano, raw)
+	if err != nil {
+		return fallback
+	}
+	return t
 }

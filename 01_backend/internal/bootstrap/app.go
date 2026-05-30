@@ -133,7 +133,10 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 	billingRepo := billing.NewRepository(db)
 	webhookRepo := webhook.NewRepository(db)
-	webhookService := webhook.NewService(webhookRepo)
+	webhookService := webhook.NewService(webhookRepo, webhook.ServiceOptions{
+		MaxRetries:       cfg.WebhookMaxRetries,
+		RetryBaseSeconds: cfg.WebhookRetryBaseSeconds,
+	})
 	analytics.RegisterRoutes(tenantScoped, analytics.NewHandler(analytics.NewRepository(db)))
 	billing.RegisterRoutes(tenantScoped, billing.NewHandlerWithWebhook(billingRepo, webhookService))
 	licenseVerifier, err := license.NewVerifierFromConfig(cfg.LicensePublicKeys)

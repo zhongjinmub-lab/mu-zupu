@@ -34,6 +34,10 @@ type Config struct {
 	GenerationTimeout             int
 	DocumentWorkerIntervalSeconds int
 	DocumentWorkerBatchSize       int
+	WebhookWorkerIntervalSeconds  int
+	WebhookWorkerBatchSize        int
+	WebhookMaxRetries             int
+	WebhookRetryBaseSeconds       int
 	LicensePublicKeys             string
 }
 
@@ -67,6 +71,10 @@ func Load() Config {
 		GenerationTimeout:             envInt("GENERATION_TIMEOUT_SECONDS", 60),
 		DocumentWorkerIntervalSeconds: envInt("DOCUMENT_WORKER_INTERVAL_SECONDS", 10),
 		DocumentWorkerBatchSize:       envInt("DOCUMENT_WORKER_BATCH_SIZE", 5),
+		WebhookWorkerIntervalSeconds:  envInt("WEBHOOK_WORKER_INTERVAL_SECONDS", 15),
+		WebhookWorkerBatchSize:        envInt("WEBHOOK_WORKER_BATCH_SIZE", 20),
+		WebhookMaxRetries:             envInt("WEBHOOK_MAX_RETRIES", 3),
+		WebhookRetryBaseSeconds:       envInt("WEBHOOK_RETRY_BASE_SECONDS", 60),
 		LicensePublicKeys:             env("LICENSE_PUBLIC_KEYS", ""),
 	}
 }

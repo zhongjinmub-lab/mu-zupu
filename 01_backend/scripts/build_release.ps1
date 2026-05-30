@@ -23,6 +23,7 @@ try {
     go build -trimpath -ldflags "-s -w" -o (Join-Path $PackageDir "bin/mu-agent-server") ./cmd/server
     go build -trimpath -ldflags "-s -w" -o (Join-Path $PackageDir "bin/mu-agent-migrate") ./cmd/migrate
     go build -trimpath -ldflags "-s -w" -o (Join-Path $PackageDir "bin/mu-agent-document-worker") ./cmd/document-worker
+    go build -trimpath -ldflags "-s -w" -o (Join-Path $PackageDir "bin/mu-agent-webhook-worker") ./cmd/webhook-worker
 
     Copy-Item -Recurse -Force .\migrations (Join-Path $PackageDir "migrations")
     Copy-Item -Force .\deploy\production\docker-compose.yml (Join-Path $PackageDir "docker-compose.yml")

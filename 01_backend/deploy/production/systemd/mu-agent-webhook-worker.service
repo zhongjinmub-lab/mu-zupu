@@ -1,0 +1,16 @@
+[Unit]
+Description=Mu Agent SaaS Webhook Worker
+After=network-online.target docker.service mu-agent-saas.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mu-agent-saas
+EnvironmentFile=/opt/mu-agent-saas/mu-agent-saas.env
+ExecStart=/opt/mu-agent-saas/bin/mu-agent-webhook-worker
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

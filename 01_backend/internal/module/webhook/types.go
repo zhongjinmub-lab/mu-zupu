@@ -31,19 +31,21 @@ type Endpoint struct {
 }
 
 type Delivery struct {
-	ID           string         `json:"id"`
-	TenantID     string         `json:"tenant_id"`
-	EndpointID   string         `json:"endpoint_id,omitempty"`
-	EventType    string         `json:"event_type"`
-	TargetURL    string         `json:"target_url"`
-	Status       string         `json:"status"`
-	HTTPStatus   int            `json:"http_status,omitempty"`
-	RequestBody  map[string]any `json:"request_body"`
-	ResponseBody string         `json:"response_body,omitempty"`
-	ErrorMessage string         `json:"error_message,omitempty"`
-	DurationMS   int64          `json:"duration_ms"`
-	RetryCount   int            `json:"retry_count"`
-	CreatedAt    time.Time      `json:"created_at"`
+	ID            string         `json:"id"`
+	TenantID      string         `json:"tenant_id"`
+	EndpointID    string         `json:"endpoint_id,omitempty"`
+	EventType     string         `json:"event_type"`
+	TargetURL     string         `json:"target_url"`
+	Status        string         `json:"status"`
+	HTTPStatus    int            `json:"http_status,omitempty"`
+	RequestBody   map[string]any `json:"request_body"`
+	ResponseBody  string         `json:"response_body,omitempty"`
+	ErrorMessage  string         `json:"error_message,omitempty"`
+	DurationMS    int64          `json:"duration_ms"`
+	RetryCount    int            `json:"retry_count"`
+	NextRetryAt   *time.Time     `json:"next_retry_at,omitempty"`
+	LastAttemptAt *time.Time     `json:"last_attempt_at,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
 }
 
 type CreateEndpointRequest struct {
@@ -67,6 +69,18 @@ type Event struct {
 	TenantID  string         `json:"tenant_id"`
 	Payload   map[string]any `json:"payload"`
 	CreatedAt time.Time      `json:"created_at"`
+}
+
+type RetryJob struct {
+	Delivery Delivery
+	Endpoint Endpoint
+	Event    Event
+}
+
+type RetrySummary struct {
+	Claimed   int `json:"claimed"`
+	Processed int `json:"processed"`
+	Failed    int `json:"failed"`
 }
 
 func (r *CreateEndpointRequest) Normalize() {

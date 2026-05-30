@@ -15,6 +15,7 @@ cd "$ROOT"
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$PACKAGE_DIR/bin/mu-agent-server" ./cmd/server
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$PACKAGE_DIR/bin/mu-agent-migrate" ./cmd/migrate
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$PACKAGE_DIR/bin/mu-agent-document-worker" ./cmd/document-worker
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$PACKAGE_DIR/bin/mu-agent-webhook-worker" ./cmd/webhook-worker
 
 cp -R migrations "$PACKAGE_DIR/migrations"
 cp deploy/production/docker-compose.yml "$PACKAGE_DIR/docker-compose.yml"

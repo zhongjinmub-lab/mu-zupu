@@ -9,6 +9,7 @@ This directory records the production layout used for the current server deploym
 ├── bin/mu-agent-server
 ├── bin/mu-agent-migrate
 ├── bin/mu-agent-document-worker
+├── bin/mu-agent-webhook-worker
 ├── docker-compose.yml
 ├── mu-agent-saas.env
 ├── migrations/
@@ -36,6 +37,7 @@ Then upload and extract the generated `dist/mu-agent-saas-*-linux-amd64.tar.gz`.
 install -m 0755 bin/mu-agent-server /opt/mu-agent-saas/bin/mu-agent-server
 install -m 0755 bin/mu-agent-migrate /opt/mu-agent-saas/bin/mu-agent-migrate
 install -m 0755 bin/mu-agent-document-worker /opt/mu-agent-saas/bin/mu-agent-document-worker
+install -m 0755 bin/mu-agent-webhook-worker /opt/mu-agent-saas/bin/mu-agent-webhook-worker
 cp -r migrations /opt/mu-agent-saas/
 cp deploy/production/docker-compose.yml /opt/mu-agent-saas/docker-compose.yml
 cp deploy/production/mu-agent-saas.env.example /opt/mu-agent-saas/mu-agent-saas.env
@@ -54,6 +56,7 @@ set -a && . ./mu-agent-saas.env && set +a
 systemctl daemon-reload
 systemctl enable --now mu-agent-saas
 systemctl enable --now mu-agent-document-worker
+systemctl enable --now mu-agent-webhook-worker
 systemctl enable --now mu-agent-saas-backup.timer
 ```
 
