@@ -1060,3 +1060,173 @@ func mcpOperationalNotes(server MCPServerItem) []string {
 		"后续接入真实 MCP 网关时必须校验 Agent 绑定范围。",
 	}
 }
+
+// PluginInstall 表示租户对某个内置插件的启用记录（持久化在 plugin_installs 表）。
+type PluginInstall struct {
+	ID         string         `json:"id"`
+	TenantID   string         `json:"tenant_id"`
+	PluginCode string         `json:"plugin_code"`
+	Status     string         `json:"status"`
+	Config     map[string]any `json:"config"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+}
+
+// PluginCatalogItem 表示插件市场目录项，合并了内置定义与当前租户的启用状态。
+type PluginCatalogItem struct {
+	Code                 string   `json:"code"`
+	Name                 string   `json:"name"`
+	Category             string   `json:"category"`
+	Status               string   `json:"status"`
+	Description          string   `json:"description"`
+	RequiresConfirmation bool     `json:"requires_confirmation"`
+	Capabilities         []string `json:"capabilities"`
+	Installable          bool     `json:"installable"`
+	Installed            bool     `json:"installed"`
+	TenantStatus         string   `json:"tenant_status"`
+	OperationalNotes     []string `json:"operational_notes"`
+}
+
+// PluginMarketPolicy 描述插件市场的安全默认策略，与工具/MCP 策略保持一致。
+type PluginMarketPolicy struct {
+	PermissionRole     string   `json:"permission_role"`
+	AuditAction        string   `json:"audit_action"`
+	DangerConfirmation bool     `json:"danger_confirmation"`
+	Guardrails         []string `json:"guardrails"`
+	AgentPolicyHint    string   `json:"agent_policy_hint"`
+}
+
+type pluginDefinition struct {
+	Code                 string
+	Name                 string
+	Category             string
+	Status               string
+	Description          string
+	RequiresConfirmation bool
+	Capabilities         []string
+	DefaultEnabled       bool
+}
+
+// builtinPlugins 返回内置插件定义。active 插件可由租户启用/禁用；blocked 插件默认禁止安装。
+func builtinPlugins() []pluginDefinition {
+	return []pluginDefinition{
+		{
+			Code:           "kb_search_plugin",
+			Name:           "知识库检索插件",
+			Category:       "read",
+			Status:         "active",
+			Description:    "为 Agent 提供当前租户已授权知识库的检索能力。",
+			Capabilities:   []string{"知识库混合检索", "引用片段返回"},
+			DefaultEnabled: true,
+		},
+		{
+			Code:           "genealogy_insight_plugin",
+			Name:           "智能体族谱洞察插件",
+			Category:       "read",
+			Status:         "active",
+			Description:    "汇总智能体族谱结构、根节点和孤立节点等只读统计。",
+			Capabilities:   []string{"族谱结构统计", "孤立节点诊断"},
+			DefaultEnabled: false,
+		},
+		{
+			Code:                 "webhook_notify_plugin",
+			Name:                 "Webhook 通知插件",
+			Category:             "integration",
+			Status:               "active",
+			Description:          "在会话或事件完成后向已配置的 Webhook 投递通知。",
+			RequiresConfirmation: true,
+			Capabilities:         []string{"事件通知投递", "失败重试"},
+			DefaultEnabled:       false,
+		},
+		{
+			Code:                 "web_search_plugin",
+			Name:                 "联网检索插件",
+			Category:             "external",
+			Status:               "blocked",
+			Description:          "访问外部搜索引擎，首版默认禁止，防止数据外泄与不可控成本。",
+			RequiresConfirmation: true,
+			Capabilities:         []string{"外部网页检索"},
+			DefaultEnabled:       false,
+		},
+	}
+}
+
+// DefaultPluginMarketPolicy 返回插件市场安全默认策略。
+func DefaultPluginMarketPolicy() PluginMarketPolicy {
+	return PluginMarketPolicy{
+		PermissionRole:     "tenant_writer",
+		AuditAction:        "agent.plugin.toggle",
+		DangerConfirmation: true,
+		Guardrails: []string{
+			"仅 active 状态的内置插件可由租户启用，blocked 插件默认禁止安装。",
+			"启用集成类或外部类插件必须由 tenant writer/admin 操作并人工确认。",
+			"插件启用、禁用都按当前租户隔离，互不影响其他租户。",
+			"后续接入真实插件执行器时，启用状态将作为是否允许调用的前置开关。",
+		},
+		AgentPolicyHint: "插件未启用时按 deny 处理；显式启用前 Agent 不得调用对应插件能力。",
+	}
+}
+
+// DefaultPluginCatalog 返回不含租户状态的内置插件目录。
+func DefaultPluginCatalog() []PluginCatalogItem {
+	return MergePluginCatalog(nil)
+}
+
+// FindPluginDefinition 按编码查找内置插件定义（忽略大小写和空白）。
+func FindPluginDefinition(code string) (pluginDefinition, bool) {
+	code = strings.ToLower(strings.TrimSpace(code))
+	for _, def := range builtinPlugins() {
+		if def.Code == code {
+			return def, true
+		}
+	}
+	return pluginDefinition{}, false
+}
+
+// MergePluginCatalog 将租户启用记录合并进内置插件目录，计算每个插件的安装状态。
+func MergePluginCatalog(installs map[string]PluginInstall) []PluginCatalogItem {
+	items := make([]PluginCatalogItem, 0, len(builtinPlugins()))
+	for _, def := range builtinPlugins() {
+		installable := def.Status == "active"
+		tenantStatus := ""
+		installed := false
+		if install, ok := installs[def.Code]; ok {
+			tenantStatus = install.Status
+			installed = install.Status == "enabled"
+		} else if def.DefaultEnabled && installable {
+			tenantStatus = "enabled"
+			installed = true
+		} else {
+			tenantStatus = "disabled"
+		}
+		items = append(items, PluginCatalogItem{
+			Code:                 def.Code,
+			Name:                 def.Name,
+			Category:             def.Category,
+			Status:               def.Status,
+			Description:          def.Description,
+			RequiresConfirmation: def.RequiresConfirmation,
+			Capabilities:         def.Capabilities,
+			Installable:          installable,
+			Installed:            installed,
+			TenantStatus:         tenantStatus,
+			OperationalNotes:     pluginOperationalNotes(def),
+		})
+	}
+	return items
+}
+
+// pluginOperationalNotes 返回插件的运维提示。
+func pluginOperationalNotes(def pluginDefinition) []string {
+	if def.Status == "blocked" {
+		return []string{
+			"当前版本默认禁止安装，不允许 Agent 调用。",
+			"启用前必须加入人工确认、角色校验和审计记录。",
+		}
+	}
+	notes := []string{"可由 tenant writer/admin 启用或禁用，按当前租户隔离。"}
+	if def.RequiresConfirmation {
+		notes = append(notes, "启用该插件需要人工确认。")
+	}
+	return notes
+}

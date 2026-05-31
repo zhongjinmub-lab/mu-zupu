@@ -422,3 +422,63 @@ func TestBuildToolTestResultCarriesSchemaValidation(t *testing.T) {
 		t.Fatalf("expected valid schema result, got %#v", valid)
 	}
 }
+
+func TestDefaultPluginCatalogReflectsDefaults(t *testing.T) {
+	items := DefaultPluginCatalog()
+	if len(items) == 0 {
+		t.Fatal("expected non-empty plugin catalog")
+	}
+	byCode := map[string]PluginCatalogItem{}
+	for _, item := range items {
+		if _, dup := byCode[item.Code]; dup {
+			t.Fatalf("duplicate plugin code %q", item.Code)
+		}
+		byCode[item.Code] = item
+	}
+	// kb_search_plugin 默认启用，应被视为已安装。
+	if !byCode["kb_search_plugin"].Installed || byCode["kb_search_plugin"].TenantStatus != "enabled" {
+		t.Fatalf("kb_search_plugin should be enabled by default, got %#v", byCode["kb_search_plugin"])
+	}
+	// web_search_plugin 为 blocked，不可安装。
+	if byCode["web_search_plugin"].Installable || byCode["web_search_plugin"].Status != "blocked" {
+		t.Fatalf("web_search_plugin must be blocked and not installable, got %#v", byCode["web_search_plugin"])
+	}
+}
+
+func TestFindPluginDefinition(t *testing.T) {
+	if _, ok := FindPluginDefinition("  KB_Search_Plugin "); !ok {
+		t.Fatal("expected to find kb_search_plugin ignoring case and spaces")
+	}
+	if _, ok := FindPluginDefinition("missing_plugin"); ok {
+		t.Fatal("expected missing plugin to be not found")
+	}
+}
+
+func TestMergePluginCatalogAppliesTenantStatus(t *testing.T) {
+	installs := map[string]PluginInstall{
+		"kb_search_plugin":         {PluginCode: "kb_search_plugin", Status: "disabled"},
+		"genealogy_insight_plugin": {PluginCode: "genealogy_insight_plugin", Status: "enabled"},
+	}
+	byCode := map[string]PluginCatalogItem{}
+	for _, item := range MergePluginCatalog(installs) {
+		byCode[item.Code] = item
+	}
+	// 租户显式禁用应覆盖默认启用。
+	if byCode["kb_search_plugin"].Installed || byCode["kb_search_plugin"].TenantStatus != "disabled" {
+		t.Fatalf("tenant disable should override default, got %#v", byCode["kb_search_plugin"])
+	}
+	// 租户显式启用默认关闭的插件。
+	if !byCode["genealogy_insight_plugin"].Installed || byCode["genealogy_insight_plugin"].TenantStatus != "enabled" {
+		t.Fatalf("tenant enable should apply, got %#v", byCode["genealogy_insight_plugin"])
+	}
+}
+
+func TestDefaultPluginMarketPolicy(t *testing.T) {
+	policy := DefaultPluginMarketPolicy()
+	if policy.AuditAction != "agent.plugin.toggle" {
+		t.Fatalf("audit action = %q", policy.AuditAction)
+	}
+	if !policy.DangerConfirmation || len(policy.Guardrails) == 0 {
+		t.Fatalf("expected danger confirmation and guardrails, got %#v", policy)
+	}
+}

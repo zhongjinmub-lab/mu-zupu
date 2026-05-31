@@ -292,6 +292,51 @@ func (h Handler) TestMCPServer(c *gin.Context) {
 	response.OK(c, result)
 }
 
+func (h Handler) ListPlugins(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	installs, err := h.Repo.ListPluginInstalls(c.Request.Context(), t.ID)
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"items": MergePluginCatalog(installs), "policy": DefaultPluginMarketPolicy()})
+}
+
+func (h Handler) EnablePlugin(c *gin.Context) {
+	h.setPluginStatus(c, "enabled")
+}
+
+func (h Handler) DisablePlugin(c *gin.Context) {
+	h.setPluginStatus(c, "disabled")
+}
+
+func (h Handler) setPluginStatus(c *gin.Context, status string) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	def, ok := FindPluginDefinition(c.Param("plugin_code"))
+	if !ok {
+		response.Error(c, http.StatusNotFound, 40422, "插件不存在")
+		return
+	}
+	if def.Status != "active" {
+		response.Error(c, http.StatusConflict, 40942, "该插件当前默认禁止安装，暂不可启用或禁用")
+		return
+	}
+	item, err := h.Repo.SetPluginStatus(c.Request.Context(), t.ID, def.Code, status, map[string]any{})
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	response.OK(c, item)
+}
+
 func (h Handler) GenealogyGraph(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {
