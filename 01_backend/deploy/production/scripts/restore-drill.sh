@@ -7,6 +7,7 @@ DRILL_DB="${DRILL_DB:-mu_agent_saas_restore_drill}"
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-mu-agent-saas-postgres}"
 POSTGRES_USER="${POSTGRES_USER:-mu}"
 KEEP_DRILL_DB="${KEEP_DRILL_DB:-no}"
+REQUIRED_TABLES="${REQUIRED_TABLES:-tenants,users,tenant_members,agents,knowledge_bases,documents,document_chunks,conversations,messages,audit_logs,plans,subscriptions,usage_records,business_orders,payment_orders,licenses,webhook_endpoints,webhook_deliveries,agent_genealogy}"
 
 if [[ -z "$DB_BACKUP" ]]; then
   DB_BACKUP="$(ls -1t "$APP_DIR"/backups/mu_agent_saas_*.sql.gz 2>/dev/null | head -n 1 || true)"
@@ -32,7 +33,7 @@ docker exec -i "$POSTGRES_CONTAINER" createdb -U "$POSTGRES_USER" "$DRILL_DB"
 echo "step 2/4 restore backup into drill database"
 gzip -dc "$DB_BACKUP" | docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$DRILL_DB" -v ON_ERROR_STOP=1 >/tmp/mu-agent-restore-drill.log
 
-echo "step 3/4 verify restored schema"
+echo "step 3/4 verify restored schema and business tables"
 docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$DRILL_DB" -v ON_ERROR_STOP=1 -tAc "SELECT COUNT(*) FROM schema_migrations;" >/tmp/mu-agent-restore-drill-schema-count.txt
 SCHEMA_COUNT="$(tr -d '[:space:]' </tmp/mu-agent-restore-drill-schema-count.txt)"
 if [[ -z "$SCHEMA_COUNT" || "$SCHEMA_COUNT" -lt 1 ]]; then
@@ -41,8 +42,17 @@ if [[ -z "$SCHEMA_COUNT" || "$SCHEMA_COUNT" -lt 1 ]]; then
 fi
 docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$DRILL_DB" -v ON_ERROR_STOP=1 -c "SELECT version, name, applied_at FROM schema_migrations ORDER BY version DESC LIMIT 5;"
 
+docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$DRILL_DB" -v ON_ERROR_STOP=1 -v required_tables="$REQUIRED_TABLES" -tAc "WITH required(name) AS (SELECT trim(value) FROM regexp_split_to_table(:'required_tables', ',') AS t(value)) SELECT COALESCE(string_agg(name, ', ' ORDER BY name), '') FROM required WHERE to_regclass('public.' || name) IS NULL;" >/tmp/mu-agent-restore-drill-missing-tables.txt
+MISSING_TABLES="$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' </tmp/mu-agent-restore-drill-missing-tables.txt)"
+if [[ -n "$MISSING_TABLES" ]]; then
+  echo "restore drill missing required tables: $MISSING_TABLES"
+  exit 1
+fi
+docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$DRILL_DB" -v ON_ERROR_STOP=1 -v required_tables="$REQUIRED_TABLES" -tAc "WITH required(name) AS (SELECT trim(value) FROM regexp_split_to_table(:'required_tables', ',') AS t(value)) SELECT COUNT(*) FROM required;" >/tmp/mu-agent-restore-drill-table-count.txt
+TABLE_COUNT="$(tr -d '[:space:]' </tmp/mu-agent-restore-drill-table-count.txt)"
+
 echo "step 4/4 cleanup drill database"
 cleanup
 trap - EXIT
 
-echo "restore drill ok db=$DRILL_DB backup=$DB_BACKUP schema_migrations=$SCHEMA_COUNT"
+echo "restore drill ok db=$DRILL_DB backup=$DB_BACKUP schema_migrations=$SCHEMA_COUNT required_tables=$TABLE_COUNT"

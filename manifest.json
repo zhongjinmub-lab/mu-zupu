@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T16:09:08+08:00",
+    "generated_at":  "2026-05-31T16:16:59+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  229,
+    "file_count":  230,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -57,8 +57,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/README.md",
-                      "size":  5697,
-                      "sha256":  "494a57bac3e90e75e4f68f6846746c75c6f388d891d1e253963250e87d7da6a0"
+                      "size":  5930,
+                      "sha256":  "8b45c23a60997b3b59f999a4c098827c4302a778ebcf5c107657c4a58f99d20b"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/backup.sh",
@@ -77,8 +77,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/restore-drill.sh",
-                      "size":  2081,
-                      "sha256":  "3420c1c26233c5a2435a32b848e0403cd60e771582df987350306e87739f25b2"
+                      "size":  3450,
+                      "sha256":  "95a3b0566ee8bbf933c326bd34062c7fb3c8fd895ef415b15a165018deaab185"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/rollback.sh",
@@ -742,8 +742,8 @@
                   },
                   {
                       "path":  "01_backend/scripts/release_scripts_test.go",
-                      "size":  4743,
-                      "sha256":  "18b30da87f0be6003282f29cc2a3722d741ab1b817a3e842ffd1beeb5654f28f"
+                      "size":  4803,
+                      "sha256":  "31f410dff4e614f768116640c07bcf64910ee668532c3851ff320de1e99e6c01"
                   },
                   {
                       "path":  "01_backend/向量存储与索引优化说明.md",
@@ -1032,8 +1032,8 @@
                   },
                   {
                       "path":  "02_docs_v1_delivery/2026-05-31_数据库备份恢复演练脚本增量验收.md",
-                      "size":  2253,
-                      "sha256":  "7b9b85106f6883064e9567d6913a5ae3243ea74bd94289090de12817c3c37ded"
+                      "size":  2418,
+                      "sha256":  "2888a35dfd956ae66321fb29b421a5e571acdc77fffff834d0a99d59e6836462"
                   },
                   {
                       "path":  "02_docs_v1_delivery/2026-05-31_套餐订阅额度状态增量验收.md",
@@ -1129,6 +1129,11 @@
                       "path":  "04_最终交付验收清单.md",
                       "size":  8946,
                       "sha256":  "f6001ee4f3fce3d02bf396d63d1b954f03506acdf40461bbc725ac12b8c61629"
+                  },
+                  {
+                      "path":  "manifest.json",
+                      "size":  542401,
+                      "sha256":  "f3faec0ff69146d911cae95a3fb5f7317b6290022064c114481d928ad052c8b4"
                   },
                   {
                       "path":  "README.md",

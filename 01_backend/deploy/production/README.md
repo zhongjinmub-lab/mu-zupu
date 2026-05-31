@@ -134,7 +134,7 @@ EXPECTED_MIGRATION='000004_auth_tenant_kb_mvp applied' \
 
 ## 备份恢复演练
 
-日常演练优先使用 `restore-drill.sh`，它会把备份恢复到临时数据库 `mu_agent_saas_restore_drill`，校验 `schema_migrations` 后自动删除临时库，不影响生产库。
+日常演练优先使用 `restore-drill.sh`，它会把备份恢复到临时数据库 `mu_agent_saas_restore_drill`，校验 `schema_migrations` 和核心业务表存在性后自动删除临时库，不影响生产库。
 
 ```bash
 cd /opt/mu-agent-saas
@@ -153,6 +153,8 @@ DB_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saas_20260531120000.sql.gz ./scrip
 ```bash
 KEEP_DRILL_DB=yes ./scripts/restore-drill.sh
 ```
+
+演练默认检查租户、用户、智能体、知识库、对话、审计、订阅、支付、授权、Webhook 和族谱关系等关键表。特殊环境可通过 `REQUIRED_TABLES` 覆盖检查清单。
 
 真实恢复会删除并重建目标数据库，必须显式设置 `CONFIRM_RESTORE=yes`。执行真实恢复前，脚本会再次调用 `backup.sh` 生成当前现场备份。
 

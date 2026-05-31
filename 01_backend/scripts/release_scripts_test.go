@@ -79,7 +79,7 @@ func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	}
 
 	drill := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "restore-drill.sh"))
-	for _, want := range []string{"mu_agent_saas_restore_drill", "schema_migrations", "KEEP_DRILL_DB", "dropdb", "restore drill ok"} {
+	for _, want := range []string{"mu_agent_saas_restore_drill", "schema_migrations", "REQUIRED_TABLES", "webhook_deliveries", "agent_genealogy", "KEEP_DRILL_DB", "dropdb", "restore drill ok"} {
 		if !strings.Contains(drill, want) {
 			t.Fatalf("restore-drill.sh should include %s", want)
 		}
