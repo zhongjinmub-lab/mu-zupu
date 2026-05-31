@@ -756,6 +756,47 @@ LIMIT ` + limitPlaceholder
 	return out, nextCursor, nil
 }
 
+// ListPluginInstalls 返回当前租户的插件启用记录，按 plugin_code 建立索引。
+func (r Repository) ListPluginInstalls(ctx context.Context, tenantID string) (map[string]PluginInstall, error) {
+	const q = `
+SELECT id::text, tenant_id::text, plugin_code, status, config, created_at, updated_at
+FROM plugin_installs
+WHERE tenant_id = $1`
+	rows, err := r.DB.Query(ctx, q, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(map[string]PluginInstall)
+	for rows.Next() {
+		item, err := scanPluginInstall(rows)
+		if err != nil {
+			return nil, err
+		}
+		out[item.PluginCode] = item
+	}
+	return out, rows.Err()
+}
+
+// SetPluginStatus 以 upsert 方式写入插件启用状态，返回最新记录。
+func (r Repository) SetPluginStatus(ctx context.Context, tenantID, pluginCode, status string, config map[string]any) (PluginInstall, error) {
+	configJSON, err := jsonObject(config)
+	if err != nil {
+		return PluginInstall{}, err
+	}
+	const q = `
+INSERT INTO plugin_installs(tenant_id, plugin_code, status, config)
+VALUES ($1, $2, $3, $4::jsonb)
+ON CONFLICT (tenant_id, plugin_code)
+DO UPDATE SET status = EXCLUDED.status, config = EXCLUDED.config, updated_at = now()
+RETURNING id::text, tenant_id::text, plugin_code, status, config, created_at, updated_at`
+	var item PluginInstall
+	err = r.DB.QueryRow(ctx, q, tenantID, pluginCode, status, configJSON).Scan(
+		&item.ID, &item.TenantID, &item.PluginCode, &item.Status, &item.Config, &item.CreatedAt, &item.UpdatedAt,
+	)
+	return item, err
+}
+
 func (r Repository) touchConversation(ctx context.Context, tenantID, conversationID string) error {
 	_, err := r.DB.Exec(ctx, `UPDATE conversations SET updated_at = now() WHERE id = $1 AND tenant_id = $2`, conversationID, tenantID)
 	return err
@@ -839,6 +880,14 @@ func scanGenealogyEdge(rows pgx.Rows) (GenealogyEdge, error) {
 	var item GenealogyEdge
 	err := rows.Scan(
 		&item.ID, &item.ParentAgentID, &item.ParentName, &item.ChildAgentID, &item.ChildName, &item.RelationType, &item.CreatedAt,
+	)
+	return item, err
+}
+
+func scanPluginInstall(rows pgx.Rows) (PluginInstall, error) {
+	var item PluginInstall
+	err := rows.Scan(
+		&item.ID, &item.TenantID, &item.PluginCode, &item.Status, &item.Config, &item.CreatedAt, &item.UpdatedAt,
 	)
 	return item, err
 }

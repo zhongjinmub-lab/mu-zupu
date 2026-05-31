@@ -44,6 +44,9 @@
 | GET | /mcp-gateway/policy | MCP 网关安全策略摘要 | tenant |
 | GET | /mcp-servers | MCP 服务目录，返回只读服务、危险服务、传输方式、安全状态和审计动作 | tenant |
 | POST | /mcp-servers/{server_id}/test | MCP 连通性测试，当前只执行 dry-run 预检，不建立真实连接 | tenant writer |
+| GET | /plugins | 插件市场目录，合并当前租户启用状态与市场安全策略 | tenant |
+| POST | /plugins/{plugin_code}/enable | 启用内置插件（仅 active 插件可启用） | tenant writer |
+| POST | /plugins/{plugin_code}/disable | 禁用内置插件 | tenant writer |
 | DELETE | /agents/{agent_id} | 归档 Agent | tenant |
 | POST | /agents/{agent_id}/knowledge-bases | 绑定当前租户 KB | tenant |
 | GET | /agents/{agent_id}/knowledge-bases | Agent 已绑定 KB 列表 | tenant |
@@ -1030,3 +1033,14 @@ P1「插件工具」继续补齐 Tool Schema，为工具目录提供正式参数
 - 管理台“Agent 工具安全策略”工具卡片新增“参数 Schema”一行，安全测试会按 Schema 自动构造示例必填参数，并展示 Schema 校验结果。
 
 后续启用真实工具执行器时，将以 `input_schema` 作为入参契约做强校验，不合规直接拒绝并写入审计。
+
+
+## 2026-05-31 增量：插件市场（启用/禁用持久化）
+
+P1「插件工具」收尾，新增插件市场。内置插件目录为代码内置，租户级启用状态持久化在 `plugin_installs` 表（唯一约束 `tenant_id + plugin_code`）。
+
+- `GET /plugins`：返回插件目录（合并当前租户启用状态）与市场安全策略 `policy`。内置插件：`kb_search_plugin`（知识库检索，默认启用）、`genealogy_insight_plugin`（族谱洞察，默认关闭）、`webhook_notify_plugin`（Webhook 通知，集成类，需确认）、`web_search_plugin`（联网检索，external，默认 `blocked` 禁止安装）。每项含 `installable`、`installed`、`tenant_status`、`capabilities`、`operational_notes`。
+- `POST /plugins/{plugin_code}/enable`：启用内置插件，仅 `active` 插件可启用，`blocked` 插件返回 409。
+- `POST /plugins/{plugin_code}/disable`：禁用内置插件。
+
+启用/禁用走 `RequireTenantWriter` 权限，按当前 `X-Tenant-ID` 租户隔离，互不影响其他租户。`plugin_installs` 以 upsert 写入（`ON CONFLICT (tenant_id, plugin_code) DO UPDATE`）。配套新增 `000022_plugin_installs` 迁移（含 down 回滚）。管理台新增“插件市场”卡片，展示插件目录、启用状态、能力与一键启用/禁用，中文摘要展示。后续接入真实插件执行器时，启用状态将作为是否允许 Agent 调用对应插件的前置开关。

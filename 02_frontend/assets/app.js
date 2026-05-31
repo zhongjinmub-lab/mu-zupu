@@ -20,6 +20,8 @@ const state = {
   mcpGatewayPolicy: null,
   mcpServers: [],
   mcpTestResults: {},
+  plugins: [],
+  pluginMarketPolicy: null,
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -1986,6 +1988,73 @@ async function testMCPServer(serverCode) {
   toast(result.allowed ? "MCP 连通性预检通过" : "MCP 连接已被安全策略阻断");
 }
 
+// loadPlugins 拉取插件目录与市场策略并渲染。
+async function loadPlugins() {
+  if (!state.tenantId) return;
+  const data = await api("/plugins");
+  state.plugins = data.items || [];
+  state.pluginMarketPolicy = data.policy || null;
+  renderPlugins();
+}
+
+function renderPlugins(error = "") {
+  const el = $("#pluginMarketBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`插件市场加载失败：${error}`);
+    return;
+  }
+  const policy = state.pluginMarketPolicy;
+  const plugins = state.plugins || [];
+  el.innerHTML = `
+    ${policy ? `
+      <div class="summary-grid compact-summary">
+        <span>权限要求：${escapeHtml(policy.permission_role || "-")}</span>
+        <span>审计动作：${escapeHtml(policy.audit_action || "-")}</span>
+        <span>危险确认：${policy.danger_confirmation ? "必须人工确认" : "未要求确认"}</span>
+        <span>策略提示：${escapeHtml(policy.agent_policy_hint || "-")}</span>
+      </div>
+    ` : ""}
+    <div class="list">
+      ${plugins.map((plugin) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(plugin.name || plugin.code)}</strong>
+            <span class="badge ${plugin.installed ? "ok" : (plugin.status === "blocked" ? "danger" : "warn")}">${escapeHtml(pluginStatusLabel(plugin))}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(plugin.code || "-")} / ${escapeHtml(plugin.category || "-")} / ${plugin.requires_confirmation ? "需要确认" : "无需确认"}</div>
+          <div class="item-meta">${escapeHtml(plugin.description || "")}</div>
+          <div class="item-meta">能力：${escapeHtml((plugin.capabilities || []).join("、") || "-")}</div>
+          <div class="item-meta">${escapeHtml((plugin.operational_notes || []).join("；") || "")}</div>
+          <div class="item-actions">
+            ${plugin.installable
+              ? (plugin.installed
+                ? `<button class="button small secondary" data-plugin-disable="${escapeHtml(plugin.code || "")}" type="button">禁用</button>`
+                : `<button class="button small" data-plugin-enable="${escapeHtml(plugin.code || "")}" type="button">启用</button>`)
+              : `<span class="item-meta">默认禁止安装</span>`}
+          </div>
+        </article>
+      `).join("") || empty("暂无插件")}
+    </div>
+    ${policy ? `<div class="item-meta">护栏：${escapeHtml((policy.guardrails || []).join("；") || "-")}</div>` : ""}
+  `;
+}
+
+function pluginStatusLabel(plugin) {
+  if (plugin.status === "blocked") return "默认禁止";
+  if (plugin.installed) return "已启用";
+  return "未启用";
+}
+
+// togglePlugin 启用或禁用指定插件后刷新插件市场。
+async function togglePlugin(pluginCode, enable) {
+  if (!pluginCode) return;
+  const action = enable ? "enable" : "disable";
+  await api(`/plugins/${encodeURIComponent(pluginCode)}/${action}`, { method: "POST" });
+  await loadPlugins();
+  toast(enable ? "插件已启用" : "插件已禁用");
+}
+
 async function loadToolCallLogs() {
   if (!state.tenantId) return;
   const data = await api(`/tool-call-logs${toolCallLogQuery()}`);
@@ -2559,6 +2628,7 @@ async function refreshAll() {
     loadAgents(),
     loadToolSafetyPolicy(),
     loadMCPGateway(),
+    loadPlugins(),
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
@@ -2626,6 +2696,7 @@ function bindEvents() {
       loadAgents(),
       loadToolSafetyPolicy(),
       loadMCPGateway(),
+      loadPlugins(),
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
@@ -3114,6 +3185,7 @@ function bindEvents() {
   $("#loadAgentsBtn").addEventListener("click", () => loadAgents().catch((err) => toast(err.message)));
   $("#loadToolSafetyPolicyBtn").addEventListener("click", () => loadToolSafetyPolicy().then(() => toast("工具安全策略已刷新")).catch((err) => renderToolSafetyPolicy(err.message)));
   $("#loadMCPGatewayBtn").addEventListener("click", () => loadMCPGateway().then(() => toast("MCP 网关策略已刷新")).catch((err) => renderMCPGateway(err.message)));
+  $("#loadPluginsBtn").addEventListener("click", () => loadPlugins().then(() => toast("插件市场已刷新")).catch((err) => renderPlugins(err.message)));
   $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     agentGenealogyFiltersFromForm();
@@ -3215,6 +3287,8 @@ function bindEvents() {
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const toolTestId = target.dataset?.toolTest;
     const mcpTestId = target.dataset?.mcpTest;
+    const pluginEnableId = target.dataset?.pluginEnable;
+    const pluginDisableId = target.dataset?.pluginDisable;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3234,6 +3308,12 @@ function bindEvents() {
       }
       if (mcpTestId) {
         await testMCPServer(mcpTestId);
+      }
+      if (pluginEnableId) {
+        await togglePlugin(pluginEnableId, true);
+      }
+      if (pluginDisableId) {
+        await togglePlugin(pluginDisableId, false);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();
