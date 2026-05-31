@@ -87,6 +87,15 @@ func (h Handler) ListMembers(c *gin.Context) {
 	response.OK(c, gin.H{"items": items})
 }
 
+func (h Handler) RolePermissions(c *gin.Context) {
+	t, ok := CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, RolePermissions(t.RoleCode))
+}
+
 func (h Handler) AddMember(c *gin.Context) {
 	user, ok := auth.CurrentUser(c)
 	if !ok {
@@ -408,6 +417,7 @@ func RegisterRoutes(private *gin.RouterGroup, h Handler) {
 
 func RegisterTenantScopedRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/tenant/members", h.ListMembers)
+	rg.GET("/tenant/role-permissions", h.RolePermissions)
 	rg.POST("/tenant/members", h.AddMember)
 	rg.PUT("/tenant/members/:member_id/role", h.UpdateMemberRole)
 	rg.DELETE("/tenant/members/:member_id", h.RemoveMember)

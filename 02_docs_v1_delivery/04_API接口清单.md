@@ -25,6 +25,7 @@
 | GET | /auth/me | 当前用户 | user |
 | GET | /tenants | 当前用户租户列表 | user |
 | POST | /tenants | 创建租户 | user |
+| GET | /tenant/role-permissions | 当前租户角色权限矩阵摘要 | tenant |
 | GET | /audit-logs/export | 导出当前租户审计日志 CSV，支持筛选条件 | tenant |
 | POST | /agents | 创建 Agent | tenant |
 | GET | /agents | 当前租户 Agent 列表 | tenant |
@@ -94,9 +95,13 @@
 |---|---|---|
 | GET | /tenants | 租户列表 |
 | POST | /tenants | 创建租户 |
-| GET | /roles | 角色列表 |
-| POST | /roles | 创建角色 |
-| PUT | /roles/{id}/permissions | 分配权限 |
+| GET | /tenant/members | 当前租户成员列表 |
+| POST | /tenant/members | 添加当前租户成员 |
+| PUT | /tenant/members/{member_id}/role | 调整当前租户成员角色 |
+| DELETE | /tenant/members/{member_id} | 移除当前租户成员 |
+| GET | /tenant/role-permissions | 当前租户角色权限矩阵摘要 |
+
+当前角色模型为固定 SaaS 租户角色：`owner`、`admin`、`member`、`viewer`。`owner/admin` 可管理成员、账单授权和 Webhook；`member` 可维护知识库、文件和智能体；`viewer` 仅可查看。管理台“角色权限矩阵”会以中文摘要展示当前角色、可读/可写/可管理能力、权限范围和受限操作，不展示黑色 JSON 原文。
 
 ### 3.3 Agent
 

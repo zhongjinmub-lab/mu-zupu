@@ -96,6 +96,23 @@ type Invitation struct {
 	Token      string     `json:"token,omitempty"`
 }
 
+type RolePermissionSummary struct {
+	CurrentRole string           `json:"current_role"`
+	Roles       []RolePermission `json:"roles"`
+}
+
+type RolePermission struct {
+	RoleCode      string   `json:"role_code"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description"`
+	Scope         string   `json:"scope"`
+	CanRead       bool     `json:"can_read"`
+	CanWrite      bool     `json:"can_write"`
+	CanManage     bool     `json:"can_manage"`
+	Permissions   []string `json:"permissions"`
+	RestrictedOps []string `json:"restricted_ops"`
+}
+
 type CreateInvitationRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	RoleCode string `json:"role_code"`
@@ -284,6 +301,79 @@ func validInviteRoleCode(role string) bool {
 
 func CanManageMembers(role string) bool {
 	return role == "owner" || role == "admin"
+}
+
+func RolePermissions(currentRole string) RolePermissionSummary {
+	return RolePermissionSummary{
+		CurrentRole: strings.TrimSpace(currentRole),
+		Roles: []RolePermission{
+			{
+				RoleCode:    "owner",
+				Name:        "所有者",
+				Description: "拥有租户全部管理权限，负责成员、账单、授权和集成配置。",
+				Scope:       "租户全局管理",
+				CanRead:     true,
+				CanWrite:    true,
+				CanManage:   true,
+				Permissions: []string{
+					"查看全部租户数据",
+					"管理成员和角色",
+					"管理知识库、文件、智能体和族谱关系",
+					"管理订单、支付、License 和 Webhook",
+					"查看和导出审计日志",
+				},
+				RestrictedOps: []string{"不能被普通成员移除", "生产密钥仍只允许通过服务端环境变量配置"},
+			},
+			{
+				RoleCode:    "admin",
+				Name:        "管理员",
+				Description: "可管理租户业务资源和成员，不能转移所有者身份。",
+				Scope:       "租户运营管理",
+				CanRead:     true,
+				CanWrite:    true,
+				CanManage:   true,
+				Permissions: []string{
+					"查看全部租户数据",
+					"邀请成员并调整 admin/member/viewer 角色",
+					"管理知识库、文件、智能体和族谱关系",
+					"管理订单、支付、License 和 Webhook",
+					"查看和导出审计日志",
+				},
+				RestrictedOps: []string{"不能创建或分配 owner", "不能移除 owner"},
+			},
+			{
+				RoleCode:    "member",
+				Name:        "成员",
+				Description: "可维护核心业务资料和智能体，不能管理成员、账单授权和外部集成。",
+				Scope:       "租户业务协作",
+				CanRead:     true,
+				CanWrite:    true,
+				CanManage:   false,
+				Permissions: []string{
+					"查看租户数据",
+					"上传文件并维护知识库文档",
+					"创建和更新智能体",
+					"发起 Agent 会话和 RAG 问答",
+				},
+				RestrictedOps: []string{"不能管理成员", "不能管理订单、License、Webhook 和支付回调"},
+			},
+			{
+				RoleCode:    "viewer",
+				Name:        "只读成员",
+				Description: "仅可查看租户数据和报表，不能执行写入或危险操作。",
+				Scope:       "租户只读查看",
+				CanRead:     true,
+				CanWrite:    false,
+				CanManage:   false,
+				Permissions: []string{
+					"查看租户数据",
+					"查看知识库、智能体、会话、账单和分析报表",
+					"查看审计日志和运行摘要",
+				},
+				RestrictedOps: []string{"不能创建、更新或删除业务资源", "不能上传文件", "不能发起 Agent 会话或支付授权操作"},
+			},
+		},
+	}
 }
 
 func newInvitationToken() (string, string, error) {

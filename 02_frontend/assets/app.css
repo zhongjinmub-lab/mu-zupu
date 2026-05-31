@@ -1143,6 +1143,10 @@ textarea:focus {
   color: var(--danger);
 }
 
+.badge.secondary {
+  color: var(--muted);
+}
+
 .codebox {
   margin: 0;
   max-height: 360px;

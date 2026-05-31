@@ -33,6 +33,31 @@ func TestCanManageMembers(t *testing.T) {
 	}
 }
 
+func TestRolePermissionsSummarizesRoles(t *testing.T) {
+	summary := RolePermissions("admin")
+	if summary.CurrentRole != "admin" {
+		t.Fatalf("current role = %q", summary.CurrentRole)
+	}
+	if len(summary.Roles) != 4 {
+		t.Fatalf("roles length = %d", len(summary.Roles))
+	}
+	var owner, viewer RolePermission
+	for _, role := range summary.Roles {
+		switch role.RoleCode {
+		case "owner":
+			owner = role
+		case "viewer":
+			viewer = role
+		}
+	}
+	if !owner.CanManage || !owner.CanWrite || !owner.CanRead {
+		t.Fatalf("unexpected owner permissions: %#v", owner)
+	}
+	if viewer.CanWrite || viewer.CanManage || !viewer.CanRead {
+		t.Fatalf("unexpected viewer permissions: %#v", viewer)
+	}
+}
+
 func TestCreateInvitationRequestNormalizeAndValidate(t *testing.T) {
 	req := CreateInvitationRequest{Email: " Invite@Example.COM ", RoleCode: "owner"}
 	req.Normalize()

@@ -35,6 +35,7 @@ const state = {
   runtimeSummary: null,
   monitoringSnapshot: null,
   members: [],
+  rolePermissions: null,
   auditLogs: [],
   auditNextCursor: "",
   auditCursorStack: [],
@@ -1180,6 +1181,39 @@ function renderMembers() {
   renderMetrics();
 }
 
+function renderRolePermissions() {
+  const el = $("#rolePermissionList");
+  if (!el) return;
+  const summary = state.rolePermissions;
+  if (!summary?.roles?.length) {
+    el.innerHTML = empty("暂无角色权限摘要");
+    return;
+  }
+  el.innerHTML = summary.roles.map((role) => {
+    const active = role.role_code === summary.current_role;
+    const flags = [
+      role.can_read ? "可查看" : "不可查看",
+      role.can_write ? "可写入" : "只读",
+      role.can_manage ? "可管理" : "不可管理",
+    ];
+    return `
+      <article class="item ${active ? "active" : ""}">
+        <div class="item-title">
+          <strong>${escapeHtml(role.name || role.role_code)}</strong>
+          <span class="badge ${active ? "" : "secondary"}">${active ? "当前角色" : escapeHtml(role.role_code)}</span>
+        </div>
+        <div class="item-meta">${escapeHtml(role.description || "")}</div>
+        <div class="summary-grid compact-summary">
+          <span>范围：${escapeHtml(role.scope || "-")}</span>
+          <span>能力：${escapeHtml(flags.join(" / "))}</span>
+        </div>
+        <div class="item-meta">权限：${escapeHtml((role.permissions || []).join("、") || "-")}</div>
+        <div class="item-meta danger-text">限制：${escapeHtml((role.restricted_ops || []).join("、") || "-")}</div>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderAuditLogs() {
   const el = $("#auditLogList");
   if (!el) return;
@@ -1613,6 +1647,12 @@ async function loadMembers() {
   renderMetrics();
 }
 
+async function loadRolePermissions() {
+  if (!state.tenantId) return;
+  state.rolePermissions = await api("/tenant/role-permissions");
+  renderRolePermissions();
+}
+
 function auditFiltersFromForm() {
   const form = $("#auditFilterForm");
   if (!form) return state.auditFilters;
@@ -1957,6 +1997,7 @@ async function refreshAll() {
     loadRuntimeSummary(),
     loadMonitoringSnapshot(),
     loadMembers(),
+    loadRolePermissions(),
     loadAuditLogs(),
     loadInvitations(),
     loadWebhooks(),
@@ -2015,6 +2056,7 @@ function bindEvents() {
       loadRateLimitPolicy(),
       loadRuntimeSummary(),
       loadMembers(),
+      loadRolePermissions(),
       loadAuditLogs(),
       loadInvitations(),
       loadWebhooks(),
@@ -2494,6 +2536,7 @@ function bindEvents() {
   $("#loadAnalyticsBtn").addEventListener("click", () => loadAnalytics().then(() => toast("分析已刷新")).catch((err) => toast(err.message)));
   $("#exportAnalyticsSummaryBtn").addEventListener("click", () => exportAnalyticsSummary().then(() => toast("分析摘要已导出")).catch((err) => toast(err.message)));
   $("#loadMembersBtn").addEventListener("click", () => loadMembers().catch((err) => toast(err.message)));
+  $("#loadRolePermissionsBtn").addEventListener("click", () => loadRolePermissions().then(() => toast("权限矩阵已刷新")).catch((err) => toast(err.message)));
   $("#loadInvitationsBtn").addEventListener("click", () => loadInvitations().catch((err) => toast(err.message)));
   $("#loadWebhooksBtn").addEventListener("click", () => loadWebhooks().catch((err) => toast(err.message)));
   $("#loadWebhookDeliverySummaryBtn").addEventListener("click", () => {
