@@ -81,6 +81,20 @@ func (h Handler) ListAgents(c *gin.Context) {
 	response.OK(c, gin.H{"items": items})
 }
 
+func (h Handler) GenealogyGraph(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	graph, err := h.Repo.GenealogyGraph(c.Request.Context(), t.ID)
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	response.OK(c, graph)
+}
+
 func (h Handler) GetAgent(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {

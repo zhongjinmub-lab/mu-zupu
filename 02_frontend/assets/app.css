@@ -755,6 +755,69 @@ textarea {
   color: var(--danger);
 }
 
+.genealogy-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.genealogy-graph {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.genealogy-node {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  background: #fbfcff;
+}
+
+.genealogy-node:nth-child(6n + 2) {
+  border-left-color: #27a36a;
+}
+
+.genealogy-node:nth-child(6n + 3) {
+  border-left-color: #c8872f;
+}
+
+.genealogy-node:nth-child(6n + 4) {
+  border-left-color: #7a5af8;
+}
+
+.genealogy-node:nth-child(6n + 5) {
+  border-left-color: #d14f72;
+}
+
+.genealogy-node:nth-child(6n + 6) {
+  border-left-color: #138b9f;
+}
+
+.genealogy-node strong,
+.genealogy-node span,
+.genealogy-node small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.genealogy-node strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.genealogy-node span,
+.genealogy-node small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .answer-summary {
   display: grid;
   gap: 14px;

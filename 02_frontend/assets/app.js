@@ -13,6 +13,7 @@ const state = {
   documentJobs: [],
   pendingChunks: [],
   agents: [],
+  agentGenealogy: { nodes: [], edges: [] },
   agentBindings: [],
   conversations: [],
   selectedConversationId: "",
@@ -815,6 +816,56 @@ function renderAgents() {
   renderMetrics();
 }
 
+function relationLabel(type) {
+  return {
+    fork: "派生",
+    inherit: "继承",
+    compose: "组合",
+    route: "路由",
+  }[type] || type || "未标注";
+}
+
+function renderAgentGenealogy(error = "") {
+  const graphEl = $("#agentGenealogyGraph");
+  const summaryEl = $("#agentGenealogySummary");
+  const edgeEl = $("#agentGenealogyEdges");
+  if (!graphEl || !summaryEl || !edgeEl) return;
+  if (error) {
+    summaryEl.innerHTML = `<div class="item item-meta danger-text">族谱加载失败：${escapeHtml(error)}</div>`;
+    graphEl.innerHTML = empty("暂无可展示节点");
+    edgeEl.innerHTML = empty("暂无关系");
+    return;
+  }
+  const nodes = state.agentGenealogy.nodes || [];
+  const edges = state.agentGenealogy.edges || [];
+  const roots = nodes.filter((node) => !edges.some((edge) => edge.child_agent_id === node.id && edge.parent_agent_id));
+  summaryEl.innerHTML = `
+    <article><strong>${nodes.length.toLocaleString()}</strong><span>智能体节点</span></article>
+    <article><strong>${edges.length.toLocaleString()}</strong><span>族谱关系</span></article>
+    <article><strong>${roots.length.toLocaleString()}</strong><span>根节点</span></article>
+  `;
+  graphEl.innerHTML = nodes.map((node, index) => {
+    const outCount = edges.filter((edge) => edge.parent_agent_id === node.id).length;
+    const inCount = edges.filter((edge) => edge.child_agent_id === node.id && edge.parent_agent_id).length;
+    return `
+      <article class="genealogy-node" style="--node-index:${index % 6}">
+        <strong>${escapeHtml(node.name)}</strong>
+        <span>${escapeHtml(node.code || node.id)}</span>
+        <small>${escapeHtml(node.status || "draft")} / 上游 ${inCount.toLocaleString()} / 下游 ${outCount.toLocaleString()}</small>
+      </article>
+    `;
+  }).join("") || empty("暂无智能体节点");
+  edgeEl.innerHTML = edges.map((edge) => `
+    <article class="item">
+      <div class="item-title">
+        <strong>${escapeHtml(edge.parent_name || "根节点")} → ${escapeHtml(edge.child_name || edge.child_agent_id)}</strong>
+        <span class="badge">${escapeHtml(relationLabel(edge.relation_type))}</span>
+      </div>
+      <div class="item-meta">${escapeHtml(edge.parent_agent_id || "root")} / ${escapeHtml(edge.child_agent_id)} / ${formatDateTime(edge.created_at)}</div>
+    </article>
+  `).join("") || empty("暂无族谱关系，后续可通过关系维护能力补充");
+}
+
 function resetAgentForm() {
   const form = $("#agentForm");
   if (!form) return;
@@ -1280,6 +1331,17 @@ async function loadAgents() {
   renderAgents();
 }
 
+async function loadAgentGenealogy() {
+  if (!state.tenantId) return;
+  try {
+    state.agentGenealogy = await api("/agent-genealogy/graph");
+    renderAgentGenealogy();
+  } catch (err) {
+    renderAgentGenealogy(err.message);
+    throw err;
+  }
+}
+
 function selectedBindingAgentID() {
   return $("#agentBindingForm select[name='agent_id']")?.value || state.agents[0]?.id || "";
 }
@@ -1663,6 +1725,7 @@ async function refreshAll() {
     loadFiles(),
     loadDocuments(),
     loadAgents(),
+    loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
     loadLicenses(),
@@ -1720,6 +1783,7 @@ function bindEvents() {
       loadFiles(),
       loadDocuments(),
       loadAgents(),
+      loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
       loadLicenses(),
@@ -1925,7 +1989,7 @@ function bindEvents() {
         await api("/agents", { method: "POST", body: { ...body, code: data.code } });
       }
       resetAgentForm();
-      await loadAgents();
+      await Promise.allSettled([loadAgents(), loadAgentGenealogy()]);
       toast(data.agent_id ? "智能体已更新" : "智能体已创建");
     } catch (err) {
       toast(err.message);
@@ -2162,6 +2226,7 @@ function bindEvents() {
   $("#loadDocumentJobsBtn").addEventListener("click", () => loadDocumentJobs().catch((err) => toast(err.message)));
   $("#loadPendingChunksBtn").addEventListener("click", () => loadPendingChunks().catch((err) => toast(err.message)));
   $("#loadAgentsBtn").addEventListener("click", () => loadAgents().catch((err) => toast(err.message)));
+  $("#loadAgentGenealogyBtn").addEventListener("click", () => loadAgentGenealogy().then(() => toast("智能体族谱已刷新")).catch((err) => toast(err.message)));
   $("#loadAgentBindingsBtn").addEventListener("click", () => loadAgentBindings().catch((err) => toast(err.message)));
   $("#loadConversationsBtn").addEventListener("click", () => loadConversations().catch((err) => toast(err.message)));
   $("#loadLicensesBtn").addEventListener("click", () => loadLicenses().catch((err) => toast(err.message)));
@@ -2316,11 +2381,11 @@ function bindEvents() {
       }
       if (publishId) {
         await api(`/agents/${publishId}/publish`, { method: "POST" });
-        await loadAgents();
+        await Promise.allSettled([loadAgents(), loadAgentGenealogy()]);
       }
       if (rollbackId) {
         await api(`/agents/${rollbackId}/rollback`, { method: "POST" });
-        await loadAgents();
+        await Promise.allSettled([loadAgents(), loadAgentGenealogy()]);
       }
       if (archiveAgentId) {
         const agent = state.agents.find((item) => item.id === archiveAgentId);
@@ -2330,7 +2395,7 @@ function bindEvents() {
         state.conversations = [];
         state.selectedConversationId = "";
         state.messages = [];
-        await Promise.allSettled([loadAgents(), loadAgentBindings(), loadConversations()]);
+        await Promise.allSettled([loadAgents(), loadAgentGenealogy(), loadAgentBindings(), loadConversations()]);
         renderAgentBindings();
         renderConversations();
         renderMessages();

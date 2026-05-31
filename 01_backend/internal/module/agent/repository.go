@@ -67,6 +67,65 @@ ORDER BY created_at DESC`
 	return out, rows.Err()
 }
 
+func (r Repository) GenealogyGraph(ctx context.Context, tenantID string) (GenealogyGraph, error) {
+	const nodeQ = `
+SELECT id::text, name, code, COALESCE(description, ''), status, created_at
+FROM agents
+WHERE tenant_id = $1 AND deleted_at IS NULL
+ORDER BY created_at ASC`
+	nodeRows, err := r.DB.Query(ctx, nodeQ, tenantID)
+	if err != nil {
+		return GenealogyGraph{}, err
+	}
+	defer nodeRows.Close()
+	nodes := make([]GenealogyNode, 0)
+	for nodeRows.Next() {
+		var item GenealogyNode
+		if err := nodeRows.Scan(&item.ID, &item.Name, &item.Code, &item.Description, &item.Status, &item.CreatedAt); err != nil {
+			return GenealogyGraph{}, err
+		}
+		nodes = append(nodes, item)
+	}
+	if err := nodeRows.Err(); err != nil {
+		return GenealogyGraph{}, err
+	}
+
+	const edgeQ = `
+SELECT g.id::text,
+       COALESCE(g.parent_agent_id::text, ''),
+       COALESCE(parent.name, ''),
+       g.child_agent_id::text,
+       child.name,
+       g.relation_type,
+       g.created_at
+FROM agent_genealogy g
+JOIN agents child ON child.id = g.child_agent_id
+LEFT JOIN agents parent ON parent.id = g.parent_agent_id
+WHERE g.tenant_id = $1
+  AND child.tenant_id = $1
+  AND child.deleted_at IS NULL
+  AND (parent.id IS NULL OR (parent.tenant_id = $1 AND parent.deleted_at IS NULL))
+ORDER BY g.created_at ASC`
+	edgeRows, err := r.DB.Query(ctx, edgeQ, tenantID)
+	if err != nil {
+		return GenealogyGraph{}, err
+	}
+	defer edgeRows.Close()
+	edges := make([]GenealogyEdge, 0)
+	for edgeRows.Next() {
+		var item GenealogyEdge
+		if err := edgeRows.Scan(&item.ID, &item.ParentAgentID, &item.ParentName, &item.ChildAgentID, &item.ChildName, &item.RelationType, &item.CreatedAt); err != nil {
+			return GenealogyGraph{}, err
+		}
+		edges = append(edges, item)
+	}
+	if err := edgeRows.Err(); err != nil {
+		return GenealogyGraph{}, err
+	}
+
+	return GenealogyGraph{Nodes: nodes, Edges: edges}, nil
+}
+
 func (r Repository) Get(ctx context.Context, tenantID, agentID string) (Agent, error) {
 	const q = `
 SELECT id::text, tenant_id::text, name, code, COALESCE(description, ''), COALESCE(system_prompt, ''),

@@ -22,6 +22,30 @@ type Agent struct {
 	UpdatedAt    time.Time      `json:"updated_at"`
 }
 
+type GenealogyNode struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Code        string    `json:"code"`
+	Description string    `json:"description,omitempty"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type GenealogyEdge struct {
+	ID            string    `json:"id"`
+	ParentAgentID string    `json:"parent_agent_id,omitempty"`
+	ParentName    string    `json:"parent_name,omitempty"`
+	ChildAgentID  string    `json:"child_agent_id"`
+	ChildName     string    `json:"child_name"`
+	RelationType  string    `json:"relation_type"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+type GenealogyGraph struct {
+	Nodes []GenealogyNode `json:"nodes"`
+	Edges []GenealogyEdge `json:"edges"`
+}
+
 type KnowledgeBaseBinding struct {
 	ID              string         `json:"id"`
 	TenantID        string         `json:"tenant_id"`
