@@ -37,6 +37,9 @@ func TestVerifierVerifiesSignedLicense(t *testing.T) {
 	if !result.Valid {
 		t.Fatalf("expected valid signature: %#v", result)
 	}
+	if result.Mode != "offline" || !result.HasSignature || result.PublicKeyID != "default" {
+		t.Fatalf("unexpected offline verify summary: %#v", result)
+	}
 
 	item.Limits["rag_requests"] = float64(11)
 	result = verifier.Verify(item)
@@ -45,12 +48,47 @@ func TestVerifierVerifiesSignedLicense(t *testing.T) {
 	}
 }
 
+func TestVerifierAcceptsOnlineLicenseWithoutSignature(t *testing.T) {
+	verifier, err := NewVerifierFromConfig("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	item := License{LicenseType: TypeTenant, Status: StatusInactive}
+	result := verifier.Verify(item)
+	if !result.Valid || result.Mode != "online" || result.HasSignature {
+		t.Fatalf("expected online license to pass status verification: %#v", result)
+	}
+}
+
+func TestVerifierRejectsExpiredOnlineLicense(t *testing.T) {
+	verifier, err := NewVerifierFromConfig("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expired := time.Now().Add(-time.Minute)
+	result := verifier.Verify(License{LicenseType: TypeTrial, ExpiredAt: &expired})
+	if result.Valid || result.Mode != "online" || result.Message == "" {
+		t.Fatalf("expected expired online license to fail: %#v", result)
+	}
+}
+
+func TestVerifierRejectsExpiredStatus(t *testing.T) {
+	verifier, err := NewVerifierFromConfig("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := verifier.Verify(License{LicenseType: TypeTenant, Status: StatusExpired})
+	if result.Valid || result.Message == "" {
+		t.Fatalf("expected expired status to fail: %#v", result)
+	}
+}
+
 func TestVerifierRejectsMissingKey(t *testing.T) {
 	verifier, err := NewVerifierFromConfig("")
 	if err != nil {
 		t.Fatal(err)
 	}
-	result := verifier.Verify(License{PublicKeyID: "missing", Signature: "bad"})
+	result := verifier.Verify(License{LicenseType: TypeOffline, PublicKeyID: "missing", Signature: "bad"})
 	if result.Valid || result.Message == "" {
 		t.Fatalf("expected missing key failure: %#v", result)
 	}

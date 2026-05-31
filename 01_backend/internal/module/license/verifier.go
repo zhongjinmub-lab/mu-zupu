@@ -16,9 +16,12 @@ type Verifier struct {
 }
 
 type VerifyResult struct {
-	Valid       bool   `json:"valid"`
-	PublicKeyID string `json:"public_key_id,omitempty"`
-	Message     string `json:"message,omitempty"`
+	Valid        bool   `json:"valid"`
+	Mode         string `json:"mode"`
+	Status       string `json:"status"`
+	PublicKeyID  string `json:"public_key_id,omitempty"`
+	HasSignature bool   `json:"has_signature"`
+	Message      string `json:"message,omitempty"`
 }
 
 type signedPayload struct {
@@ -69,34 +72,67 @@ func NewVerifierFromConfig(raw string) (Verifier, error) {
 }
 
 func (v Verifier) Verify(item License) VerifyResult {
+	mode := licenseVerifyMode(item)
+	result := VerifyResult{
+		Mode:         mode,
+		Status:       item.Status,
+		PublicKeyID:  item.PublicKeyID,
+		HasSignature: item.Signature != "",
+	}
+	if item.ExpiredAt != nil && !item.ExpiredAt.After(time.Now()) {
+		result.Message = "license is expired"
+		return result
+	}
+	if item.Status == StatusRevoked {
+		result.Message = "license is revoked"
+		return result
+	}
+	if item.Status == StatusExpired {
+		result.Message = "license is expired"
+		return result
+	}
+	if mode == "online" {
+		result.Valid = true
+		result.Message = "ok"
+		return result
+	}
 	if item.Signature == "" {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: "signature is required"}
+		result.Message = "signature is required"
+		return result
 	}
 	if item.PublicKeyID == "" {
-		return VerifyResult{Valid: false, Message: "public_key_id is required"}
+		result.Message = "public_key_id is required"
+		return result
 	}
 	key, ok := v.keys[item.PublicKeyID]
 	if !ok {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: "public key is not configured"}
+		result.Message = "public key is not configured"
+		return result
 	}
 	sig, err := decodeBase64(item.Signature)
 	if err != nil {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: "invalid signature encoding"}
+		result.Message = "invalid signature encoding"
+		return result
 	}
 	payload, err := LicensePayload(item)
 	if err != nil {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: err.Error()}
+		result.Message = err.Error()
+		return result
 	}
 	if !ed25519.Verify(key, payload, sig) {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: "signature verification failed"}
+		result.Message = "signature verification failed"
+		return result
 	}
-	if item.ExpiredAt != nil && !item.ExpiredAt.After(time.Now()) {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: "license is expired"}
+	result.Valid = true
+	result.Message = "ok"
+	return result
+}
+
+func licenseVerifyMode(item License) string {
+	if item.LicenseType == TypeOffline || item.Signature != "" || item.PublicKeyID != "" {
+		return "offline"
 	}
-	if item.Status == StatusRevoked {
-		return VerifyResult{Valid: false, PublicKeyID: item.PublicKeyID, Message: "license is revoked"}
-	}
-	return VerifyResult{Valid: true, PublicKeyID: item.PublicKeyID, Message: "ok"}
+	return "online"
 }
 
 func LicensePayload(item License) ([]byte, error) {

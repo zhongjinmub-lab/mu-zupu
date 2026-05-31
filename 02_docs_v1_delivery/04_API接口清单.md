@@ -260,7 +260,7 @@
 }
 ```
 
-License 查询和状态变更均按 `tenant_id + license_id` 隔离；`public_key_id` 和 `signature` 使用服务端 `LICENSE_PUBLIC_KEYS` 中配置的 Ed25519 公钥验签，激活带签名 License 前会强制验签。
+License 查询和状态变更均按 `tenant_id + license_id` 隔离；`public_key_id` 和服务端保存的签名使用 `LICENSE_PUBLIC_KEYS` 中配置的 Ed25519 公钥验签，激活带签名 License 前会强制验签。接口响应不返回 `signature` 原文，只返回 `has_signature`。`POST /licenses/{license_id}/verify` 会返回 `mode`、`status`、`has_signature` 和中文可展示摘要所需字段：普通 `tenant/trial` License 走在线状态校验，`offline` 或带签名的 License 走离线验签。
 
 ## 4. 检索请求要求
 

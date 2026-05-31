@@ -132,6 +132,7 @@ func scanLicense(row licenseScanner) (License, error) {
 		&item.Subject, &item.Limits, &item.PublicKeyID, &item.Signature, &item.IssuedAt,
 		&item.ActivatedAt, &item.RevokedAt, &item.ExpiredAt, &item.CreatedAt, &item.UpdatedAt,
 	)
+	item.HasSignature = item.Signature != ""
 	return item, err
 }
 

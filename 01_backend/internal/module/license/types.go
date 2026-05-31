@@ -18,21 +18,22 @@ const (
 )
 
 type License struct {
-	ID          string         `json:"id"`
-	TenantID    string         `json:"tenant_id"`
-	LicenseNo   string         `json:"license_no"`
-	LicenseType string         `json:"license_type"`
-	Status      string         `json:"status"`
-	Subject     map[string]any `json:"subject"`
-	Limits      map[string]any `json:"limits"`
-	PublicKeyID string         `json:"public_key_id,omitempty"`
-	Signature   string         `json:"signature,omitempty"`
-	IssuedAt    time.Time      `json:"issued_at"`
-	ActivatedAt *time.Time     `json:"activated_at,omitempty"`
-	RevokedAt   *time.Time     `json:"revoked_at,omitempty"`
-	ExpiredAt   *time.Time     `json:"expired_at,omitempty"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID           string         `json:"id"`
+	TenantID     string         `json:"tenant_id"`
+	LicenseNo    string         `json:"license_no"`
+	LicenseType  string         `json:"license_type"`
+	Status       string         `json:"status"`
+	Subject      map[string]any `json:"subject"`
+	Limits       map[string]any `json:"limits"`
+	PublicKeyID  string         `json:"public_key_id,omitempty"`
+	HasSignature bool           `json:"has_signature"`
+	Signature    string         `json:"-"`
+	IssuedAt     time.Time      `json:"issued_at"`
+	ActivatedAt  *time.Time     `json:"activated_at,omitempty"`
+	RevokedAt    *time.Time     `json:"revoked_at,omitempty"`
+	ExpiredAt    *time.Time     `json:"expired_at,omitempty"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
 }
 
 type CreateLicenseRequest struct {

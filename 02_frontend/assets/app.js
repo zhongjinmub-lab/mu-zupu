@@ -23,6 +23,7 @@ const state = {
   selectedConversationId: "",
   messages: [],
   licenses: [],
+  licenseVerifyResults: {},
   orders: [],
   payments: [],
   paymentEvents: [],
@@ -155,6 +156,30 @@ function findLicenseExpiry() {
     .filter((date) => !Number.isNaN(date.getTime()))
     .sort((a, b) => b.getTime() - a.getTime());
   return candidates[0] ? formatDate(candidates[0]) : "暂无授权";
+}
+
+function licenseTypeLabel(type) {
+  return {
+    tenant: "在线租户授权",
+    trial: "在线试用授权",
+    offline: "离线授权",
+  }[type] || "未知授权";
+}
+
+function licenseStatusLabel(status) {
+  return {
+    inactive: "未激活",
+    active: "已激活",
+    revoked: "已吊销",
+    expired: "已过期",
+  }[status] || status || "未知";
+}
+
+function licenseVerifyMessage(result) {
+  if (!result) return "等待验证";
+  const mode = result.mode === "offline" ? "离线验签" : "在线状态校验";
+  const status = result.valid ? "通过" : "未通过";
+  return `${mode}${status}：${result.message || (result.valid ? "授权有效" : "授权无效")}`;
 }
 
 function fillSelect(selector, items, placeholder, allowEmpty = false) {
@@ -1042,14 +1067,24 @@ function renderMessages() {
 
 function renderLicenses() {
   $("#licenseList").innerHTML = state.licenses.map((license) => {
-    const statusClass = license.status === "revoked" ? "danger" : license.status === "inactive" ? "warn" : "";
+    const verifyResult = state.licenseVerifyResults[license.id];
+    const statusClass = license.status === "revoked" || license.status === "expired" ? "danger" : license.status === "inactive" ? "warn" : "";
+    const verifyClass = verifyResult ? (verifyResult.valid ? "" : "danger") : "warn";
+    const hasSignature = Boolean(license.has_signature || verifyResult?.has_signature);
     return `
       <article class="item">
         <div class="item-title">
           <strong>${escapeHtml(license.license_no)}</strong>
-          <span class="badge ${statusClass}">${escapeHtml(license.status)}</span>
+          <span class="badge ${statusClass}">${escapeHtml(licenseStatusLabel(license.status))}</span>
         </div>
-        <div class="item-meta">${escapeHtml(license.id)} / ${escapeHtml(license.license_type)}</div>
+        <div class="item-meta">${escapeHtml(license.id)} / ${escapeHtml(licenseTypeLabel(license.license_type))}</div>
+        <div class="summary-grid compact-summary">
+          <span>授权模式：${escapeHtml(license.license_type === "offline" || hasSignature ? "离线验签" : "在线状态校验")}</span>
+          <span>签名状态：${hasSignature ? "已配置签名" : "未配置签名"}</span>
+          <span>公钥标识：${escapeHtml(license.public_key_id || "未配置")}</span>
+          <span>到期时间：${escapeHtml(formatDateTime(license.expired_at, "长期有效"))}</span>
+        </div>
+        <div class="item-meta"><span class="badge ${verifyClass}">${escapeHtml(licenseVerifyMessage(verifyResult))}</span></div>
         <div class="item-actions">
           <button class="button small secondary" data-license-verify="${license.id}">验证</button>
           <button class="button small secondary" data-license-activate="${license.id}">激活</button>
@@ -1509,6 +1544,10 @@ async function loadLicenses() {
   if (!state.tenantId) return;
   const data = await api("/licenses");
   state.licenses = data.items || [];
+  const ids = new Set(state.licenses.map((item) => item.id));
+  Object.keys(state.licenseVerifyResults).forEach((id) => {
+    if (!ids.has(id)) delete state.licenseVerifyResults[id];
+  });
   renderLicenses();
 }
 
@@ -2629,15 +2668,20 @@ function bindEvents() {
       }
       if (verifyId) {
         const result = await api(`/licenses/${verifyId}/verify`, { method: "POST" });
+        state.licenseVerifyResults[verifyId] = result;
+        renderLicenses();
         toast(result.valid ? "License 验证通过" : `License 验证失败：${result.message}`);
       }
       if (activateId) {
         await api(`/licenses/${activateId}/activate`, { method: "POST" });
         await loadLicenses();
+        renderLicenses();
       }
       if (revokeId) {
         await api(`/licenses/${revokeId}/revoke`, { method: "POST" });
         await loadLicenses();
+        delete state.licenseVerifyResults[revokeId];
+        renderLicenses();
       }
       if (orderPayId) {
         const pay = await api("/payment-orders", { method: "POST", body: { business_order_id: orderPayId, channel: "mock" } });
