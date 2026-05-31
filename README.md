@@ -73,6 +73,7 @@ D:\Node.js\node.exe --check 02_frontend\assets\app.js
 - `scripts/backup.sh`：数据库、运行配置、前端静态文件、Nginx 和 systemd 备份。
 - `scripts/restore-drill.sh`：恢复到临时库演练并校验。
 - `scripts/restore.sh`：显式确认后的真实恢复。
+- `scripts/restore-config.sh`：显式确认后的运行配置和前端静态文件恢复。
 - `scripts/upgrade.sh`：发布包升级、迁移、重启和冒烟检查。
 - `scripts/rollback.sh`：运行文件回滚，可选迁移回滚。
 - `scripts/smoke.sh`：公网 API、前端静态资源、Nginx 配置、systemd 服务和迁移状态检查。

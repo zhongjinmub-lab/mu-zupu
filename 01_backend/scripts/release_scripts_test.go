@@ -9,7 +9,7 @@ import (
 
 func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 	root := repoRoot(t)
-	for _, name := range []string{"backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh"} {
+	for _, name := range []string{"backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh", "restore-config.sh"} {
 		path := filepath.Join(root, "deploy", "production", "scripts", name)
 		info, err := os.Stat(path)
 		if err != nil {
@@ -22,7 +22,7 @@ func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 
 	buildScript := readFile(t, filepath.Join(root, "scripts", "build_release.sh"))
 	buildScriptPS := readFile(t, filepath.Join(root, "scripts", "build_release.ps1"))
-	for _, want := range []string{"upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh"} {
+	for _, want := range []string{"upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh", "restore-config.sh"} {
 		if !strings.Contains(buildScript, want) {
 			t.Fatalf("build_release.sh should verify %s is packaged", want)
 		}
@@ -76,6 +76,13 @@ func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	for _, want := range []string{"mu_agent_saas_restore_drill", "schema_migrations", "KEEP_DRILL_DB", "dropdb", "restore drill ok"} {
 		if !strings.Contains(drill, want) {
 			t.Fatalf("restore-drill.sh should include %s", want)
+		}
+	}
+
+	restoreConfig := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "restore-config.sh"))
+	for _, want := range []string{"CONFIRM_CONFIG_RESTORE=yes", "mu_agent_saas_config_", "frontend", "nginx", "systemd", "smoke.sh"} {
+		if !strings.Contains(restoreConfig, want) {
+			t.Fatalf("restore-config.sh should include %s", want)
 		}
 	}
 }

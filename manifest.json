@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T15:58:47+08:00",
+    "generated_at":  "2026-05-31T16:05:17+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  226,
+    "file_count":  228,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -57,8 +57,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/README.md",
-                      "size":  5268,
-                      "sha256":  "945b36f9affc8faaafe486ec8f37bb40eb2d2266f666299b0a513c5dd73d3c1e"
+                      "size":  5697,
+                      "sha256":  "494a57bac3e90e75e4f68f6846746c75c6f388d891d1e253963250e87d7da6a0"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/backup.sh",
@@ -69,6 +69,11 @@
                       "path":  "01_backend/deploy/production/scripts/restore.sh",
                       "size":  1949,
                       "sha256":  "63f2ae448cdaae96cf7442349cc824f08e28cda94018e6e4f3ecf7ef0246ba32"
+                  },
+                  {
+                      "path":  "01_backend/deploy/production/scripts/restore-config.sh",
+                      "size":  1972,
+                      "sha256":  "2aec64a4ea23388c9b5866667ee2162c3e02c001e90fb98b6702767413e6d82c"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/restore-drill.sh",
@@ -727,18 +732,18 @@
                   },
                   {
                       "path":  "01_backend/scripts/build_release.ps1",
-                      "size":  2976,
-                      "sha256":  "2a841d318b9a6230ed929b001990b5951baaa9935b54f412d1a09137ee7f670a"
+                      "size":  2997,
+                      "sha256":  "d6b1f5d9b17d311f454415ab33fec4677ab69331af1d0d654924ec627cf7adee"
                   },
                   {
                       "path":  "01_backend/scripts/build_release.sh",
-                      "size":  1998,
-                      "sha256":  "273c8b46fabba57ca722252adc61b605f8fd3e8fc2fc353f13ad20461f8e38d5"
+                      "size":  2047,
+                      "sha256":  "49af96ef46d2ba9a99da659c7b3934f4d0338459b2169602836d448733273bad"
                   },
                   {
                       "path":  "01_backend/scripts/release_scripts_test.go",
-                      "size":  4053,
-                      "sha256":  "bce1417135e57c007a9e8d0cfe16f9119befbdda5dcd19610ad4a5bd8ab56e27"
+                      "size":  4445,
+                      "sha256":  "724a571656005dcf55f65160496ee9e7241387928631fbf0bb5ef8b71536aa58"
                   },
                   {
                       "path":  "01_backend/向量存储与索引优化说明.md",
@@ -1011,6 +1016,11 @@
                       "sha256":  "02bafd9204455f65f01127b2f28f769df1a7f38280de6646f1a384b2d90be0e6"
                   },
                   {
+                      "path":  "02_docs_v1_delivery/2026-05-31_生产配置归档恢复脚本增量验收.md",
+                      "size":  1279,
+                      "sha256":  "8060b03f4213580dcf4f4ab40a590e4285e2b4d74329b698c906b2aa9a881df3"
+                  },
+                  {
                       "path":  "02_docs_v1_delivery/2026-05-31_数据分析摘要CSV导出增量验收.md",
                       "size":  1707,
                       "sha256":  "e2dbe562003dbcdae59d9afd41e7a255c064be0771b90eea7dac78c6ff25d6c4"
@@ -1117,8 +1127,8 @@
                   },
                   {
                       "path":  "README.md",
-                      "size":  3320,
-                      "sha256":  "e64970d64a7869a518fd8475e84a42539ed28518d93fb98c94f08cf964a5102f"
+                      "size":  3413,
+                      "sha256":  "a9a9df2cbacb84c92d6dc59ae37409c791f10b2de84dd7635d2f000050e12b67"
                   },
                   {
                       "path":  "verify_delivery.ps1",

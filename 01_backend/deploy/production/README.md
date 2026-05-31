@@ -160,6 +160,12 @@ KEEP_DRILL_DB=yes ./scripts/restore-drill.sh
 CONFIRM_RESTORE=yes DB_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saas_20260531120000.sql.gz ./scripts/restore.sh
 ```
 
+配置归档恢复用于恢复 `frontend/`、`nginx/`、`systemd/`、`scripts/`、`migrations/`、`docker-compose.yml` 和 `mu-agent-saas.env` 等运行文件，必须显式设置 `CONFIRM_CONFIG_RESTORE=yes`。执行前会再次调用 `backup.sh` 生成当前现场备份。
+
+```bash
+CONFIRM_CONFIG_RESTORE=yes CONFIG_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saas_config_20260531120000.tar.gz ./scripts/restore-config.sh
+```
+
 升级和回滚后都必须确认：
 
 - `systemctl status mu-agent-saas`

@@ -36,7 +36,7 @@ try {
     Copy-Item -Force .\deploy\production\README.md (Join-Path $PackageDir "README.md")
     Copy-Item -Recurse -Force (Join-Path $ProjectRoot "02_frontend") (Join-Path $PackageDir "frontend")
 
-    foreach ($RequiredScript in @("backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh")) {
+    foreach ($RequiredScript in @("backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh", "restore-config.sh")) {
         $ScriptPath = Join-Path $PackageDir "scripts/$RequiredScript"
         if (-not (Test-Path $ScriptPath)) {
             throw "missing release script: $RequiredScript"
