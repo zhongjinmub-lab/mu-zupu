@@ -42,6 +42,7 @@ const state = {
   },
   invitations: [],
   webhooks: [],
+  editingWebhookId: "",
   webhookDeliverySummary: null,
   webhookDeliveries: [],
   webhookDeliveryFilters: {
@@ -1057,6 +1058,7 @@ function renderWebhooks() {
       <div class="item-meta">${escapeHtml(item.url)}</div>
       <div class="item-meta">订阅事件：${(item.events || []).map(eventLabel).map(escapeHtml).join("、") || "未配置"}</div>
       <div class="item-actions">
+        <button class="button small secondary" data-webhook-edit="${escapeHtml(item.id)}">编辑</button>
         <button class="button small secondary" data-webhook-test="${escapeHtml(item.id)}">测试发送</button>
         <button class="button small secondary" data-webhook-toggle="${escapeHtml(item.id)}">${item.status === "active" ? "停用" : "启用"}</button>
         <button class="button small danger" data-webhook-delete="${escapeHtml(item.id)}">删除</button>
@@ -1066,6 +1068,35 @@ function renderWebhooks() {
   fillSelect("#webhookDeliveryFilterForm select[name='endpoint_id']", state.webhooks, "全部 Webhook", true);
   const endpointFilter = $("#webhookDeliveryFilterForm select[name='endpoint_id']");
   if (endpointFilter) endpointFilter.value = state.webhookDeliveryFilters.endpoint_id;
+}
+
+function resetWebhookForm() {
+  const form = $("#webhookForm");
+  if (!form) return;
+  state.editingWebhookId = "";
+  form.reset();
+  Array.from(form.elements.events.options).forEach((option) => { option.selected = true; });
+  form.elements.secret.placeholder = "可选，用于 HMAC 签名";
+  setText("webhookFormTitle", "Webhook 配置");
+  setText("saveWebhookBtn", "创建 Webhook");
+}
+
+function fillWebhookForm(webhookID) {
+  const item = state.webhooks.find((hook) => hook.id === webhookID);
+  const form = $("#webhookForm");
+  if (!item || !form) return;
+  state.editingWebhookId = item.id;
+  form.elements.name.value = item.name || "";
+  form.elements.url.value = item.url || "";
+  form.elements.secret.value = "";
+  form.elements.secret.placeholder = item.secret ? "留空则保留原密钥，填写则替换" : "可选，用于 HMAC 签名";
+  form.elements.status.value = item.status || "active";
+  const selectedEvents = new Set(item.events || []);
+  Array.from(form.elements.events.options).forEach((option) => {
+    option.selected = selectedEvents.has(option.value);
+  });
+  setText("webhookFormTitle", "编辑 Webhook");
+  setText("saveWebhookBtn", "保存 Webhook");
 }
 
 function renderWebhookDeliveries() {
@@ -2078,25 +2109,31 @@ function bindEvents() {
     event.preventDefault();
     const data = formData(event.currentTarget);
     const events = Array.from(event.currentTarget.elements.events.selectedOptions).map((option) => option.value);
+    const body = {
+      name: data.name,
+      url: data.url,
+      status: data.status,
+      events,
+    };
+    if ((data.secret || "").trim()) {
+      body.secret = data.secret.trim();
+    }
     try {
-      await api("/webhooks", {
-        method: "POST",
-        body: {
-          name: data.name,
-          url: data.url,
-          secret: data.secret,
-          status: data.status,
-          events,
-        },
-      });
-      event.currentTarget.reset();
-      Array.from(event.currentTarget.elements.events.options).forEach((option) => { option.selected = true; });
+      if (state.editingWebhookId) {
+        await api(`/webhooks/${state.editingWebhookId}`, { method: "PUT", body });
+      } else {
+        await api("/webhooks", { method: "POST", body });
+      }
+      const message = state.editingWebhookId ? "Webhook 已更新" : "Webhook 已创建";
+      resetWebhookForm();
       await loadWebhooks();
-      toast("Webhook 已创建");
+      toast(message);
     } catch (err) {
       toast(err.message);
     }
   });
+
+  $("#resetWebhookFormBtn").addEventListener("click", resetWebhookForm);
 
   $("#webhookDeliveryFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -2200,6 +2237,7 @@ function bindEvents() {
     const documentChunksId = target.dataset?.documentChunks;
     const fileDownloadId = target.dataset?.fileDownload;
     const documentArchiveId = target.dataset?.documentArchive;
+    const webhookEditId = target.dataset?.webhookEdit;
     const webhookTestId = target.dataset?.webhookTest;
     const webhookToggleId = target.dataset?.webhookToggle;
     const webhookDeleteId = target.dataset?.webhookDelete;
@@ -2248,6 +2286,10 @@ function bindEvents() {
       if (documentChunksId) {
         await loadDocumentDetail(documentChunksId, true);
         toast("文档 Chunk 已加载");
+      }
+      if (webhookEditId) {
+        fillWebhookForm(webhookEditId);
+        toast("Webhook 已载入编辑表单，密钥留空则保留原值");
       }
       if (webhookTestId) {
         const delivery = await api(`/webhooks/${webhookTestId}/test`, { method: "POST", body: {} });

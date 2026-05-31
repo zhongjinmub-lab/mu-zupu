@@ -521,7 +521,7 @@
           <section class="view" data-view-panel="webhooks">
             <div class="grid two">
               <form id="webhookForm" class="panel form-grid">
-                <h3>Webhook 配置</h3>
+                <h3 id="webhookFormTitle">Webhook 配置</h3>
                 <label>名称<input name="name" required placeholder="支付与授权通知" /></label>
                 <label>接收地址<input name="url" required placeholder="https://example.com/webhook" /></label>
                 <label>签名密钥<input name="secret" placeholder="可选，用于 HMAC 签名" /></label>
@@ -540,7 +540,10 @@
                     <option value="disabled">停用</option>
                   </select>
                 </label>
-                <button class="button" type="submit">创建 Webhook</button>
+                <div class="form-actions">
+                  <button id="saveWebhookBtn" class="button" type="submit">创建 Webhook</button>
+                  <button id="resetWebhookFormBtn" class="button secondary" type="button">取消编辑</button>
+                </div>
               </form>
               <section class="panel">
                 <div class="panel-head">

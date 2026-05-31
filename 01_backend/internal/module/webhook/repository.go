@@ -48,6 +48,10 @@ func (r Repository) UpdateEndpoint(ctx context.Context, tenantID, endpointID str
 	if len(req.Events) == 0 {
 		req.Events = current.Events
 	}
+	if req.Secret == "" {
+		// 未传 secret 时保留原密钥，避免启停或普通编辑时清空签名。
+		req.Secret = current.Secret
+	}
 	events, err := json.Marshal(req.Events)
 	if err != nil {
 		return Endpoint{}, err
