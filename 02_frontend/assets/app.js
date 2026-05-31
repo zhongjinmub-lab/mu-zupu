@@ -2194,6 +2194,7 @@ function renderWorkflowList(error = "") {
         <div class="item-meta">${escapeHtml(wf.description || "")}</div>
         <div class="item-actions">
           ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-run="${escapeHtml(wf.id || "")}" type="button">试运行</button>` : ""}
+          ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-duplicate="${escapeHtml(wf.id || "")}" type="button">复制</button>` : ""}
           ${wf.status === "draft" ? `<button class="button small" data-workflow-publish="${escapeHtml(wf.id || "")}" type="button">发布</button>` : ""}
           ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-archive="${escapeHtml(wf.id || "")}" type="button">归档</button>` : ""}
         </div>
@@ -2247,9 +2248,16 @@ async function toggleWorkflow(workflowID, action) {
   toast("工作流已发布");
 }
 
-// runWorkflow 对指定工作流做一次 dry-run 试运行，并刷新该工作流的运行记录。
-async function runWorkflow(workflowID) {
+// duplicateWorkflow 复制指定工作流为新草稿并刷新列表。
+async function duplicateWorkflow(workflowID) {
   if (!workflowID) return;
+  await api(`/workflows/${workflowID}/duplicate`, { method: "POST" });
+  await loadWorkflows();
+  toast("工作流已复制为新草稿");
+}
+
+// runWorkflow 对指定工作流做一次 dry-run 试运行，并刷新该工作流的运行记录。
+async function runWorkflow(workflowID) {  if (!workflowID) return;
   const data = await api(`/workflows/${workflowID}/run`, { method: "POST", body: { input: { source: "admin_console" } } });
   await loadWorkflowRuns(workflowID);
   toast("试运行完成：" + workflowRunStatusLabel((data.run || {}).status));
@@ -3710,6 +3718,7 @@ function bindEvents() {
     const workflowPublishId = target.dataset?.workflowPublish;
     const workflowArchiveId = target.dataset?.workflowArchive;
     const workflowRunId = target.dataset?.workflowRun;
+    const workflowDuplicateId = target.dataset?.workflowDuplicate;
     const channelEnableId = target.dataset?.channelEnable;
     const channelDisableId = target.dataset?.channelDisable;
     const channelArchiveId = target.dataset?.channelArchive;
@@ -3749,6 +3758,9 @@ function bindEvents() {
       }
       if (workflowRunId) {
         await runWorkflow(workflowRunId);
+      }
+      if (workflowDuplicateId) {
+        await duplicateWorkflow(workflowDuplicateId);
       }
       if (channelEnableId) {
         await toggleChannel(channelEnableId, "enable");

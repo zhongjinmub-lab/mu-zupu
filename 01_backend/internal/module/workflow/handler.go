@@ -282,3 +282,26 @@ func (h Handler) WorkflowsSummary(c *gin.Context) {
 	}
 	response.OK(c, SummarizeWorkflows(items))
 }
+
+// DuplicateWorkflow 将已有工作流复制为一个新的草稿工作流。
+func (h Handler) DuplicateWorkflow(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	u, _ := auth.CurrentUser(c)
+	src, err := h.Repo.Get(c.Request.Context(), t.ID, c.Param("workflow_id"))
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	req := DuplicateWorkflowRequest(src, time.Now().Format("150405"))
+	req.Normalize()
+	item, err := h.Repo.Create(c.Request.Context(), t.ID, u.ID, req)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	response.OK(c, item)
+}

@@ -299,3 +299,43 @@ func TestSummarizeWorkflowsEmpty(t *testing.T) {
 		t.Fatalf("empty summary should be zero-valued: %#v", summary)
 	}
 }
+
+func TestDuplicateWorkflowRequest(t *testing.T) {
+	src := Workflow{
+		Name:        "订单审批流",
+		Code:        "order_approve",
+		Description: "原始描述",
+		Status:      StatusPublished,
+		Definition:  validLinearGraph(),
+	}
+	req := DuplicateWorkflowRequest(src, "150405")
+	if req.Name != "订单审批流 副本" {
+		t.Fatalf("name = %q", req.Name)
+	}
+	if req.Code != "order_approve-copy-150405" {
+		t.Fatalf("code = %q", req.Code)
+	}
+	if req.Description != "原始描述" {
+		t.Fatalf("description = %q", req.Description)
+	}
+	if len(req.Definition.Nodes) != len(src.Definition.Nodes) {
+		t.Fatalf("definition nodes not copied: %#v", req.Definition)
+	}
+	// 副本本身应能通过创建校验。
+	req.Normalize()
+	if err := req.Validate(); err != nil {
+		t.Fatalf("duplicate request should be valid: %v", err)
+	}
+}
+
+func TestDuplicateWorkflowRequestTruncatesLongCode(t *testing.T) {
+	longCode := ""
+	for i := 0; i < 64; i++ {
+		longCode += "a"
+	}
+	src := Workflow{Name: "x", Code: longCode, Definition: validLinearGraph()}
+	req := DuplicateWorkflowRequest(src, "150405")
+	if len(req.Code) > 64 {
+		t.Fatalf("duplicated code must be <= 64, got %d (%q)", len(req.Code), req.Code)
+	}
+}

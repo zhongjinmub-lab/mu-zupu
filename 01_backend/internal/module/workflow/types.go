@@ -504,3 +504,26 @@ func SummarizeWorkflows(workflows []Workflow) WorkflowSummary {
 	}
 	return summary
 }
+
+// DuplicateWorkflowRequest 基于已有工作流构造副本的创建请求：
+// 名称追加"副本"，编码追加 -copy[-suffix] 且不超过 64 字符，定义整体复制。纯函数。
+func DuplicateWorkflowRequest(src Workflow, suffix string) CreateWorkflowRequest {
+	tag := "-copy"
+	if strings.TrimSpace(suffix) != "" {
+		tag = tag + "-" + strings.TrimSpace(suffix)
+	}
+	base := src.Code
+	maxBase := 64 - len(tag)
+	if maxBase < 1 {
+		maxBase = 1
+	}
+	if len(base) > maxBase {
+		base = base[:maxBase]
+	}
+	return CreateWorkflowRequest{
+		Name:        src.Name + " 副本",
+		Code:        base + tag,
+		Description: src.Description,
+		Definition:  src.Definition,
+	}
+}
