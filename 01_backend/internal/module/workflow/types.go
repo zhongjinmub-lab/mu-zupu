@@ -379,3 +379,102 @@ func marshalDefinition(graph WorkflowGraph) (string, error) {
 	}
 	return string(b), nil
 }
+
+// 工作流运行状态常量。
+const (
+	RunStatusBlocked          = "blocked"
+	RunStatusAwaitingApproval = "awaiting_approval"
+	RunStatusCompletedDryRun  = "completed_dry_run"
+)
+
+// WorkflowRunStep 表示一次 dry-run 中单个节点的执行步骤记录。
+type WorkflowRunStep struct {
+	NodeID   string `json:"node_id"`
+	NodeType string `json:"node_type"`
+	NodeName string `json:"node_name"`
+	Status   string `json:"status"`
+	Message  string `json:"message"`
+}
+
+// WorkflowRunResult 是一次 dry-run 模拟执行的结果。
+type WorkflowRunResult struct {
+	Status               string            `json:"status"`
+	Steps                []WorkflowRunStep `json:"steps"`
+	ExecutionOrder       []string          `json:"execution_order"`
+	AwaitingApprovalNode string            `json:"awaiting_approval_node,omitempty"`
+	Issues               []string          `json:"issues"`
+}
+
+// WorkflowRun 表示一条持久化的工作流运行记录（执行日志）。
+type WorkflowRun struct {
+	ID         string            `json:"id"`
+	TenantID   string            `json:"tenant_id"`
+	WorkflowID string            `json:"workflow_id"`
+	Status     string            `json:"status"`
+	Mode       string            `json:"mode"`
+	Input      map[string]any    `json:"input"`
+	Steps      []WorkflowRunStep `json:"steps"`
+	CostMS     int               `json:"cost_ms"`
+	CreatedBy  string            `json:"created_by,omitempty"`
+	CreatedAt  time.Time         `json:"created_at"`
+}
+
+// SimulateWorkflowRun 对工作流图做一次 dry-run 模拟执行：
+// 先做图结构校验，校验不通过返回 blocked；否则按拓扑顺序遍历节点生成步骤，
+// llm/tool 节点标记为已模拟，遇 human_approval 节点暂停（其后节点标记为 pending），
+// 全程不执行任何真实节点动作。
+func SimulateWorkflowRun(graph WorkflowGraph) WorkflowRunResult {
+	validation := ValidateWorkflowGraph(graph)
+	result := WorkflowRunResult{
+		Steps:          []WorkflowRunStep{},
+		ExecutionOrder: validation.ExecutionOrder,
+		Issues:         validation.Issues,
+	}
+	if !validation.Valid {
+		result.Status = RunStatusBlocked
+		return result
+	}
+	nodeByID := make(map[string]WorkflowNode, len(graph.Nodes))
+	for _, n := range graph.Nodes {
+		nodeByID[strings.TrimSpace(n.ID)] = n
+	}
+	paused := false
+	for _, id := range validation.ExecutionOrder {
+		node := nodeByID[id]
+		step := WorkflowRunStep{NodeID: id, NodeType: node.Type, NodeName: node.Name}
+		switch {
+		case paused:
+			step.Status = "pending"
+			step.Message = "前序存在待人工确认节点，本节点暂不执行"
+		case node.Type == "human_approval":
+			step.Status = "awaiting_approval"
+			step.Message = "等待人工确认后继续"
+			if result.AwaitingApprovalNode == "" {
+				result.AwaitingApprovalNode = id
+			}
+			paused = true
+		case node.Type == "llm" || node.Type == "tool":
+			step.Status = "simulated"
+			step.Message = "dry-run 模拟，未执行真实动作"
+		default:
+			step.Status = "passed"
+			step.Message = "控制节点已通过"
+		}
+		result.Steps = append(result.Steps, step)
+	}
+	if paused {
+		result.Status = RunStatusAwaitingApproval
+	} else {
+		result.Status = RunStatusCompletedDryRun
+	}
+	return result
+}
+
+// marshalJSONValue 将任意值序列化为 JSON 字符串，用于写入 JSONB 列。
+func marshalJSONValue(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}

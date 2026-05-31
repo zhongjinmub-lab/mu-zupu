@@ -14,6 +14,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/workflows/orchestration-policy", h.OrchestrationPolicy)
 	rg.GET("/workflow-node-types", h.ListNodeTypes)
 	rg.GET("/workflows/:workflow_id", h.GetWorkflow)
+	rg.GET("/workflows/:workflow_id/runs", h.ListWorkflowRuns)
 
 	write := rg.Group("")
 	write.Use(tenant.RequireTenantWriter())
@@ -21,5 +22,6 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write.POST("/workflows", h.CreateWorkflow)
 	write.PUT("/workflows/:workflow_id", h.UpdateWorkflow)
 	write.POST("/workflows/:workflow_id/publish", h.PublishWorkflow)
+	write.POST("/workflows/:workflow_id/run", h.RunWorkflow)
 	write.DELETE("/workflows/:workflow_id", h.ArchiveWorkflow)
 }

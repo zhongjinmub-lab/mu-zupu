@@ -192,3 +192,97 @@ func scanWorkflow(rows pgx.Rows) (Workflow, error) {
 	}
 	return item, nil
 }
+
+const workflowRunColumns = `id::text, tenant_id::text, workflow_id::text, status, mode, input, steps, cost_ms, COALESCE(created_by::text, ''), created_at`
+
+// InsertWorkflowRun 写入一条工作流运行记录（执行日志）并返回它。
+func (r Repository) InsertWorkflowRun(ctx context.Context, tenantID, workflowID, userID, status, mode string, input map[string]any, steps []WorkflowRunStep, costMS int) (WorkflowRun, error) {
+	if input == nil {
+		input = map[string]any{}
+	}
+	if steps == nil {
+		steps = []WorkflowRunStep{}
+	}
+	inputJSON, err := marshalJSONValue(input)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	stepsJSON, err := marshalJSONValue(steps)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	const q = `
+INSERT INTO workflow_runs(tenant_id, workflow_id, status, mode, input, steps, cost_ms, created_by)
+VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, NULLIF($8, '')::uuid)
+RETURNING ` + workflowRunColumns
+	rows, err := r.DB.Query(ctx, q, tenantID, workflowID, status, mode, inputJSON, stepsJSON, costMS, userID)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return WorkflowRun{}, rows.Err()
+		}
+		return WorkflowRun{}, ErrWorkflowNotFound
+	}
+	return scanWorkflowRun(rows)
+}
+
+// ListWorkflowRuns 返回指定工作流的运行记录（按时间倒序），按当前租户隔离。
+func (r Repository) ListWorkflowRuns(ctx context.Context, tenantID, workflowID string, limit int) ([]WorkflowRun, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	const q = `
+SELECT ` + workflowRunColumns + `
+FROM workflow_runs
+WHERE tenant_id = $1 AND workflow_id = $2
+ORDER BY created_at DESC, id DESC
+LIMIT $3`
+	rows, err := r.DB.Query(ctx, q, tenantID, workflowID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]WorkflowRun, 0)
+	for rows.Next() {
+		item, err := scanWorkflowRun(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
+// scanWorkflowRun 扫描运行记录，input/steps 列以原始 JSON 字节解码。
+func scanWorkflowRun(rows pgx.Rows) (WorkflowRun, error) {
+	var item WorkflowRun
+	var input []byte
+	var steps []byte
+	err := rows.Scan(
+		&item.ID, &item.TenantID, &item.WorkflowID, &item.Status, &item.Mode,
+		&input, &steps, &item.CostMS, &item.CreatedBy, &item.CreatedAt,
+	)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	if len(input) > 0 {
+		if err := json.Unmarshal(input, &item.Input); err != nil {
+			return WorkflowRun{}, err
+		}
+	}
+	if len(steps) > 0 {
+		if err := json.Unmarshal(steps, &item.Steps); err != nil {
+			return WorkflowRun{}, err
+		}
+	}
+	if item.Input == nil {
+		item.Input = map[string]any{}
+	}
+	if item.Steps == nil {
+		item.Steps = []WorkflowRunStep{}
+	}
+	return item, nil
+}

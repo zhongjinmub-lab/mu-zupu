@@ -26,6 +26,7 @@ const state = {
   workflowNodeTypes: [],
   workflowValidation: null,
   workflows: [],
+  workflowRuns: [],
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -2152,6 +2153,7 @@ async function loadWorkflows() {
   const data = await api("/workflows");
   state.workflows = data.items || [];
   renderWorkflowList();
+  renderWorkflowRuns();
 }
 
 function renderWorkflowList(error = "") {
@@ -2173,6 +2175,7 @@ function renderWorkflowList(error = "") {
         <div class="item-meta">${escapeHtml(wf.code || "-")} / v${Number(wf.version || 1)} / 节点 ${nodeCount} 个</div>
         <div class="item-meta">${escapeHtml(wf.description || "")}</div>
         <div class="item-actions">
+          ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-run="${escapeHtml(wf.id || "")}" type="button">试运行</button>` : ""}
           ${wf.status === "draft" ? `<button class="button small" data-workflow-publish="${escapeHtml(wf.id || "")}" type="button">发布</button>` : ""}
           ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-archive="${escapeHtml(wf.id || "")}" type="button">归档</button>` : ""}
         </div>
@@ -2224,6 +2227,68 @@ async function toggleWorkflow(workflowID, action) {
   await api(`/workflows/${workflowID}/publish`, { method: "POST" });
   await loadWorkflows();
   toast("工作流已发布");
+}
+
+// runWorkflow 对指定工作流做一次 dry-run 试运行，并刷新该工作流的运行记录。
+async function runWorkflow(workflowID) {
+  if (!workflowID) return;
+  const data = await api(`/workflows/${workflowID}/run`, { method: "POST", body: { input: { source: "admin_console" } } });
+  await loadWorkflowRuns(workflowID);
+  toast("试运行完成：" + workflowRunStatusLabel((data.run || {}).status));
+}
+
+// loadWorkflowRuns 拉取指定工作流的运行记录（执行日志）并渲染。
+async function loadWorkflowRuns(workflowID) {
+  if (!state.tenantId || !workflowID) return;
+  const data = await api(`/workflows/${workflowID}/runs?limit=20`);
+  state.workflowRuns = data.items || [];
+  renderWorkflowRuns();
+}
+
+function renderWorkflowRuns(error = "") {
+  const el = $("#workflowRunBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`运行记录加载失败：${error}`);
+    return;
+  }
+  const runs = state.workflowRuns || [];
+  if (!runs.length) {
+    el.innerHTML = empty("尚无运行记录，可在工作流定义中点击“试运行”");
+    return;
+  }
+  el.innerHTML = runs.map((run) => {
+    const steps = run.steps || [];
+    const stepText = steps.map((step) => `${escapeHtml(step.node_name || step.node_id)}（${escapeHtml(workflowRunStepLabel(step.status))}）`).join(" → ");
+    return `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(formatDateTime(run.created_at))}</strong>
+          <span class="badge ${run.status === "completed_dry_run" ? "ok" : (run.status === "blocked" ? "danger" : "warn")}">${escapeHtml(workflowRunStatusLabel(run.status))}</span>
+        </div>
+        <div class="item-meta">模式 ${escapeHtml(run.mode || "dry_run")} / 步骤 ${steps.length} 个 / 耗时 ${Number(run.cost_ms || 0)} ms</div>
+        <div class="item-meta">${stepText || "无步骤"}</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function workflowRunStatusLabel(status) {
+  return {
+    completed_dry_run: "模拟完成",
+    awaiting_approval: "待人工确认",
+    blocked: "已阻断",
+  }[status] || status || "未知";
+}
+
+function workflowRunStepLabel(status) {
+  return {
+    passed: "通过",
+    simulated: "已模拟",
+    awaiting_approval: "待确认",
+    pending: "待执行",
+    blocked: "阻断",
+  }[status] || status || "未知";
 }
 
 async function loadToolCallLogs() {
@@ -3473,6 +3538,7 @@ function bindEvents() {
     const pluginDisableId = target.dataset?.pluginDisable;
     const workflowPublishId = target.dataset?.workflowPublish;
     const workflowArchiveId = target.dataset?.workflowArchive;
+    const workflowRunId = target.dataset?.workflowRun;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3504,6 +3570,9 @@ function bindEvents() {
       }
       if (workflowArchiveId) {
         await toggleWorkflow(workflowArchiveId, "archive");
+      }
+      if (workflowRunId) {
+        await runWorkflow(workflowRunId);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

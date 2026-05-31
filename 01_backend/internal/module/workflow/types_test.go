@@ -207,3 +207,73 @@ func TestMarshalDefinitionFillsEmptySlices(t *testing.T) {
 		t.Fatalf("unexpected marshalled definition: %s", raw)
 	}
 }
+
+func TestSimulateWorkflowRunCompletesLinear(t *testing.T) {
+	result := SimulateWorkflowRun(validLinearGraph())
+	if result.Status != RunStatusCompletedDryRun {
+		t.Fatalf("status = %q, want completed_dry_run", result.Status)
+	}
+	if len(result.Steps) != 3 {
+		t.Fatalf("expected 3 steps, got %d", len(result.Steps))
+	}
+	var llmSimulated bool
+	for _, step := range result.Steps {
+		if step.NodeID == "n_llm" && step.Status == "simulated" {
+			llmSimulated = true
+		}
+	}
+	if !llmSimulated {
+		t.Fatalf("llm node should be simulated, steps=%#v", result.Steps)
+	}
+}
+
+func TestSimulateWorkflowRunPausesAtHumanApproval(t *testing.T) {
+	graph := WorkflowGraph{
+		Nodes: []WorkflowNode{
+			{ID: "n_start", Type: "start"},
+			{ID: "n_appr", Type: "human_approval"},
+			{ID: "n_llm", Type: "llm"},
+			{ID: "n_end", Type: "end"},
+		},
+		Edges: []WorkflowEdge{
+			{From: "n_start", To: "n_appr"},
+			{From: "n_appr", To: "n_llm"},
+			{From: "n_llm", To: "n_end"},
+		},
+	}
+	result := SimulateWorkflowRun(graph)
+	if result.Status != RunStatusAwaitingApproval {
+		t.Fatalf("status = %q, want awaiting_approval", result.Status)
+	}
+	if result.AwaitingApprovalNode != "n_appr" {
+		t.Fatalf("awaiting node = %q", result.AwaitingApprovalNode)
+	}
+	// 人工确认节点之后的节点应为 pending。
+	statusByID := map[string]string{}
+	for _, step := range result.Steps {
+		statusByID[step.NodeID] = step.Status
+	}
+	if statusByID["n_llm"] != "pending" || statusByID["n_end"] != "pending" {
+		t.Fatalf("nodes after approval should be pending, steps=%#v", result.Steps)
+	}
+}
+
+func TestSimulateWorkflowRunBlockedOnInvalidGraph(t *testing.T) {
+	graph := WorkflowGraph{
+		Nodes: []WorkflowNode{
+			{ID: "n_llm", Type: "llm"},
+			{ID: "n_end", Type: "end"},
+		},
+		Edges: []WorkflowEdge{{From: "n_llm", To: "n_end"}},
+	}
+	result := SimulateWorkflowRun(graph)
+	if result.Status != RunStatusBlocked {
+		t.Fatalf("status = %q, want blocked", result.Status)
+	}
+	if len(result.Steps) != 0 {
+		t.Fatalf("blocked run should have no steps, got %#v", result.Steps)
+	}
+	if len(result.Issues) == 0 {
+		t.Fatal("blocked run should carry validation issues")
+	}
+}
