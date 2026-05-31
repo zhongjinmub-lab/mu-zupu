@@ -1518,7 +1518,7 @@ function renderOrders() {
       </div>
       <div class="item-meta">${escapeHtml(order.id)} / ${escapeHtml(order.order_type)} / ${Number(order.amount_cents).toLocaleString()} ${escapeHtml(order.currency)}</div>
       <div class="item-actions">
-        <button class="button small secondary" data-order-pay="${order.id}">mock 支付</button>
+        <button class="button small secondary" data-order-pay="${order.id}">支付</button>
         <button class="button small secondary" data-order-close="${order.id}">关闭</button>
         <button class="button small danger" data-order-cancel="${order.id}">取消</button>
       </div>
@@ -3986,13 +3986,27 @@ function bindEvents() {
         renderLicenses();
       }
       if (orderPayId) {
-        const pay = await api("/payment-orders", { method: "POST", body: { business_order_id: orderPayId, channel: "mock" } });
-        await api("/payment-callbacks/mock", {
-          method: "POST",
-          body: { pay_no: pay.pay_no, status: "paid", transaction_id: `mock-${Date.now()}` },
-        });
-        await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
-        toast("mock 支付已完成");
+        const channel = (($("#paymentChannel") && $("#paymentChannel").value) || "mock").trim();
+        const pay = await api("/payment-orders", { method: "POST", body: { business_order_id: orderPayId, channel } });
+        const prepay = pay.prepay;
+        if (prepay && prepay.pay_url) {
+          window.open(prepay.pay_url, "_blank", "noopener");
+          await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
+          toast(prepay.message || "已创建支付单,请在新页面完成支付");
+        } else if (prepay && prepay.qr_content) {
+          await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
+          window.prompt(prepay.message || "请复制以下支付链接并用对应 App 扫码完成支付", prepay.qr_content);
+        } else if (channel === "mock") {
+          await api("/payment-callbacks/mock", {
+            method: "POST",
+            body: { pay_no: pay.pay_no, status: "paid", transaction_id: `mock-${Date.now()}` },
+          });
+          await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
+          toast("mock 支付已完成");
+        } else {
+          await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
+          toast((prepay && prepay.message) || "支付单已创建");
+        }
       }
       if (orderCloseId) {
         await api(`/orders/${orderCloseId}/close`, { method: "POST", body: { reason: "manual close from console" } });
@@ -4006,7 +4020,11 @@ function bindEvents() {
       }
       if (paymentQueryId) {
         const result = await api(`/payments/${paymentQueryId}/query`, { method: "POST" });
-        toast(`支付单状态：${result.status}`);
+        if (result.reconciled) {
+          await Promise.allSettled([loadPayments(), loadOrders(), loadPaymentEvents(), loadSubscription()]);
+        }
+        const remote = result.remote_status ? `,渠道:${result.remote_status}` : "";
+        toast(`支付单状态:${result.status}${remote}${result.reconciled ? "(已对账更新)" : ""}`);
       }
       if (paymentCloseId) {
         await api(`/payments/${paymentCloseId}/close`, { method: "POST", body: { reason: "manual close from console" } });

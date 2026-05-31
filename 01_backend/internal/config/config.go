@@ -44,6 +44,21 @@ type Config struct {
 	WebhookMaxRetries             int
 	WebhookRetryBaseSeconds       int
 	PaymentCallbackSecret         string
+	PaymentChannels               string
+	PaymentNotifyBaseURL          string
+	PaymentReturnURL              string
+	AlipayAppID                   string
+	AlipayPrivateKey              string
+	AlipayPublicKey               string
+	AlipayGateway                 string
+	AlipaySignType                string
+	WechatAppID                   string
+	WechatMchID                   string
+	WechatSerialNo                string
+	WechatAPIv3Key                string
+	WechatPrivateKey              string
+	WechatPlatformPublicKey       string
+	WechatGateway                 string
 	LicensePublicKeys             string
 }
 
@@ -87,6 +102,21 @@ func Load() Config {
 		WebhookMaxRetries:             envInt("WEBHOOK_MAX_RETRIES", 3),
 		WebhookRetryBaseSeconds:       envInt("WEBHOOK_RETRY_BASE_SECONDS", 60),
 		PaymentCallbackSecret:         env("PAYMENT_CALLBACK_SECRET", ""),
+		PaymentChannels:               env("PAYMENT_CHANNELS", "mock"),
+		PaymentNotifyBaseURL:          env("PAYMENT_NOTIFY_BASE_URL", ""),
+		PaymentReturnURL:              env("PAYMENT_RETURN_URL", ""),
+		AlipayAppID:                   env("ALIPAY_APP_ID", ""),
+		AlipayPrivateKey:              env("ALIPAY_PRIVATE_KEY", ""),
+		AlipayPublicKey:               env("ALIPAY_PUBLIC_KEY", ""),
+		AlipayGateway:                 env("ALIPAY_GATEWAY", ""),
+		AlipaySignType:                env("ALIPAY_SIGN_TYPE", "RSA2"),
+		WechatAppID:                   env("WECHAT_APP_ID", ""),
+		WechatMchID:                   env("WECHAT_MCH_ID", ""),
+		WechatSerialNo:                env("WECHAT_SERIAL_NO", ""),
+		WechatAPIv3Key:                env("WECHAT_API_V3_KEY", ""),
+		WechatPrivateKey:              env("WECHAT_PRIVATE_KEY", ""),
+		WechatPlatformPublicKey:       env("WECHAT_PLATFORM_PUBLIC_KEY", ""),
+		WechatGateway:                 env("WECHAT_GATEWAY", ""),
 		LicensePublicKeys:             env("LICENSE_PUBLIC_KEYS", ""),
 	}
 }

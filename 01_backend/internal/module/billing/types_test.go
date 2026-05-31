@@ -59,11 +59,33 @@ func TestCreateOrderRequestNormalizeAndValidate(t *testing.T) {
 	}
 }
 
-func TestCreatePaymentOrderRequestOnlyAllowsMock(t *testing.T) {
-	req := CreatePaymentOrderRequest{BusinessOrderID: "order", Channel: "wechat"}
+func TestCreatePaymentOrderRequestNormalizeDefaultsChannel(t *testing.T) {
+	req := CreatePaymentOrderRequest{BusinessOrderID: " order "}
+	req.Normalize()
+	if req.BusinessOrderID != "order" || req.Channel != "mock" {
+		t.Fatalf("normalized request = %#v", req)
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected valid request: %v", err)
+	}
+}
+
+func TestCreatePaymentOrderRequestAcceptsRealChannel(t *testing.T) {
+	req := CreatePaymentOrderRequest{BusinessOrderID: "order", Channel: "Alipay"}
+	req.Normalize()
+	if req.Channel != "alipay" {
+		t.Fatalf("channel should be lowercased, got %q", req.Channel)
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected real channel to be accepted: %v", err)
+	}
+}
+
+func TestCreatePaymentOrderRequestRequiresBusinessOrder(t *testing.T) {
+	req := CreatePaymentOrderRequest{Channel: "alipay"}
 	req.Normalize()
 	if err := req.Validate(); err == nil {
-		t.Fatal("expected unsupported channel error")
+		t.Fatal("expected business_order_id validation error")
 	}
 }
 

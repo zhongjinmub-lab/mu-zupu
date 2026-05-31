@@ -68,9 +68,10 @@
 | GET | /billing/quota/status | 当前租户套餐额度状态 | tenant |
 | POST | /orders | 创建当前租户业务订单 | tenant |
 | GET | /orders | 当前租户订单列表 | tenant |
-| POST | /payment-orders | 创建 mock 支付单 | tenant |
-| POST | /payments/{payment_id}/query | 查询当前租户支付单 | tenant |
-| POST | /payment-callbacks/{channel} | mock 支付回调 | tenant |
+| POST | /payment-orders | 创建支付单(channel 支持 mock/alipay/wechat),返回 prepay 预支付信息 | tenant(管理员) |
+| POST | /payments/{payment_id}/query | 查询支付单,非终态时向渠道主动查单并对账同步 | tenant |
+| POST | /payment-callbacks/{channel} | mock 内部 JSON 支付回调 | tenant(管理员) |
+| POST | /payment-notify/{channel} | 第三方渠道异步通知(原生验签,按 pay_no 反查租户) | 公开 |
 | GET | /analytics/summary | 当前租户统计汇总，包含资源、经营、智能体族谱、用量趋势、最近操作和风险 | tenant |
 | GET | /analytics/summary/export | 导出当前租户统计汇总 CSV，包含资源、经营、智能体族谱、用量趋势、风险和最近操作 | tenant |
 | GET | /licenses | 当前租户 License 列表 | tenant |
@@ -230,8 +231,9 @@
 |---|---|---|
 | POST | /orders | 创建业务订单 |
 | GET | /orders | 订单列表 |
-| POST | /payment-orders | 创建支付单 |
-| POST | /payments/{channel}/callback | 支付回调 |
+| POST | /payment-orders | 创建支付单(mock/alipay/wechat) |
+| POST | /payment-callbacks/{channel} | mock 内部支付回调 |
+| POST | /payment-notify/{channel} | 第三方渠道异步通知(公开) |
 | POST | /payments/{id}/query | 主动查单 |
 | GET | /licenses | License 列表 |
 | POST | /licenses | 创建 License |
@@ -263,14 +265,21 @@
 套餐 quota 已接入硬限制 MVP：文件上传、`/kbs/{kb_id}/embedding/run`、`/kbs/{kb_id}/ask`、`/agents/{id}/test-chat` 和 `/agents/{id}/chat` 会在执行前检查当前 active 订阅的 quota；超过配额时返回 `402`，响应 message 以 `quota exceeded` 开头。
 管理台“套餐额度状态”会调用 `/billing/quota/status`，用中文卡片展示 RAG 问答、Agent 消息、文件上传容量和知识切片向量化的已用、上限、剩余和使用率，不展示黑色 JSON 原文。
 
-订单/支付 MVP 已接入 mock 通道：
+订单/支付已接入可插拔渠道(mock + 支付宝 + 微信):
 
-- `POST /orders`：按 `plan_code` 创建业务订单；
-- `GET /orders`：列出当前租户订单；
-- `POST /payment-orders`：为 pending 业务订单创建 mock 支付单；
-- `POST /payments/{payment_id}/query`：查询当前租户支付单；
-- `POST /payment-callbacks/mock`：按 `pay_no` 幂等更新支付单，支付成功后将业务订单置为 `paid` 并创建订阅。
-- 支付回调支持服务端验签：未配置 `PAYMENT_CALLBACK_SECRET` 时保留 mock 开发体验；配置后必须对原始 JSON 请求体使用 HMAC-SHA256 计算签名，并在 `X-Payment-Signature` 传入 `sha256=<hex>`，签名失败返回中文错误且不更新支付单。
+- `POST /orders`：按 `plan_code` 创建业务订单;
+- `GET /orders`：列出当前租户订单;
+- `POST /payment-orders`：为 pending 业务订单创建支付单,`channel` 支持 `mock`、`alipay`、`wechat`(以 `PAYMENT_CHANNELS` 启用为准),响应在支付单字段外附加 `prepay` 预支付信息(`method`、`pay_url`、`qr_content` 等)供前端引导用户支付;
+- `POST /payments/{payment_id}/query`：查询当前租户支付单;若支付单非终态且渠道支持远程查单,则向渠道(支付宝 `alipay.trade.query`、微信查单接口)发起主动查单,命中已支付/失败终态时复用回调入账逻辑对账同步(幂等),响应附带 `remote_status` 与 `reconciled`;
+- `POST /payment-callbacks/mock`:(租户管理员,内部 JSON 回调)按 `pay_no` 幂等更新支付单,支付成功后将业务订单置为 `paid` 并创建订阅;
+- `POST /payment-notify/{channel}`:(公开,无需鉴权)第三方支付渠道异步通知端点,由渠道做原生验签后按 `pay_no` 反查租户入账;支付宝返回纯文本 `success`/`failure`,微信返回 JSON `{"code":"SUCCESS"}`/`{"code":"FAIL"}`。
+
+支付渠道说明:
+
+- mock 渠道沿用 HMAC-SHA256 验签:未配置 `PAYMENT_CALLBACK_SECRET` 时保留开发体验;配置后必须对原始 JSON 请求体计算签名并在 `X-Payment-Signature` 传入 `sha256=<hex>`,签名失败返回中文错误且不更新支付单。
+- 支付宝渠道(`alipay`)采用电脑网站支付 `alipay.trade.page.pay`:创建支付单时服务端用应用私钥 RSA2 签名生成跳转 URL(`prepay.pay_url`);异步通知 `POST /payment-notify/alipay` 使用支付宝公钥 RSA2 验签,`trade_status` 为 `TRADE_SUCCESS`/`TRADE_FINISHED` 记为已支付,`TRADE_CLOSED` 记为失败,其余中间态不更新支付单。
+- 微信渠道(`wechat`)采用 v3 Native 下单:创建支付单时用商户 API 私钥按 `METHOD\nURL\ntimestamp\nnonce\nbody\n` SHA256-RSA 签名并调用 `POST /v3/pay/transactions/native`,返回二维码内容(`prepay.qr_content` 即 `code_url`);异步通知 `POST /payment-notify/wechat` 用平台证书公钥验签 `timestamp\nnonce\nbody\n`,再用 APIv3 密钥对资源体做 AES-256-GCM 解密,`trade_state` 为 `SUCCESS` 记为已支付,`CLOSED`/`REVOKED`/`PAYERROR` 记为失败,其余中间态不更新支付单。
+- 渠道凭据通过环境变量注入:`PAYMENT_CHANNELS`、`PAYMENT_NOTIFY_BASE_URL`、`PAYMENT_RETURN_URL`、`ALIPAY_*`、`WECHAT_*`。
 
 ## 3.8 License 授权
 

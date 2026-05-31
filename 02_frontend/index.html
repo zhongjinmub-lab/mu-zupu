@@ -605,7 +605,14 @@
               <section class="panel">
                 <div class="panel-head">
                   <h3>订单列表</h3>
-                  <button id="loadOrdersBtn" class="button small secondary" type="button">刷新</button>
+                  <span class="item-actions">
+                    <select id="paymentChannel" aria-label="支付渠道">
+                      <option value="mock" selected>mock 渠道(测试)</option>
+                      <option value="alipay">支付宝</option>
+                      <option value="wechat">微信支付</option>
+                    </select>
+                    <button id="loadOrdersBtn" class="button small secondary" type="button">刷新</button>
+                  </span>
                 </div>
                 <div id="orderList" class="list"></div>
               </section>

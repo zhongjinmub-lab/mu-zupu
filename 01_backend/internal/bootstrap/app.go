@@ -26,6 +26,7 @@ import (
 	"mu-agent-saas/internal/module/tenant"
 	"mu-agent-saas/internal/module/webhook"
 	"mu-agent-saas/internal/module/workflow"
+	"mu-agent-saas/internal/payment"
 	"mu-agent-saas/pkg/database"
 	"mu-agent-saas/pkg/response"
 	"mu-agent-saas/pkg/storage"
@@ -159,7 +160,32 @@ func NewApp(cfg config.Config) (*App, error) {
 		RetryBaseSeconds: cfg.WebhookRetryBaseSeconds,
 	})
 	analytics.RegisterRoutes(tenantScoped, analytics.NewHandler(analytics.NewRepository(db)))
-	billing.RegisterRoutes(tenantScoped, billing.NewHandlerWithWebhookAndPaymentSecret(billingRepo, webhookService, cfg.PaymentCallbackSecret))
+	paymentRegistry, err := payment.BuildRegistry(payment.RegistryConfig{
+		Channels:   cfg.PaymentChannels,
+		MockSecret: cfg.PaymentCallbackSecret,
+		Alipay: payment.AlipayConfig{
+			AppID:      cfg.AlipayAppID,
+			PrivateKey: cfg.AlipayPrivateKey,
+			PublicKey:  cfg.AlipayPublicKey,
+			Gateway:    cfg.AlipayGateway,
+			SignType:   cfg.AlipaySignType,
+		},
+		Wechat: payment.WechatConfig{
+			AppID:          cfg.WechatAppID,
+			MchID:          cfg.WechatMchID,
+			SerialNo:       cfg.WechatSerialNo,
+			APIv3Key:       cfg.WechatAPIv3Key,
+			PrivateKey:     cfg.WechatPrivateKey,
+			PlatformPublic: cfg.WechatPlatformPublicKey,
+			Gateway:        cfg.WechatGateway,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	billingHandler := billing.NewHandlerWithDeps(billingRepo, webhookService, cfg.PaymentCallbackSecret, paymentRegistry, cfg.PaymentNotifyBaseURL, cfg.PaymentReturnURL)
+	billing.RegisterRoutes(tenantScoped, billingHandler)
+	billing.RegisterPublicRoutes(v1, billingHandler)
 	licenseVerifier, err := license.NewVerifierFromConfig(cfg.LicensePublicKeys)
 	if err != nil {
 		return nil, err
