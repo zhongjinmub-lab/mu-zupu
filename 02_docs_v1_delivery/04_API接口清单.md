@@ -489,3 +489,29 @@ Generation provider 配置：
 - 空回答仍会输出一个空 `delta`，保持前端协议处理稳定。
 - 管理台遇到 SSE `error` 事件时，会保留已输出的流式内容，并在结果区显示中文错误摘要。
 - 流式失败时不会清空输入框，也不会误刷新会话和用量。
+
+## 2026-05-31 增量：限流策略只读接口
+
+`GET /settings/rate-limit` 用于返回当前后端生效的 API 限流策略摘要，供管理台设置页只读展示。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | user，需携带 `Authorization: Bearer <token>` |
+| 租户头 | 不强制 `X-Tenant-ID`，该接口返回全局运行策略摘要 |
+| 敏感信息 | 不返回 `REDIS_ADDR`、`REDIS_PASS`、数据库连接串或任何密钥 |
+
+响应 `data` 示例：
+
+```json
+{
+  "backend": "memory",
+  "window_seconds": 60,
+  "tenant_per_window": 120,
+  "user_per_window": 60,
+  "auth_ip_per_window": 20,
+  "redis_enabled": false,
+  "redis_fallback_label": "当前使用内存限流，适合单实例或本地环境"
+}
+```
+
+管理台设置页已从静态说明改为读取该接口动态展示，展示内容为中文摘要，不展示黑色 JSON 原文区域。

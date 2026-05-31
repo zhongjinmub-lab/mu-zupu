@@ -25,6 +25,7 @@ const state = {
   subscription: null,
   health: null,
   analytics: null,
+  rateLimitPolicy: null,
   members: [],
   auditLogs: [],
   auditNextCursor: "",
@@ -172,6 +173,7 @@ function renderShell() {
   $("#apiBaseInput").value = state.apiBase;
   renderTenants();
   renderMetrics();
+  renderRateLimitPolicy();
 }
 
 function renderMetrics() {
@@ -379,6 +381,51 @@ function renderSubscriptionSummary(item, error = "") {
     <article class="status-row">
       <strong>开通来源</strong>
       <span>${escapeHtml(source)}</span>
+    </article>
+  `;
+}
+
+function renderRateLimitPolicy(error = "") {
+  const el = $("#rateLimitPolicyGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.rateLimitPolicy;
+  if (!item) {
+    el.innerHTML = `<article><strong>限流策略</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const windowSeconds = Number(item.window_seconds || 60);
+  const windowText = windowSeconds % 60 === 0 ? `${windowSeconds / 60} 分钟` : `${windowSeconds} 秒`;
+  const backendText = item.backend === "redis" ? "Redis 集中限流" : "内存限流";
+  const redisText = item.redis_enabled ? "已启用 Redis，多实例共享计数" : "未启用 Redis，当前实例本地计数";
+  el.innerHTML = `
+    <article>
+      <strong>租户 API</strong>
+      <span>同一租户每 ${escapeHtml(windowText)} ${Number(item.tenant_per_window || 0).toLocaleString()} 次</span>
+    </article>
+    <article>
+      <strong>用户 API</strong>
+      <span>同一用户每 ${escapeHtml(windowText)} ${Number(item.user_per_window || 0).toLocaleString()} 次</span>
+    </article>
+    <article>
+      <strong>登录注册</strong>
+      <span>同一 IP 每 ${escapeHtml(windowText)} ${Number(item.auth_ip_per_window || 0).toLocaleString()} 次</span>
+    </article>
+    <article>
+      <strong>限流后端</strong>
+      <span>${escapeHtml(backendText)}；${escapeHtml(redisText)}</span>
+    </article>
+    <article>
+      <strong>故障策略</strong>
+      <span>${escapeHtml(item.redis_fallback_label || "异常时保持接口可用优先")}</span>
     </article>
   `;
 }
@@ -1157,6 +1204,11 @@ async function loadSubscription() {
   renderMetrics();
 }
 
+async function loadRateLimitPolicy() {
+  state.rateLimitPolicy = await api("/settings/rate-limit", { tenant: false });
+  renderRateLimitPolicy();
+}
+
 async function loadOrders() {
   if (!state.tenantId) return;
   const data = await api("/orders");
@@ -1398,6 +1450,7 @@ async function refreshAll() {
     loadPaymentEvents(),
     loadAnalytics(),
     loadSubscription(),
+    loadRateLimitPolicy(),
     loadMembers(),
     loadAuditLogs(),
     loadInvitations(),
@@ -1452,6 +1505,7 @@ function bindEvents() {
       loadPaymentEvents(),
       loadAnalytics(),
       loadSubscription(),
+      loadRateLimitPolicy(),
       loadMembers(),
       loadAuditLogs(),
       loadInvitations(),
@@ -1509,6 +1563,10 @@ function bindEvents() {
     state.apiBase = $("#apiBaseInput").value.trim().replace(/\/$/, "");
     localStorage.setItem("mu.apiBase", state.apiBase);
     toast("连接配置已保存");
+  });
+
+  $("#loadRateLimitPolicyBtn").addEventListener("click", () => {
+    loadRateLimitPolicy().then(() => toast("限流策略已刷新")).catch((err) => renderRateLimitPolicy(err.message));
   });
 
   $("#kbForm").addEventListener("submit", async (event) => {

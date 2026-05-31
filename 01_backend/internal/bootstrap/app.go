@@ -21,6 +21,7 @@ import (
 	filemodule "mu-agent-saas/internal/module/file"
 	"mu-agent-saas/internal/module/kb"
 	"mu-agent-saas/internal/module/license"
+	"mu-agent-saas/internal/module/settings"
 	"mu-agent-saas/internal/module/tenant"
 	"mu-agent-saas/internal/module/webhook"
 	"mu-agent-saas/pkg/database"
@@ -93,6 +94,7 @@ func NewApp(cfg config.Config) (*App, error) {
 	tenantRepo := tenant.NewRepository(db)
 	tenantHandler := tenant.NewHandler(tenantRepo)
 	tenant.RegisterRoutes(private, tenantHandler)
+	settings.RegisterRoutes(private, settings.NewHandler(cfg))
 
 	tenantScoped := private.Group("")
 	tenantScoped.Use(tenant.ContextMiddleware(tenantRepo))
