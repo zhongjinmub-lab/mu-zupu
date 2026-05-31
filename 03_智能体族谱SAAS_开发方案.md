@@ -1,7 +1,7 @@
 # 智能体族谱SAAS 开发方案
 
-版本：v1.1-clean  
-更新时间：2026-05-27
+版本：v1.2-final
+更新时间：2026-05-31
 
 ## 1. 项目定位
 
@@ -22,7 +22,7 @@
 | 数据库 | PostgreSQL 16 + pgvector |
 | 缓存/队列 | Redis 7.4 |
 | 文件存储 | MinIO / S3 兼容存储 |
-| 前端 | Vue3 + TypeScript + Vite + Element Plus |
+| 前端 | 免构建静态管理台已交付，Vue3 + TypeScript + Vite + Element Plus 作为后续工程化方向 |
 | 移动端 | UniApp / H5 / 小程序预留 |
 | 部署 | Docker Compose 起步，支持 Kubernetes |
 | AI | Agent Runtime、RAG、Tool Schema、MCP、模型网关 |
@@ -146,13 +146,31 @@ mu:{env}:{module}:{tenant_id}:{biz_key}
 }
 ```
 
-已落地接口：
+核心已落地接口范围：
 
 ```text
 GET  /api/v1/health
 GET  /api/v1/ready
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/tenants
+GET  /api/v1/settings/rate-limit
+GET  /api/v1/settings/runtime
+GET  /api/v1/settings/monitoring
+GET  /api/v1/settings/sensitive-fields
+GET  /api/v1/settings/rate-limit-audit
 POST /api/v1/kb/search/vector
 POST /api/v1/kb/search/hybrid
+POST /api/v1/kbs/{kb_id}/ask
+POST /api/v1/agents/{agent_id}/chat
+POST /api/v1/agents/{agent_id}/chat/stream
+GET  /api/v1/agent-genealogy/graph
+GET  /api/v1/analytics/summary
+GET  /api/v1/webhooks
+GET  /api/v1/webhook-deliveries
+GET  /api/v1/licenses
+GET  /api/v1/orders
+GET  /api/v1/audit-logs
 ```
 
 ## 10. MVP 开发排期
@@ -170,44 +188,56 @@ POST /api/v1/kb/search/hybrid
 
 ## 11. 当前已交付状态
 
-- 后端 Go 工程骨架；
-- Docker Compose 基础依赖；
-- PostgreSQL/pgvector 迁移；
-- 健康检查和就绪检查；
-- 请求 ID 中间件；
-- KB 向量检索接口；
-- KB 混合检索接口；
-- HNSW、全文、Trigram 索引；
-- 检索 Profile 和检索日志；
-- `go test ./...` 已通过。
+- SaaS 多租户、认证、角色权限、成员邀请和租户隔离已完成；
+- 文件上传、知识库文档、切片、向量化、RAG 检索和问答闭环已完成；
+- Agent 创建、编辑、发布、回滚、归档、知识库绑定、多轮会话和 SSE 流式对话已完成；
+- 智能体族谱图谱、关系维护、筛选、结构诊断、统计分析和 CSV 导出已完成；
+- 套餐订阅、用量统计、额度限制、订单生命周期和支付回调验签已完成；
+- License 在线/离线验证、签名脱敏和授权生命周期管理已完成；
+- Webhook 配置、测试发送、投递记录、重试 Worker、状态摘要和 CSV 导出已完成；
+- API 限流、审计筛选分页、审计 CSV 导出和安全摘要接口已完成；
+- 生产部署、systemd/Nginx、备份、升级、回滚和恢复演练脚本已完成；
+- 管理台已覆盖总览、知识库、Agent、族谱、License、用量订单、Webhook、审计和设置；
+- `go test ./...`、`node --check 02_frontend/assets/app.js` 和 `git diff --check` 已通过；
+- `02_docs_v1_delivery/06_交付验收清单.md` 已全部勾选。
 
-## 12. 下一步开发主线
+## 12. 已跑通主链路
 
 ```text
 文件上传 → MinIO → 文档解析 → 清洗切片 → embedding worker → pgvector 入库 → RAG 问答 → 引用溯源
 ```
 
-优先级：
+```text
+Agent 会话 → 历史编排 → KB 检索 → 生成模型 → SSE delta 输出 → 用量计费 → 审计记录
+```
 
-1. 文件上传与对象存储；
-2. 文档解析与切片任务；
-3. embedding provider 接入；
-4. Agent 会话编排；
-5. 前端知识库管理页；
-6. 套餐额度和用量统计；
-7. License 授权闭环。
+```text
+订单支付 → 回调验签 → 订阅生效 → License 校验 → Webhook 投递 → 投递重试
+```
+
+```text
+发布包 → 备份 → 升级 → 冒烟检查 → 回滚快照 → 恢复演练
+```
+
+后续增强建议：
+
+1. 前端 Vue3/Vite 工程化迁移；
+2. 真实第三方支付渠道接入；
+3. 多实例生产环境 Redis 限流压测和监控告警增强；
+4. 企业级自定义角色和插件市场扩展；
+5. 工作流编排与人工确认节点。
 
 ## 13. 验收门禁
 
-- [ ] 生产环境关闭 debug；
-- [ ] 密钥、Token、License 私钥不入库；
-- [ ] 所有租户数据强制隔离；
-- [ ] 支付、授权、工具调用具备幂等；
-- [ ] RAG 检索记录日志并可追踪；
-- [ ] 数据库迁移有回滚脚本；
-- [ ] Docker Compose 可一键启动；
-- [ ] 备份恢复方案可执行；
-- [ ] 核心接口测试通过。
+- [x] 生产环境关闭 debug；
+- [x] 密钥、Token、License 私钥不入库；
+- [x] 所有租户数据强制隔离；
+- [x] 支付、授权、工具调用具备幂等；
+- [x] RAG 检索记录日志并可追踪；
+- [x] 数据库迁移有回滚脚本；
+- [x] Docker Compose 可一键启动；
+- [x] 备份恢复方案可执行；
+- [x] 核心接口测试通过。
 
 ## 14. 交付物清单
 
