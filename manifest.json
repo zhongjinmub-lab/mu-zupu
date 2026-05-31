@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T15:45:07+08:00",
+    "generated_at":  "2026-05-31T15:53:51+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  224,
+    "file_count":  225,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -57,8 +57,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/README.md",
-                      "size":  4887,
-                      "sha256":  "f6eb64bdab1111b0d9ae27c42c118c7df8b34f959896d359d1387b24aad6de3f"
+                      "size":  4971,
+                      "sha256":  "fdf973915ea889002d30c73590713715eb348591352442f0acd5bf12f8ae415e"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/backup.sh",
@@ -77,8 +77,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/rollback.sh",
-                      "size":  1804,
-                      "sha256":  "4c5147afc0356eba49e28124475b4d9392da7152515116d5a80b64151e63402a"
+                      "size":  1813,
+                      "sha256":  "72de4e10103102b2cb8f67d67a00ce532d493dc7939c381c97e64f59ea7bc12e"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/smoke.sh",
@@ -87,8 +87,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/upgrade.sh",
-                      "size":  2381,
-                      "sha256":  "0614f69bc31989b5515760f84ecc2164f74df1803a0c76f5d1781aa60ebc153f"
+                      "size":  2512,
+                      "sha256":  "77f6f11528bb52e09ac37056c8feba0611d2ee2e9661b4ed8fd8d937d53d45e2"
                   },
                   {
                       "path":  "01_backend/deploy/production/systemd/mu-agent-document-worker.service",
@@ -727,18 +727,18 @@
                   },
                   {
                       "path":  "01_backend/scripts/build_release.ps1",
-                      "size":  2523,
-                      "sha256":  "232cf9c43642997a95b77a4db4200a5c9420294205ce259b32893868a1d46947"
+                      "size":  2976,
+                      "sha256":  "2a841d318b9a6230ed929b001990b5951baaa9935b54f412d1a09137ee7f670a"
                   },
                   {
                       "path":  "01_backend/scripts/build_release.sh",
-                      "size":  1765,
-                      "sha256":  "2d23e7ad4b1fed8f2bce600947f176d94b7ae4fd611f15ac99a8c993276bce55"
+                      "size":  1998,
+                      "sha256":  "273c8b46fabba57ca722252adc61b605f8fd3e8fc2fc353f13ad20461f8e38d5"
                   },
                   {
                       "path":  "01_backend/scripts/release_scripts_test.go",
-                      "size":  3034,
-                      "sha256":  "d6be44ead8ec8cb3d7a4b9c369fcf77c106a0441d69184aa4323872d096d41da"
+                      "size":  3502,
+                      "sha256":  "5d16146913729edc7879068fdf9ad4cf09d9071baa26e06b1311ce99a26ba7da"
                   },
                   {
                       "path":  "01_backend/向量存储与索引优化说明.md",
@@ -991,6 +991,11 @@
                       "sha256":  "511e0c9f91badfb7c650d5e8013cf8fe5dcc8e1200aa16a08cf4940275b03247"
                   },
                   {
+                      "path":  "02_docs_v1_delivery/2026-05-31_前端静态文件发布包集成增量验收.md",
+                      "size":  1104,
+                      "sha256":  "a11e311e2015fc529f1c6205f93bf59ae2099c43857fe52064ecf59957c69200"
+                  },
+                  {
                       "path":  "02_docs_v1_delivery/2026-05-31_前端源码完整性说明增量验收.md",
                       "size":  1593,
                       "sha256":  "f274bf813d746414a637b7c475afd55e9f904015970b3607460f7a65be3dd583"
@@ -1107,8 +1112,8 @@
                   },
                   {
                       "path":  "README.md",
-                      "size":  3245,
-                      "sha256":  "5c90aea7ddc4614f24213ee09dd220bd96ae17fdf3b5d26467ca46529104d0b4"
+                      "size":  3272,
+                      "sha256":  "03e75d5d6284bb61fdcd5cb708b61f230ff2e61e4c4da888e474f4e3af9d74c5"
                   },
                   {
                       "path":  "verify_delivery.ps1",

@@ -30,6 +30,16 @@ func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 			t.Fatalf("build_release.ps1 should verify %s is packaged", want)
 		}
 	}
+	for _, want := range []string{"frontend/index.html", "frontend/assets/app.js", "frontend/assets/app.css"} {
+		if !strings.Contains(buildScript, want) {
+			t.Fatalf("build_release.sh should verify %s is packaged", want)
+		}
+	}
+	for _, want := range []string{"index.html", "assets/app.js", "assets/app.css"} {
+		if !strings.Contains(buildScriptPS, want) {
+			t.Fatalf("build_release.ps1 should verify frontend file %s is packaged", want)
+		}
+	}
 }
 
 func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
@@ -42,14 +52,14 @@ func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	}
 
 	upgrade := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "upgrade.sh"))
-	for _, want := range []string{"backup.sh", "mu-agent-migrate up", "smoke.sh", "rollback/last_release_path"} {
+	for _, want := range []string{"backup.sh", "mu-agent-migrate up", "smoke.sh", "rollback/last_release_path", "frontend"} {
 		if !strings.Contains(upgrade, want) {
 			t.Fatalf("upgrade.sh should include %s", want)
 		}
 	}
 
 	rollback := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "rollback.sh"))
-	for _, want := range []string{"backup.sh", "MIGRATION_STEPS", "mu-agent-migrate down", "smoke.sh"} {
+	for _, want := range []string{"backup.sh", "MIGRATION_STEPS", "mu-agent-migrate down", "smoke.sh", "frontend"} {
 		if !strings.Contains(rollback, want) {
 			t.Fatalf("rollback.sh should include %s", want)
 		}

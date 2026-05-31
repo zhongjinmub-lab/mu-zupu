@@ -29,7 +29,7 @@ tar -xzf "$RELEASE_ARCHIVE" -C "$STAGE_DIR" --strip-components=1
 
 echo "step 3/7 snapshot current runtime files"
 mkdir -p "$CURRENT_DIR"
-for item in bin migrations scripts nginx systemd docker-compose.yml compose.env.example mu-agent-saas.env.example README.md; do
+for item in bin migrations scripts nginx systemd frontend docker-compose.yml compose.env.example mu-agent-saas.env.example README.md; do
   if [[ -e "$APP_DIR/$item" ]]; then
     cp -a "$APP_DIR/$item" "$CURRENT_DIR/"
   fi
@@ -44,6 +44,10 @@ cp -a "$STAGE_DIR/migrations" "$APP_DIR/migrations"
 cp -a "$STAGE_DIR/scripts" "$APP_DIR/scripts"
 cp -a "$STAGE_DIR/nginx" "$APP_DIR/nginx"
 cp -a "$STAGE_DIR/systemd" "$APP_DIR/systemd"
+if [[ -d "$STAGE_DIR/frontend" ]]; then
+  rm -rf "$APP_DIR/frontend"
+  cp -a "$STAGE_DIR/frontend" "$APP_DIR/frontend"
+fi
 cp -f "$STAGE_DIR/docker-compose.yml" "$APP_DIR/docker-compose.yml"
 cp -f "$STAGE_DIR/compose.env.example" "$APP_DIR/compose.env.example"
 cp -f "$STAGE_DIR/mu-agent-saas.env.example" "$APP_DIR/mu-agent-saas.env.example"

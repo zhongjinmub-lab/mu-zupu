@@ -14,6 +14,7 @@
 ├── compose.env
 ├── mu-agent-saas.env
 ├── migrations/
+├── frontend/
 ├── scripts/
 ├── rollback/
 └── backups/
@@ -45,6 +46,7 @@ install -m 0755 bin/mu-agent-migrate /opt/mu-agent-saas/bin/mu-agent-migrate
 install -m 0755 bin/mu-agent-document-worker /opt/mu-agent-saas/bin/mu-agent-document-worker
 install -m 0755 bin/mu-agent-webhook-worker /opt/mu-agent-saas/bin/mu-agent-webhook-worker
 cp -r migrations scripts nginx systemd /opt/mu-agent-saas/
+cp -r frontend /opt/mu-agent-saas/frontend
 cp docker-compose.yml /opt/mu-agent-saas/docker-compose.yml
 cp compose.env.example /opt/mu-agent-saas/compose.env
 cp mu-agent-saas.env.example /opt/mu-agent-saas/mu-agent-saas.env
@@ -68,7 +70,7 @@ systemctl enable --now mu-agent-saas-backup.timer
 
 ## 升级
 
-升级脚本会先执行备份，再解压新发布包、保存当前运行文件快照、安装新二进制和迁移文件、执行 `mu-agent-migrate up`、重启服务并运行冒烟检查。
+升级脚本会先执行备份，再解压新发布包、保存当前运行文件快照、安装新二进制、迁移文件和前端静态文件、执行 `mu-agent-migrate up`、重启服务并运行冒烟检查。
 
 ```bash
 cd /opt/mu-agent-saas

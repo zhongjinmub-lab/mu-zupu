@@ -29,7 +29,7 @@ systemctl stop mu-agent-document-worker || true
 systemctl stop mu-agent-saas || true
 
 echo "step 3/5 restore runtime files from snapshot"
-for item in bin migrations scripts nginx systemd docker-compose.yml compose.env.example mu-agent-saas.env.example README.md; do
+for item in bin migrations scripts nginx systemd frontend docker-compose.yml compose.env.example mu-agent-saas.env.example README.md; do
   if [[ -e "$ROLLBACK_DIR/$item" ]]; then
     rm -rf "$APP_DIR/$item"
     cp -a "$ROLLBACK_DIR/$item" "$APP_DIR/$item"

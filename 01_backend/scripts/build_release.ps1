@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
+$ProjectRoot = Resolve-Path (Join-Path $Root "..")
 $Dist = Join-Path $Root $OutDir
 $PackageName = "mu-agent-saas-$Version-linux-amd64"
 $PackageDir = Join-Path $Dist $PackageName
@@ -33,11 +34,18 @@ try {
     Copy-Item -Recurse -Force .\deploy\production\scripts (Join-Path $PackageDir "scripts")
     Copy-Item -Recurse -Force .\deploy\production\nginx (Join-Path $PackageDir "nginx")
     Copy-Item -Force .\deploy\production\README.md (Join-Path $PackageDir "README.md")
+    Copy-Item -Recurse -Force (Join-Path $ProjectRoot "02_frontend") (Join-Path $PackageDir "frontend")
 
     foreach ($RequiredScript in @("backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh")) {
         $ScriptPath = Join-Path $PackageDir "scripts/$RequiredScript"
         if (-not (Test-Path $ScriptPath)) {
             throw "missing release script: $RequiredScript"
+        }
+    }
+    foreach ($RequiredFrontendFile in @("index.html", "assets/app.js", "assets/app.css")) {
+        $FrontendPath = Join-Path $PackageDir "frontend/$RequiredFrontendFile"
+        if (-not (Test-Path $FrontendPath)) {
+            throw "missing frontend file: $RequiredFrontendFile"
         }
     }
 
