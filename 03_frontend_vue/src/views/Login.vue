@@ -35,9 +35,12 @@ async function handleLogin() {
   errorMsg.value = ''
   try {
     const data: any = await http.post('/auth/login', form.value)
-    localStorage.setItem('token', data.token)
-    if (data.tenants?.length) {
-      localStorage.setItem('tenantId', data.tenants[0].id)
+    const token = data.access_token || data.token
+    if (!token) throw new Error('登录响应缺少访问令牌')
+    localStorage.setItem('token', token)
+    const tenants: any = await http.get('/tenants')
+    if (tenants?.items?.length) {
+      localStorage.setItem('tenantId', tenants.items[0].id)
     }
     router.push('/dashboard')
   } catch (err: any) {
