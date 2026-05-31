@@ -47,6 +47,29 @@ type NotifyResult struct {
 	Raw           map[string]any // 渠道原始字段摘要(用于审计)
 }
 
+// 主动查单返回的标准化状态。
+const (
+	QueryStatusPaid     = "paid"
+	QueryStatusFailed   = "failed"
+	QueryStatusPending  = "pending"
+	QueryStatusNotFound = "not_found"
+)
+
+// QueryResult 是向渠道主动查单后的标准化结果。
+type QueryResult struct {
+	PayNo         string
+	TransactionID string
+	Status        string // paid / failed / pending / not_found
+	Raw           map[string]any
+}
+
+// OrderQuerier 是可选能力接口:支持向渠道主动查单对账的渠道实现它。
+// mock 等不支持远程查单的渠道无需实现,上层据此回退到本地状态。
+type OrderQuerier interface {
+	// QueryOrder 按商户支付单号向渠道查询订单真实状态。
+	QueryOrder(ctx context.Context, payNo string) (QueryResult, error)
+}
+
 // Provider 抽象一个支付渠道。所有实现都必须是无状态、并发安全的。
 type Provider interface {
 	// Channel 返回渠道编码,例如 "mock" 或 "alipay"。

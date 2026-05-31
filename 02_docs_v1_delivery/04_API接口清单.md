@@ -52,7 +52,7 @@
 | POST | /orders | 创建当前租户业务订单 | tenant |
 | GET | /orders | 当前租户订单列表 | tenant |
 | POST | /payment-orders | 创建支付单(channel 支持 mock/alipay/wechat),返回 prepay 预支付信息 | tenant(管理员) |
-| POST | /payments/{payment_id}/query | 查询当前租户支付单 | tenant |
+| POST | /payments/{payment_id}/query | 查询支付单,非终态时向渠道主动查单并对账同步 | tenant |
 | POST | /payment-callbacks/{channel} | mock 内部 JSON 支付回调 | tenant(管理员) |
 | POST | /payment-notify/{channel} | 第三方渠道异步通知(原生验签,按 pay_no 反查租户) | 公开 |
 | GET | /analytics/summary | 当前租户统计汇总，包含资源、经营、智能体族谱、用量趋势、最近操作和风险 | tenant |
@@ -252,7 +252,7 @@
 - `POST /orders`：按 `plan_code` 创建业务订单;
 - `GET /orders`：列出当前租户订单;
 - `POST /payment-orders`：为 pending 业务订单创建支付单,`channel` 支持 `mock`、`alipay`、`wechat`(以 `PAYMENT_CHANNELS` 启用为准),响应在支付单字段外附加 `prepay` 预支付信息(`method`、`pay_url`、`qr_content` 等)供前端引导用户支付;
-- `POST /payments/{payment_id}/query`：查询当前租户支付单;
+- `POST /payments/{payment_id}/query`：查询当前租户支付单;若支付单非终态且渠道支持远程查单,则向渠道(支付宝 `alipay.trade.query`、微信查单接口)发起主动查单,命中已支付/失败终态时复用回调入账逻辑对账同步(幂等),响应附带 `remote_status` 与 `reconciled`;
 - `POST /payment-callbacks/mock`:(租户管理员,内部 JSON 回调)按 `pay_no` 幂等更新支付单,支付成功后将业务订单置为 `paid` 并创建订阅;
 - `POST /payment-notify/{channel}`:(公开,无需鉴权)第三方支付渠道异步通知端点,由渠道做原生验签后按 `pay_no` 反查租户入账;支付宝返回纯文本 `success`/`failure`,微信返回 JSON `{"code":"SUCCESS"}`/`{"code":"FAIL"}`。
 

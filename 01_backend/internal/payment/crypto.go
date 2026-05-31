@@ -151,3 +151,59 @@ func decryptAESGCM(key, nonce, ciphertext, associatedData []byte) ([]byte, error
 	}
 	return plaintext, nil
 }
+
+// extractJSONObjectNode 从原始 JSON 字节中精确截取指定 key 对应的对象子串(含花括号)。
+// 支付宝同步响应要求对业务节点的"原文"验签,不能重新序列化,因此需按原始字节截取。
+// 该实现可正确跳过字符串字面量中的花括号与转义字符。
+func extractJSONObjectNode(body []byte, key string) (string, bool) {
+	s := string(body)
+	marker := "\"" + key + "\""
+	idx := strings.Index(s, marker)
+	if idx < 0 {
+		return "", false
+	}
+	start := -1
+	for i := idx + len(marker); i < len(s); i++ {
+		if s[i] == '{' {
+			start = i
+			break
+		}
+		if s[i] != ':' && s[i] != ' ' && s[i] != '\t' && s[i] != '\n' && s[i] != '\r' {
+			return "", false
+		}
+	}
+	if start < 0 {
+		return "", false
+	}
+	depth := 0
+	inString := false
+	escaped := false
+	for i := start; i < len(s); i++ {
+		c := s[i]
+		if inString {
+			if escaped {
+				escaped = false
+				continue
+			}
+			switch c {
+			case '\\':
+				escaped = true
+			case '"':
+				inString = false
+			}
+			continue
+		}
+		switch c {
+		case '"':
+			inString = true
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return s[start : i+1], true
+			}
+		}
+	}
+	return "", false
+}

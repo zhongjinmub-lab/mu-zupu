@@ -221,16 +221,7 @@ func (h Handler) CreatePaymentOrder(c *gin.Context) {
 		}
 	}
 	if item.Status == "paid" {
-		h.Hooks.Emit(c.Request.Context(), t.ID, webhook.EventOrderPaid, map[string]any{
-			"payment_order_id":  item.ID,
-			"business_order_id": item.BusinessOrderID,
-			"pay_no":            item.PayNo,
-			"channel":           item.Channel,
-			"amount_cents":      item.AmountCents,
-			"currency":          item.Currency,
-			"transaction_id":    item.TransactionID,
-			"paid_at":           item.PaidAt,
-		})
+		h.emitOrderPaid(c.Request.Context(), t.ID, item)
 	}
 	response.OK(c, resp)
 }
@@ -299,16 +290,7 @@ func (h Handler) PaymentNotify(c *gin.Context) {
 		return
 	}
 	if item.Status == "paid" {
-		h.Hooks.Emit(c.Request.Context(), tenantID, webhook.EventOrderPaid, map[string]any{
-			"payment_order_id":  item.ID,
-			"business_order_id": item.BusinessOrderID,
-			"pay_no":            item.PayNo,
-			"channel":           item.Channel,
-			"amount_cents":      item.AmountCents,
-			"currency":          item.Currency,
-			"transaction_id":    item.TransactionID,
-			"paid_at":           item.PaidAt,
-		})
+		h.emitOrderPaid(c.Request.Context(), tenantID, item)
 	}
 	writeNotifyResponse(c, provider, true)
 }
@@ -344,7 +326,48 @@ func (h Handler) QueryPayment(c *gin.Context) {
 		writeBillingHTTPError(c, err)
 		return
 	}
-	response.OK(c, item)
+	resp := QueryPaymentResponse{PaymentOrder: item}
+	// 非终态时尝试向渠道主动查单对账(异步通知丢失时的兜底)。
+	if item.Status != "paid" && item.Status != "closed" {
+		if provider, ok := h.Payments.Get(item.Channel); ok {
+			if querier, ok := provider.(payment.OrderQuerier); ok {
+				remote, qerr := querier.QueryOrder(c.Request.Context(), item.PayNo)
+				if qerr == nil {
+					resp.RemoteStatus = remote.Status
+					if remote.Status == payment.QueryStatusPaid || remote.Status == payment.QueryStatusFailed {
+						synced, serr := h.Repo.ApplyPaymentCallback(c.Request.Context(), t.ID, item.Channel, PaymentCallbackRequest{
+							PayNo:         item.PayNo,
+							TransactionID: remote.TransactionID,
+							Status:        remote.Status,
+							Metadata:      remote.Raw,
+						}, c.GetString("request_id"))
+						if serr == nil {
+							resp.PaymentOrder = synced
+							resp.Reconciled = synced.Status != item.Status
+							item = synced
+							if item.Status == "paid" {
+								h.emitOrderPaid(c.Request.Context(), t.ID, item)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	response.OK(c, resp)
+}
+
+func (h Handler) emitOrderPaid(ctx context.Context, tenantID string, item PaymentOrder) {
+	h.Hooks.Emit(ctx, tenantID, webhook.EventOrderPaid, map[string]any{
+		"payment_order_id":  item.ID,
+		"business_order_id": item.BusinessOrderID,
+		"pay_no":            item.PayNo,
+		"channel":           item.Channel,
+		"amount_cents":      item.AmountCents,
+		"currency":          item.Currency,
+		"transaction_id":    item.TransactionID,
+		"paid_at":           item.PaidAt,
+	})
 }
 
 func (h Handler) ClosePayment(c *gin.Context) {

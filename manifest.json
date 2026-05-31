@@ -1,9 +1,9 @@
 ﻿{
     "project": "智能体族谱SAAS",
-    "generated_at": "2026-05-31T19:10:00+08:00",
+    "generated_at": "2026-05-31T20:05:00+08:00",
     "status": "final_delivery_verified",
     "assigned_to": "Codex 开发助手",
-    "file_count": 242,
+    "file_count": 244,
     "files": [
         {
             "path": ".gitignore",
@@ -302,8 +302,8 @@
         },
         {
             "path": "01_backend/internal/module/billing/handler.go",
-            "size": 13782,
-            "sha256": "85704f31426aa7fa52745967570d8ff8d5311f8a8a0b05cc74c8293ef4ec9442"
+            "size": 14652,
+            "sha256": "b55f61e03b8043dde950e775ba619fd6fbe278a8bf40a9f713930af878e4bfc5"
         },
         {
             "path": "01_backend/internal/module/billing/payment_handler_test.go",
@@ -322,8 +322,8 @@
         },
         {
             "path": "01_backend/internal/module/billing/types.go",
-            "size": 9392,
-            "sha256": "207df3b624fc11ba4125329466097cf3019b6a66dce1ef1169f1f3607afb252a"
+            "size": 9721,
+            "sha256": "9ea92317badbbcc8077a57cbf79f4fdc616d5a9d37a57daf2575085f9cbb3127"
         },
         {
             "path": "01_backend/internal/module/billing/types_test.go",
@@ -522,13 +522,13 @@
         },
         {
             "path": "01_backend/internal/payment/alipay.go",
-            "size": 5957,
-            "sha256": "8789bee930bede5e350526f1d2cb68df27e62de6655920d1c3557114ba300a2d"
+            "size": 9217,
+            "sha256": "09b12e3a19fb39784d5144ca1374d8a346d7e38954bd4363717866501e579604"
         },
         {
             "path": "01_backend/internal/payment/crypto.go",
-            "size": 4198,
-            "sha256": "635e586ad18bdce995ee74a9e745a09b53d96436111eff0a8c0424dd10566130"
+            "size": 5387,
+            "sha256": "d93ebd6c9c52c0322f26933f340c02149c4139e0afb76f878bd43b7f63228ac4"
         },
         {
             "path": "01_backend/internal/payment/mock.go",
@@ -542,8 +542,13 @@
         },
         {
             "path": "01_backend/internal/payment/provider.go",
-            "size": 2903,
-            "sha256": "c5e131f0abbc12a70a6b091cf9b7412973981c735f810bd0be70bc96036aee79"
+            "size": 3673,
+            "sha256": "d1e35241098620c47843bdf034b459bc1a4efd479f795e7aa655f3601ac8b09e"
+        },
+        {
+            "path": "01_backend/internal/payment/query_test.go",
+            "size": 6565,
+            "sha256": "e19604a57f9e16f49e58a42b190deeeae65cf4753e5ef76b61667bc4c75e9a2f"
         },
         {
             "path": "01_backend/internal/payment/registry.go",
@@ -552,8 +557,8 @@
         },
         {
             "path": "01_backend/internal/payment/wechat.go",
-            "size": 9476,
-            "sha256": "ecc149ab5c56f0f572cf7b7639eee6bf4453fd24813e349cb196e1dd82202f71"
+            "size": 12056,
+            "sha256": "adf4ed24e97cd39f2acaf41416627becbf0c88abc8467335015d3f9fa68fe4dc"
         },
         {
             "path": "01_backend/internal/payment/wechat_test.go",
@@ -812,8 +817,8 @@
         },
         {
             "path": "02_docs_v1_delivery/04_API接口清单.md",
-            "size": 48405,
-            "sha256": "1ae8d5db6bc0de171c47f954d165a48b2ef43b1ef54b3fdfa65fc285cf0aefae"
+            "size": 48697,
+            "sha256": "1662bff84cfc23ddb3cbd41df6477db8a2c5b8652188345dd9f320ca06a48862"
         },
         {
             "path": "02_docs_v1_delivery/05_Redis_Key设计.md",
@@ -1061,6 +1066,11 @@
             "sha256": "167fb4d142a863903a6b459f3b92ff3a126aef6c7d205198d8fcc4047703adba"
         },
         {
+            "path": "02_docs_v1_delivery/2026-05-31_支付主动查单与对账增量验收.md",
+            "size": 2297,
+            "sha256": "2236977598695af46a8a3ff6ef04093f150241d0e607edcd7bc971dbfcd63241"
+        },
+        {
             "path": "02_docs_v1_delivery/2026-05-31_支付回调验签与幂等增量验收.md",
             "size": 1260,
             "sha256": "cc389a729da4890d5b1a1315125930614aaf5510dbd515db54dba7b10ce3bb1c"
@@ -1157,8 +1167,8 @@
         },
         {
             "path": "02_docs_v1_delivery/README.md",
-            "size": 2189,
-            "sha256": "2de8f14ccca339d31ac379db52c87882a48997e1287fffec619bd22d203b6e93"
+            "size": 2299,
+            "sha256": "23d85dd5f63d1a309fb1e135bd9554d3622dc26d0db49910dfa8a5aae71cc8fa"
         },
         {
             "path": "02_frontend/README.md",
@@ -1172,8 +1182,8 @@
         },
         {
             "path": "02_frontend/assets/app.js",
-            "size": 128446,
-            "sha256": "fb4749963f5f70fe905a82c513088fd8e41913c81f20c43798eada99be604034"
+            "size": 128738,
+            "sha256": "1847cb24a9eadd1e1240f63bcb44c99900c0ea93a78f8724f5a9275b9baa4a5e"
         },
         {
             "path": "02_frontend/index.html",
@@ -1187,8 +1197,8 @@
         },
         {
             "path": "04_最终交付验收清单.md",
-            "size": 10531,
-            "sha256": "1a6304693a008538299ab058e8673f94a90d549370ae700acaa9d23a00647c5f"
+            "size": 11364,
+            "sha256": "16063e992fa99833c11e62f7cf335fec68ed861b45f21f866eca72aaeb081211"
         },
         {
             "path": "README.md",
@@ -1197,8 +1207,8 @@
         },
         {
             "path": "manifest.json",
-            "size": 50923,
-            "sha256": "f6c34a436f4994f039e5359ca1dac49788f049d3e69c975faaf332cb8aa332b7"
+            "size": 51553,
+            "sha256": "7010f47b897726f19b6aad15a5ee82cf49b1cd1db9a8e2905c9d8bb873c9056d"
         },
         {
             "path": "verify_delivery.ps1",

@@ -131,6 +131,14 @@ type CreatePaymentResponse struct {
 	Prepay *payment.Prepay `json:"prepay,omitempty"`
 }
 
+// QueryPaymentResponse 是主动查单的响应:内嵌最新支付单字段,
+// 并附带本次向渠道查询得到的标准化状态与是否发生状态对账同步。
+type QueryPaymentResponse struct {
+	PaymentOrder
+	RemoteStatus string `json:"remote_status,omitempty"`
+	Reconciled   bool   `json:"reconciled,omitempty"`
+}
+
 type PaymentCallbackRequest struct {
 	PayNo         string         `json:"pay_no" binding:"required"`
 	TransactionID string         `json:"transaction_id"`

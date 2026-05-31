@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -242,6 +243,79 @@ func (p WechatProvider) VerifyNotify(_ context.Context, n Notify) (NotifyResult,
 			"trade_state":    resource.TradeState,
 		},
 	}, nil
+}
+
+// QueryOrder 调用微信查单接口(按商户订单号)查询订单真实状态。
+func (p WechatProvider) QueryOrder(ctx context.Context, payNo string) (QueryResult, error) {
+	payNo = strings.TrimSpace(payNo)
+	if payNo == "" {
+		return QueryResult{}, errors.New("pay_no is required")
+	}
+	path := "/v3/pay/transactions/out-trade-no/" + url.PathEscape(payNo) + "?mchid=" + url.QueryEscape(p.mchID)
+	authorization, err := p.buildAuthorization(http.MethodGet, path, nil)
+	if err != nil {
+		return QueryResult{}, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.gateway+path, nil)
+	if err != nil {
+		return QueryResult{}, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", authorization)
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return QueryResult{}, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return QueryResult{}, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return QueryResult{PayNo: payNo, Status: QueryStatusNotFound}, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return QueryResult{}, fmt.Errorf("wechat query failed: status=%d body=%s", resp.StatusCode, string(body))
+	}
+	// 若应答带签名头则验签(应答由微信平台证书签名)。
+	ts := resp.Header.Get("Wechatpay-Timestamp")
+	nonce := resp.Header.Get("Wechatpay-Nonce")
+	sig := resp.Header.Get("Wechatpay-Signature")
+	if ts != "" && nonce != "" && sig != "" {
+		if err := verifyRSA2(p.platformPub, ts+"\n"+nonce+"\n"+string(body)+"\n", sig); err != nil {
+			return QueryResult{}, ErrInvalidSignature
+		}
+	}
+	var content struct {
+		OutTradeNo    string `json:"out_trade_no"`
+		TransactionID string `json:"transaction_id"`
+		TradeState    string `json:"trade_state"`
+	}
+	if err := json.Unmarshal(body, &content); err != nil {
+		return QueryResult{}, ErrInvalidNotify
+	}
+	return QueryResult{
+		PayNo:         payNo,
+		TransactionID: strings.TrimSpace(content.TransactionID),
+		Status:        mapWechatQueryState(content.TradeState),
+		Raw: map[string]any{
+			"trade_state":    content.TradeState,
+			"transaction_id": content.TransactionID,
+		},
+	}, nil
+}
+
+// mapWechatQueryState 将查单的 trade_state 映射为内部状态(含待支付)。
+func mapWechatQueryState(s string) string {
+	switch strings.ToUpper(strings.TrimSpace(s)) {
+	case "SUCCESS":
+		return QueryStatusPaid
+	case "CLOSED", "REVOKED", "PAYERROR":
+		return QueryStatusFailed
+	default:
+		// NOTPAY / USERPAYING / REFUND / ACCEPT 等视为待支付。
+		return QueryStatusPending
+	}
 }
 
 // NotifyResponse 返回微信期望的 JSON 应答。

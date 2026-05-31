@@ -3191,7 +3191,11 @@ function bindEvents() {
       }
       if (paymentQueryId) {
         const result = await api(`/payments/${paymentQueryId}/query`, { method: "POST" });
-        toast(`支付单状态：${result.status}`);
+        if (result.reconciled) {
+          await Promise.allSettled([loadPayments(), loadOrders(), loadPaymentEvents(), loadSubscription()]);
+        }
+        const remote = result.remote_status ? `,渠道:${result.remote_status}` : "";
+        toast(`支付单状态:${result.status}${remote}${result.reconciled ? "(已对账更新)" : ""}`);
       }
       if (paymentCloseId) {
         await api(`/payments/${paymentCloseId}/close`, { method: "POST", body: { reason: "manual close from console" } });
