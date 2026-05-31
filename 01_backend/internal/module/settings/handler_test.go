@@ -170,3 +170,67 @@ func TestMonitoringSnapshotHandlerReturnsUnifiedResponseWithoutSecrets(t *testin
 		}
 	}
 }
+
+func TestBuildSensitiveFieldSummaryDoesNotExposeSecretValues(t *testing.T) {
+	summary := BuildSensitiveFieldSummary(config.Config{
+		DatabaseDSN:           "postgres://user:secret@db/prod",
+		RedisPass:             "redis-secret",
+		JWTSecret:             "jwt-secret-value",
+		StorageAccessKey:      "storage-access",
+		StorageSecretKey:      "storage-secret",
+		EmbeddingAPIKey:       "embed-secret",
+		GenerationAPIKey:      "chat-secret",
+		PaymentCallbackSecret: "payment-secret",
+	})
+
+	if len(summary.EnvironmentSecrets) == 0 || len(summary.StoredSecrets) == 0 || len(summary.ResponseRedactions) == 0 {
+		t.Fatalf("expected sensitive field summary sections: %#v", summary)
+	}
+	text := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(strings.Join(summary.OperationalNotes, " ")), "\n", " "))
+	if strings.Contains(text, "jwt-secret-value") || strings.Contains(text, "postgres://") || strings.Contains(text, "storage-secret") {
+		t.Fatalf("summary notes should not expose secret values: %#v", summary.OperationalNotes)
+	}
+	foundPayment := false
+	for _, item := range summary.EnvironmentSecrets {
+		if strings.Contains(item.Scope, "PAYMENT_CALLBACK_SECRET") && strings.Contains(item.APIExposure, "不返回") && item.Configured {
+			foundPayment = true
+		}
+		if strings.Contains(item.Protection, "secret@db") || strings.Contains(item.Protection, "embed-secret") {
+			t.Fatalf("summary should not expose secret values: %#v", item)
+		}
+	}
+	if !foundPayment {
+		t.Fatalf("expected configured payment callback secret summary: %#v", summary.EnvironmentSecrets)
+	}
+}
+
+func TestSensitiveFieldSummaryHandlerReturnsUnifiedResponseWithoutSecrets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	RegisterRoutes(r.Group("/api/v1"), NewHandler(config.Config{
+		DatabaseDSN:           "postgres://mu:secret@localhost/db",
+		RedisPass:             "redis-secret",
+		JWTSecret:             "jwt-secret-value",
+		StorageSecretKey:      "storage-secret",
+		EmbeddingAPIKey:       "embedding-secret",
+		GenerationAPIKey:      "generation-secret",
+		PaymentCallbackSecret: "payment-secret",
+	}))
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/settings/sensitive-fields", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, want := range []string{`"code":0`, `"environment_secrets"`, `"stored_secrets"`, `"response_redactions"`, `"users.password_hash"`, "has_secret"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("response missing %s: %s", want, body)
+		}
+	}
+	for _, forbidden := range []string{"postgres://", "jwt-secret-value", "storage-secret", "embedding-secret", "generation-secret", "payment-secret", "redis-secret"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("response should not expose %s: %s", forbidden, body)
+		}
+	}
+}

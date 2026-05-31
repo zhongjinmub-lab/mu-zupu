@@ -20,6 +20,7 @@
 |---|---|---|---|
 | GET | /health | 健康检查，包含数据库连通性 | public |
 | GET | /ready | 就绪检查 | public |
+| GET | /settings/sensitive-fields | 敏感字段保护与响应脱敏摘要 | user |
 | POST | /auth/register | 注册并签发 JWT | public |
 | POST | /auth/login | 登录并签发 JWT | public |
 | GET | /auth/me | 当前用户 | user |
@@ -629,6 +630,27 @@ Generation provider 配置：
 | `last_gc_ago_seconds` | 距离最近一次 GC 的秒数；无 GC 记录时为 `-1` |
 
 管理台设置页已新增“运行监控摘要”，用中文卡片展示进程状态、启动时长、goroutine、堆内存、堆对象和 GC 状态，不展示黑色 JSON 原文区域。
+
+## 2026-05-31 增量：敏感字段保护摘要
+
+`GET /settings/sensitive-fields` 用于返回当前后端敏感字段保护和响应脱敏策略摘要，供管理台设置页只读展示。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | user，需携带 `Authorization: Bearer <token>` |
+| 租户头 | 不强制 `X-Tenant-ID`，该接口返回全局安全策略摘要 |
+| 敏感信息 | 不返回真实密钥、Token、数据库 DSN、Redis 密码、对象存储密钥、模型 API Key、Webhook secret 或 License signature |
+
+响应 `data` 字段：
+
+| 字段 | 说明 |
+|---|---|
+| `environment_secrets` | 环境变量注入类密钥摘要，例如 JWT、数据库连接串、对象存储、模型 API Key 和支付回调验签密钥 |
+| `stored_secrets` | 数据库存储类敏感字段摘要，例如密码哈希、邀请 token_hash、Webhook secret 和 License signature |
+| `response_redactions` | 已脱敏响应摘要，例如运行配置、限流策略和运行监控接口 |
+| `operational_notes` | 运维注意事项，说明生产密钥注入、布尔摘要展示和后续 KMS 加密扩展边界 |
+
+管理台设置页已新增“敏感字段保护摘要”，用中文卡片展示环境变量隔离、哈希/内部存储和响应脱敏状态，不展示黑色 JSON 原文区域。租户邀请 Token 的创建结果也改为中文一次性提示，不再使用黑色代码块展示。
 
 ## 2026-05-31 增量：Webhook 投递记录 CSV 导出
 

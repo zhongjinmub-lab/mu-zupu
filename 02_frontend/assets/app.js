@@ -37,6 +37,7 @@ const state = {
   rateLimitPolicy: null,
   runtimeSummary: null,
   monitoringSnapshot: null,
+  sensitiveFieldSummary: null,
   members: [],
   rolePermissions: null,
   auditLogs: [],
@@ -215,6 +216,7 @@ function renderShell() {
   renderMetrics();
   renderRateLimitPolicy();
   renderRuntimeSummary();
+  renderSensitiveFieldSummary();
 }
 
 function renderMetrics() {
@@ -600,6 +602,47 @@ function renderMonitoringSnapshot(error = "") {
       <span>${escapeHtml(formatDateTime(item.checked_at))}</span>
     </article>
   `;
+}
+
+function renderSensitiveFieldSummary(error = "") {
+  const el = $("#sensitiveFieldSummaryGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.sensitiveFieldSummary;
+  if (!item) {
+    el.innerHTML = `<article><strong>敏感字段保护</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const renderItem = (entry, group) => `
+    <article>
+      <strong>${escapeHtml(entry.name || group)}</strong>
+      <span>${escapeHtml(group)}：${escapeHtml(entry.protection || "-")}</span>
+      <span>${escapeHtml(entry.api_exposure || "不返回敏感原文")}</span>
+      <span>${entry.configured ? "状态：已启用或已覆盖" : "状态：当前未配置"}</span>
+    </article>
+  `;
+  const cards = [
+    ...(item.environment_secrets || []).map((entry) => renderItem(entry, "环境变量隔离")),
+    ...(item.stored_secrets || []).map((entry) => renderItem(entry, "存储保护")),
+    ...(item.response_redactions || []).map((entry) => renderItem(entry, "响应脱敏")),
+  ];
+  if (item.operational_notes?.length) {
+    cards.push(`
+      <article>
+        <strong>运维说明</strong>
+        <span>${escapeHtml(item.operational_notes.join("；"))}</span>
+      </article>
+    `);
+  }
+  el.innerHTML = cards.join("") || `<article><strong>敏感字段保护</strong><span>暂无摘要</span></article>`;
 }
 
 function renderAnswerSummary(selector, result, error = "") {
@@ -1357,7 +1400,7 @@ function renderInvitations() {
         <span class="badge">${escapeHtml(item.status)}</span>
       </div>
       <div class="item-meta">${escapeHtml(item.id)} / ${escapeHtml(item.role_code)} / ${new Date(item.expired_at).toLocaleString()}</div>
-      ${item.token ? `<pre class="codebox">${escapeHtml(item.token)}</pre>` : ""}
+      ${item.token ? `<div class="item-meta token-once">邀请 Token 仅本次显示：${escapeHtml(item.token)}</div>` : ""}
       <div class="item-actions">
         <button class="button small danger" data-invitation-revoke="${item.id}">撤销</button>
       </div>
@@ -1740,6 +1783,11 @@ async function loadRuntimeSummary() {
 async function loadMonitoringSnapshot() {
   state.monitoringSnapshot = await api("/settings/monitoring", { tenant: false });
   renderMonitoringSnapshot();
+}
+
+async function loadSensitiveFieldSummary() {
+  state.sensitiveFieldSummary = await api("/settings/sensitive-fields", { tenant: false });
+  renderSensitiveFieldSummary();
 }
 
 async function loadOrders() {
@@ -2129,6 +2177,7 @@ async function refreshAll() {
     loadRateLimitPolicy(),
     loadRuntimeSummary(),
     loadMonitoringSnapshot(),
+    loadSensitiveFieldSummary(),
     loadMembers(),
     loadRolePermissions(),
     loadAuditLogs(),
@@ -2191,6 +2240,8 @@ function bindEvents() {
       loadSubscription(),
       loadRateLimitPolicy(),
       loadRuntimeSummary(),
+      loadMonitoringSnapshot(),
+      loadSensitiveFieldSummary(),
       loadMembers(),
       loadRolePermissions(),
       loadAuditLogs(),
@@ -2260,6 +2311,9 @@ function bindEvents() {
   });
   $("#loadMonitoringSnapshotBtn").addEventListener("click", () => {
     loadMonitoringSnapshot().then(() => toast("运行监控已刷新")).catch((err) => renderMonitoringSnapshot(err.message));
+  });
+  $("#loadSensitiveFieldSummaryBtn").addEventListener("click", () => {
+    loadSensitiveFieldSummary().then(() => toast("敏感字段保护摘要已刷新")).catch((err) => renderSensitiveFieldSummary(err.message));
   });
 
   $("#kbForm").addEventListener("submit", async (event) => {

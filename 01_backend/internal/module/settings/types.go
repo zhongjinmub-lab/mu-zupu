@@ -40,3 +40,18 @@ type MonitoringSnapshot struct {
 	GCCount          uint32 `json:"gc_count"`
 	LastGCAgoSeconds int64  `json:"last_gc_ago_seconds"`
 }
+
+type SensitiveFieldSummary struct {
+	EnvironmentSecrets []SensitiveFieldItem `json:"environment_secrets"`
+	StoredSecrets      []SensitiveFieldItem `json:"stored_secrets"`
+	ResponseRedactions []SensitiveFieldItem `json:"response_redactions"`
+	OperationalNotes   []string             `json:"operational_notes"`
+}
+
+type SensitiveFieldItem struct {
+	Name        string `json:"name"`
+	Scope       string `json:"scope"`
+	Protection  string `json:"protection"`
+	APIExposure string `json:"api_exposure"`
+	Configured   bool   `json:"configured"`
+}
