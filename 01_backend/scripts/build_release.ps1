@@ -1,6 +1,7 @@
 param(
     [string]$Version = "dev",
-    [string]$OutDir = "dist"
+    [string]$OutDir = "dist",
+    [string]$FrontendDir = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,6 +11,15 @@ $ProjectRoot = Resolve-Path (Join-Path $Root "..")
 $Dist = Join-Path $Root $OutDir
 $PackageName = "mu-agent-saas-$Version-linux-amd64"
 $PackageDir = Join-Path $Dist $PackageName
+$ResolvedFrontendDir = $null
+
+if ([string]::IsNullOrWhiteSpace($FrontendDir)) {
+    $FrontendDir = Join-Path $ProjectRoot "03_frontend_vue/dist"
+}
+$ResolvedFrontendDir = Resolve-Path $FrontendDir -ErrorAction SilentlyContinue
+if (-not $ResolvedFrontendDir) {
+    throw "frontend build output not found: $FrontendDir. Run npm install --legacy-peer-deps and VITE_API_BASE=/saas-api/api/v1 npm run build in 03_frontend_vue first, or pass -FrontendDir."
+}
 
 if (Test-Path $PackageDir) {
     Remove-Item -LiteralPath $PackageDir -Recurse -Force
@@ -34,7 +44,7 @@ try {
     Copy-Item -Recurse -Force .\deploy\production\scripts (Join-Path $PackageDir "scripts")
     Copy-Item -Recurse -Force .\deploy\production\nginx (Join-Path $PackageDir "nginx")
     Copy-Item -Force .\deploy\production\README.md (Join-Path $PackageDir "README.md")
-    Copy-Item -Recurse -Force (Join-Path $ProjectRoot "02_frontend") (Join-Path $PackageDir "frontend")
+    Copy-Item -Recurse -Force $ResolvedFrontendDir.Path (Join-Path $PackageDir "frontend")
 
     foreach ($RequiredScript in @("backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh", "restore-config.sh")) {
         $ScriptPath = Join-Path $PackageDir "scripts/$RequiredScript"
@@ -42,11 +52,17 @@ try {
             throw "missing release script: $RequiredScript"
         }
     }
-    foreach ($RequiredFrontendFile in @("index.html", "assets/app.js", "assets/app.css")) {
+    foreach ($RequiredFrontendFile in @("index.html", "assets")) {
         $FrontendPath = Join-Path $PackageDir "frontend/$RequiredFrontendFile"
         if (-not (Test-Path $FrontendPath)) {
             throw "missing frontend file: $RequiredFrontendFile"
         }
+    }
+    if (-not (Get-ChildItem -Path (Join-Path $PackageDir "frontend/assets") -Filter "*.js" -File | Select-Object -First 1)) {
+        throw "missing frontend javascript asset"
+    }
+    if (-not (Get-ChildItem -Path (Join-Path $PackageDir "frontend/assets") -Filter "*.css" -File | Select-Object -First 1)) {
+        throw "missing frontend stylesheet asset"
     }
 
     $Archive = Join-Path $Dist "$PackageName.tar.gz"

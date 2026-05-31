@@ -1,5 +1,6 @@
 param(
     [string]$NodePath = "D:\Node.js\node.exe",
+    [string]$NpmPath = "D:\Node.js\npm.cmd",
     [string]$GitPath = ""
 )
 
@@ -37,6 +38,20 @@ function Resolve-Node {
     return "node"
 }
 
+function Resolve-Npm {
+    if ($NpmPath -and (Test-Path -LiteralPath $NpmPath)) {
+        return $NpmPath
+    }
+
+    $nodeDir = Split-Path -Parent (Resolve-Node)
+    $npmCandidate = Join-Path $nodeDir "npm.cmd"
+    if (Test-Path -LiteralPath $npmCandidate) {
+        return $npmCandidate
+    }
+
+    return "npm"
+}
+
 function Get-OneFile {
     param(
         [string]$Directory,
@@ -53,9 +68,25 @@ function Get-OneFile {
 
 $Git = Resolve-Git
 $Node = Resolve-Node
+$Npm = Resolve-Npm
 
 Invoke-Check "frontend_js_syntax" {
     & $Node --check (Join-Path $Root "02_frontend\assets\app.js")
+}
+
+Invoke-Check "vue3_frontend_build" {
+    Push-Location (Join-Path $Root "03_frontend_vue")
+    try {
+        if (-not (Test-Path -LiteralPath "node_modules")) {
+            & $Npm install --legacy-peer-deps
+        }
+        $env:VITE_API_BASE = "/saas-api/api/v1"
+        & $Npm run build
+    }
+    finally {
+        Remove-Item Env:\VITE_API_BASE -ErrorAction SilentlyContinue
+        Pop-Location
+    }
 }
 
 Invoke-Check "backend_go_tests" {
@@ -77,6 +108,7 @@ Invoke-Check "delivery_checklists_done" {
         (Get-ChildItem -LiteralPath $Root -Filter "*.md" -File),
         (Get-ChildItem -LiteralPath (Join-Path $Root "01_backend") -Filter "*.md" -File),
         (Get-ChildItem -LiteralPath (Join-Path $Root "02_frontend") -Filter "*.md" -File),
+        (Get-ChildItem -LiteralPath (Join-Path $Root "03_frontend_vue") -Filter "*.md" -File -ErrorAction SilentlyContinue),
         (Get-ChildItem -LiteralPath (Join-Path $Root "02_docs_v1_delivery") -Filter "*.md" -File)
     ) | ForEach-Object { $_.FullName }
 

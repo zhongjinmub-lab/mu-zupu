@@ -4,6 +4,8 @@
 dist-frontend-*.tar.gz
 02_frontend/dist-*.tar.gz
 02_frontend/ui-*.png
+03_frontend/dist/
+03_frontend/node_modules/
 03_frontend_vue/dist/
 03_frontend_vue/node_modules/
 *.bak

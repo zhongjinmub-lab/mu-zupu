@@ -30,12 +30,12 @@ func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 			t.Fatalf("build_release.ps1 should verify %s is packaged", want)
 		}
 	}
-	for _, want := range []string{"frontend/index.html", "frontend/assets/app.js", "frontend/assets/app.css"} {
+	for _, want := range []string{"03_frontend_vue/dist", "frontend/index.html", "frontend/assets", "*.js", "*.css"} {
 		if !strings.Contains(buildScript, want) {
 			t.Fatalf("build_release.sh should verify %s is packaged", want)
 		}
 	}
-	for _, want := range []string{"index.html", "assets/app.js", "assets/app.css"} {
+	for _, want := range []string{"03_frontend_vue/dist", "index.html", "assets", "*.js", "*.css"} {
 		if !strings.Contains(buildScriptPS, want) {
 			t.Fatalf("build_release.ps1 should verify frontend file %s is packaged", want)
 		}

@@ -31,10 +31,17 @@ VERSION=v0.1.0 make release
 Windows 本地打包：
 
 ```powershell
+cd ..\..\03_frontend_vue
+npm install --legacy-peer-deps
+$env:VITE_API_BASE="/saas-api/api/v1"
+npm run build
+cd ..\01_backend
 .\scripts\build_release.ps1 -Version v0.1.0
 ```
 
 生成产物：`dist/mu-agent-saas-<version>-linux-amd64.tar.gz`。
+
+发布脚本默认读取 `03_frontend_vue/dist` 作为生产管理台前端。如果需要临时打包其它前端目录，Windows 使用 `-FrontendDir`，Linux/macOS 使用 `FRONTEND_DIR=/path/to/dist`。
 
 ## 首次安装
 
@@ -117,8 +124,7 @@ MIGRATION_STEPS=1 ./scripts/rollback.sh
 - `https://zupu.jiangxinnet.com/saas-api/api/v1/health`
 - `https://zupu.jiangxinnet.com/saas-api/api/v1/ready`
 - `https://zupu.jiangxinnet.com/saas/`
-- `https://zupu.jiangxinnet.com/saas/assets/app.js`
-- `https://zupu.jiangxinnet.com/saas/assets/app.css`
+- 从 `https://zupu.jiangxinnet.com/saas/` 自动解析出的 Vite 哈希 JS/CSS 资源
 - `nginx -t`
 - `mu-agent-saas`、`mu-agent-document-worker`、`mu-agent-webhook-worker` systemd 状态
 - `mu-agent-migrate status`
@@ -174,7 +180,7 @@ CONFIRM_CONFIG_RESTORE=yes CONFIG_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saa
 - `systemctl status mu-agent-document-worker`
 - `systemctl status mu-agent-webhook-worker`
 - 公网 `/saas-api/api/v1/health`、`/saas-api/api/v1/ready` 返回正常
-- 公网 `/saas/`、`/saas/assets/app.js`、`/saas/assets/app.css` 返回正常
+- 公网 `/saas/` 以及首页引用的 Vite 哈希 JS/CSS 返回正常
 - `./bin/mu-agent-migrate status` 输出符合预期
 
 
