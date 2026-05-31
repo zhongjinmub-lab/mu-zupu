@@ -99,3 +99,52 @@ func FindChannelType(t string) (ChannelType, bool) {
 	}
 	return ChannelType{}, false
 }
+
+// ChannelEmbed 表示某个渠道的接入信息（接入代码、API 端点与中文接入说明）。
+type ChannelEmbed struct {
+	ChannelKey   string   `json:"channel_key"`
+	Type         string   `json:"type"`
+	Enabled      bool     `json:"enabled"`
+	APIEndpoint  string   `json:"api_endpoint"`
+	EmbedSnippet string   `json:"embed_snippet"`
+	Instructions []string `json:"instructions"`
+}
+
+// BuildChannelEmbed 根据渠道类型与 baseURL 生成接入代码与说明，纯函数、不访问网络。
+func BuildChannelEmbed(ch Channel, baseURL string) ChannelEmbed {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	endpoint := baseURL + "/api/v1/channels/" + ch.ChannelKey + "/chat"
+	embed := ChannelEmbed{
+		ChannelKey:  ch.ChannelKey,
+		Type:        ch.Type,
+		Enabled:     ch.Status == StatusEnabled,
+		APIEndpoint: endpoint,
+	}
+	replacer := strings.NewReplacer("{{base}}", baseURL, "{{key}}", ch.ChannelKey, "{{endpoint}}", endpoint)
+	switch ch.Type {
+	case "web":
+		embed.EmbedSnippet = replacer.Replace(`<script src="{{base}}/embed.js" data-channel-key="{{key}}" async></script>`)
+		embed.Instructions = []string{
+			"将上面的脚本粘贴到网站 </body> 之前即可加载对话组件。",
+			"channel_key 为公开标识，仅用于关联渠道，不要在其中存放敏感信息。",
+		}
+	case "h5":
+		embed.EmbedSnippet = replacer.Replace(`{{base}}/h5/{{key}}`)
+		embed.Instructions = []string{
+			"在移动端浏览器或 WebView 中打开该链接即可使用 H5 对话页面。",
+			"可将链接配置到公众号菜单或短信中分发给终端用户。",
+		}
+	case "api":
+		embed.EmbedSnippet = replacer.Replace(`curl -X POST {{endpoint}} -H 'Content-Type: application/json' -d '{"message":"你好"}'`)
+		embed.Instructions = []string{
+			"通过该端点以 channel_key 接入已绑定的 Agent 进行对话。",
+			"生产接入需配合后续发布的渠道鉴权与限流策略。",
+		}
+	default:
+		embed.Instructions = []string{"该渠道类型暂未提供接入代码。"}
+	}
+	if !embed.Enabled {
+		embed.Instructions = append(embed.Instructions, "当前渠道未启用，启用后接入代码方可生效。")
+	}
+	return embed
+}

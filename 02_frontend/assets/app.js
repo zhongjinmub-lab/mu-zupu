@@ -29,6 +29,7 @@ const state = {
   workflowRuns: [],
   channels: [],
   channelTypes: [],
+  channelEmbeds: {},
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -2326,6 +2327,7 @@ function renderChannels(error = "") {
   const listEl = $("#channelListBox");
   if (listEl) {
     const channels = state.channels || [];
+    const embeds = state.channelEmbeds || {};
     listEl.innerHTML = channels.map((ch) => `
       <article class="item">
         <div class="item-title">
@@ -2335,10 +2337,19 @@ function renderChannels(error = "") {
         <div class="item-meta">${escapeHtml(channelTypeLabel(ch.type))} / Agent ${escapeHtml(ch.agent_id || "-")}</div>
         <div class="item-meta">接入凭据 channel_key：${escapeHtml(ch.channel_key || "-")}</div>
         <div class="item-actions">
+          ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-embed="${escapeHtml(ch.id || "")}" type="button">接入代码</button>` : ""}
           ${ch.status === "disabled" ? `<button class="button small" data-channel-enable="${escapeHtml(ch.id || "")}" type="button">启用</button>` : ""}
           ${ch.status === "enabled" ? `<button class="button small secondary" data-channel-disable="${escapeHtml(ch.id || "")}" type="button">禁用</button>` : ""}
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-archive="${escapeHtml(ch.id || "")}" type="button">删除</button>` : ""}
         </div>
+        ${embeds[ch.id] ? `
+          <div class="tool-test-result ${embeds[ch.id].enabled ? "ok" : "blocked"}">
+            <strong>接入代码（${escapeHtml(embeds[ch.id].type || "")}）</strong>
+            <span>${escapeHtml(embeds[ch.id].embed_snippet || "")}</span>
+            <span>API：${escapeHtml(embeds[ch.id].api_endpoint || "")}</span>
+            <span>${escapeHtml((embeds[ch.id].instructions || []).join("；"))}</span>
+          </div>
+        ` : ""}
       </article>
     `).join("") || empty("暂无渠道");
   }
@@ -2387,6 +2398,15 @@ async function toggleChannel(channelID, action) {
   await api(`/channels/${channelID}/${action}`, { method: "POST" });
   await loadChannels();
   toast(action === "enable" ? "渠道已启用" : "渠道已禁用");
+}
+
+// loadChannelEmbed 拉取指定渠道的接入代码并展示在该渠道下方。
+async function loadChannelEmbed(channelID) {
+  if (!channelID) return;
+  const embed = await api(`/channels/${channelID}/embed`);
+  state.channelEmbeds[channelID] = embed;
+  renderChannels();
+  toast("已生成接入代码");
 }
 
 async function loadToolCallLogs() {
@@ -3647,6 +3667,7 @@ function bindEvents() {
     const channelEnableId = target.dataset?.channelEnable;
     const channelDisableId = target.dataset?.channelDisable;
     const channelArchiveId = target.dataset?.channelArchive;
+    const channelEmbedId = target.dataset?.channelEmbed;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3690,6 +3711,9 @@ function bindEvents() {
       }
       if (channelArchiveId) {
         await toggleChannel(channelArchiveId, "archive");
+      }
+      if (channelEmbedId) {
+        await loadChannelEmbed(channelEmbedId);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

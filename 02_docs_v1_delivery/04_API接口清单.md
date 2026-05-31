@@ -1099,6 +1099,7 @@ P1「渠道入口」第一增量，引入 Agent 渠道接入点持久化。新�
 - `GET /channel-types`：内置渠道类型目录。`web`（网页嵌入）、`h5`（移动 H5）、`api`（开放 API）为 active 可创建；`wechat_official`（微信公众号）、`wechat_work`（企业微信）为 planned，待后续对接回调与凭据。
 - `GET /channels`：当前租户未归档渠道列表。
 - `GET /channels/{channel_id}`：渠道详情。
+- `GET /channels/{channel_id}/embed`：返回该渠道的接入代码与说明（按请求推断 baseURL）。`web` 返回 `<script>` 嵌入片段，`h5` 返回页面链接，`api` 返回 curl 调用示例，均含中文接入说明；渠道未启用时追加提示。
 - `POST /channels`：创建渠道，请求体 `{agent_id, type, name, config}`，仅允许 active 类型；绑定的 agent 不存在返回 404。
 - `POST /channels/{channel_id}/enable`、`/disable`：启用/禁用渠道。
 - `DELETE /channels/{channel_id}`：归档（软删除）渠道。
