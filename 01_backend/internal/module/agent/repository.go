@@ -657,6 +657,49 @@ ORDER BY created_at ASC`
 	return out, rows.Err()
 }
 
+func (r Repository) InsertToolCallLog(ctx context.Context, tenantID, agentID, conversationID, toolName, status string, input, output map[string]any, costMS int) error {
+	inputJSON, err := jsonObject(input)
+	if err != nil {
+		return err
+	}
+	outputJSON, err := jsonObject(output)
+	if err != nil {
+		return err
+	}
+	const q = `
+INSERT INTO tool_call_logs(tenant_id, agent_id, conversation_id, tool_name, input, output, status, cost_ms)
+VALUES ($1, NULLIF($2, '')::uuid, NULLIF($3, '')::uuid, $4, $5::jsonb, $6::jsonb, $7, $8)`
+	_, err = r.DB.Exec(ctx, q, tenantID, agentID, conversationID, toolName, inputJSON, outputJSON, status, costMS)
+	return err
+}
+
+func (r Repository) ListToolCallLogs(ctx context.Context, tenantID string, limit int) ([]ToolCallLog, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	const q = `
+SELECT id::text, tenant_id::text, COALESCE(agent_id::text, ''), COALESCE(conversation_id::text, ''),
+       tool_name, input, output, status, cost_ms, created_at
+FROM tool_call_logs
+WHERE tenant_id = $1
+ORDER BY created_at DESC
+LIMIT $2`
+	rows, err := r.DB.Query(ctx, q, tenantID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]ToolCallLog, 0)
+	for rows.Next() {
+		item, err := scanToolCallLog(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
 func (r Repository) touchConversation(ctx context.Context, tenantID, conversationID string) error {
 	_, err := r.DB.Exec(ctx, `UPDATE conversations SET updated_at = now() WHERE id = $1 AND tenant_id = $2`, conversationID, tenantID)
 	return err
@@ -723,6 +766,15 @@ func scanMessage(rows pgx.Rows) (Message, error) {
 	err := rows.Scan(
 		&item.ID, &item.TenantID, &item.ConversationID, &item.Role,
 		&item.Content, &item.TokenUsage, &item.Metadata, &item.CreatedAt,
+	)
+	return item, err
+}
+
+func scanToolCallLog(rows pgx.Rows) (ToolCallLog, error) {
+	var item ToolCallLog
+	err := rows.Scan(
+		&item.ID, &item.TenantID, &item.AgentID, &item.ConversationID,
+		&item.ToolName, &item.Input, &item.Output, &item.Status, &item.CostMS, &item.CreatedAt,
 	)
 	return item, err
 }

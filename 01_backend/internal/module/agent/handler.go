@@ -101,10 +101,12 @@ func (h Handler) ListTools(c *gin.Context) {
 }
 
 func (h Handler) TestTool(c *gin.Context) {
+	started := time.Now()
 	if _, ok := tenant.CurrentTenant(c); !ok {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
+	t, _ := tenant.CurrentTenant(c)
 	item, ok := FindToolCatalogItem(c.Param("tool_id"))
 	if !ok {
 		response.Error(c, http.StatusNotFound, 40420, "工具不存在")
@@ -115,7 +117,31 @@ func (h Handler) TestTool(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40001, err.Error())
 		return
 	}
-	response.OK(c, BuildToolTestResult(item, req))
+	result := BuildToolTestResult(item, req)
+	_ = h.Repo.InsertToolCallLog(c.Request.Context(), t.ID, "", "", item.Code, result.Status, map[string]any{
+		"input_summary": result.InputSummary,
+		"dry_run":       true,
+	}, map[string]any{
+		"allowed":               result.Allowed,
+		"requires_confirmation": result.RequiresConfirmation,
+		"message":               result.Message,
+	}, int(time.Since(started).Milliseconds()))
+	response.OK(c, result)
+}
+
+func (h Handler) ListToolCallLogs(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	items, err := h.Repo.ListToolCallLogs(c.Request.Context(), t.ID, limit)
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"items": items})
 }
 
 func (h Handler) ConversationOrchestrationPolicy(c *gin.Context) {

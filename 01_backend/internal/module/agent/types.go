@@ -242,6 +242,19 @@ type ToolTestResult struct {
 	AuditAction          string   `json:"audit_action"`
 }
 
+type ToolCallLog struct {
+	ID             string         `json:"id"`
+	TenantID       string         `json:"tenant_id"`
+	AgentID        string         `json:"agent_id,omitempty"`
+	ConversationID string         `json:"conversation_id,omitempty"`
+	ToolName       string         `json:"tool_name"`
+	Input          map[string]any `json:"input"`
+	Output         map[string]any `json:"output"`
+	Status         string         `json:"status"`
+	CostMS         int            `json:"cost_ms"`
+	CreatedAt      time.Time      `json:"created_at"`
+}
+
 type ConversationOrchestrationPolicy struct {
 	HistoryLimitDefault int      `json:"history_limit_default"`
 	HistoryLimitMax     int      `json:"history_limit_max"`

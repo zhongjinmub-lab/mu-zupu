@@ -1132,6 +1132,18 @@ textarea:focus {
   color: var(--danger);
 }
 
+.panel-subhead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 8px;
+}
+
+.panel-subhead strong {
+  font-size: 14px;
+}
+
 .item-actions {
   display: flex;
   gap: 8px;

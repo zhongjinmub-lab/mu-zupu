@@ -16,6 +16,7 @@ const state = {
   toolSafetyPolicy: null,
   tools: [],
   toolTestResults: {},
+  toolCallLogs: [],
   agentGenealogy: { nodes: [], edges: [] },
   agentGenealogyFilters: {
     q: "",
@@ -1154,7 +1155,43 @@ function renderToolSafetyPolicy(error = "") {
     </div>
     <div class="item-meta">护栏：${escapeHtml((policy.guardrails || []).join("；") || "-")}</div>
     <div class="item-meta">后续执行要求：${escapeHtml((policy.future_execution_notes || []).join("；") || "-")}</div>
+    <div class="panel-subhead">
+      <strong>工具调用日志</strong>
+      <button class="button small secondary" data-tool-log-refresh type="button">刷新日志</button>
+    </div>
+    <div class="list">
+      ${(state.toolCallLogs || []).map((log) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(toolNameLabel(log.tool_name))}</strong>
+            <span class="badge ${log.status === "blocked" ? "danger" : "warn"}">${escapeHtml(toolStatusLabel(log.status))}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(formatDateTime(log.created_at))} / ${Number(log.cost_ms || 0)} ms</div>
+          <div class="item-meta">${escapeHtml(toolLogSummary(log))}</div>
+        </article>
+      `).join("") || empty("暂无工具调用日志")}
+    </div>
   `;
+}
+
+function toolNameLabel(code) {
+  const item = state.tools.find((tool) => tool.code === code);
+  return item?.name || code || "未知工具";
+}
+
+function toolStatusLabel(status) {
+  return {
+    dry_run_ok: "dry-run 通过",
+    blocked: "已阻断",
+    failed: "失败",
+    success: "成功",
+  }[status] || status || "未知";
+}
+
+function toolLogSummary(log) {
+  const output = log.output || {};
+  const input = log.input || {};
+  return [output.message, input.input_summary].filter(Boolean).join("；") || "暂无摘要";
 }
 
 function relationLabel(type) {
@@ -1800,12 +1837,14 @@ async function loadAgents() {
 
 async function loadToolSafetyPolicy() {
   if (!state.tenantId) return;
-  const [policy, tools] = await Promise.all([
+  const [policy, tools, logs] = await Promise.all([
     api("/agents/tool-safety-policy"),
     api("/tools"),
+    api("/tool-call-logs?limit=20"),
   ]);
   state.toolSafetyPolicy = policy;
   state.tools = tools.items || [];
+  state.toolCallLogs = logs.items || [];
   renderToolSafetyPolicy();
 }
 
@@ -1816,8 +1855,16 @@ async function testTool(toolCode) {
     body: { input: { source: "admin_console", checked_at: new Date().toISOString() } },
   });
   state.toolTestResults[toolCode] = result;
+  await loadToolCallLogs();
   renderToolSafetyPolicy();
   toast(result.allowed ? "工具安全测试通过" : "工具测试已被安全策略阻断");
+}
+
+async function loadToolCallLogs() {
+  if (!state.tenantId) return;
+  const data = await api("/tool-call-logs?limit=20");
+  state.toolCallLogs = data.items || [];
+  renderToolSafetyPolicy();
 }
 
 function agentGenealogyFiltersFromForm() {
@@ -2986,6 +3033,7 @@ function bindEvents() {
     const conversationSelectId = target.closest("[data-conversation-select]")?.dataset.conversationSelect;
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const toolTestId = target.dataset?.toolTest;
+    const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const viewLink = target.closest("[data-view-link]")?.dataset.viewLink;
 
     try {
@@ -2999,6 +3047,10 @@ function bindEvents() {
       }
       if (toolTestId) {
         await testTool(toolTestId);
+      }
+      if (toolLogRefresh) {
+        await loadToolCallLogs();
+        toast("工具调用日志已刷新");
       }
       if (agentKbUnbindId) {
         const agentID = selectedBindingAgentID();

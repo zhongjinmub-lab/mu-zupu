@@ -111,6 +111,14 @@ func TestBuildToolTestResultUsesDryRunAndBlocksDangerousTools(t *testing.T) {
 	}
 }
 
+func TestBuildToolTestLogSummaryAvoidsRawInputValues(t *testing.T) {
+	kbSearch, _ := FindToolCatalogItem("kb_search")
+	result := BuildToolTestResult(kbSearch, ToolTestRequest{Input: map[string]any{"api_key": "raw_value_marker", "query": "族谱"}})
+	if !strings.Contains(result.InputSummary, "api_key") || strings.Contains(result.InputSummary, "raw_value_marker") {
+		t.Fatalf("input summary should contain keys only: %q", result.InputSummary)
+	}
+}
+
 func TestDefaultConversationOrchestrationPolicySummarizesFlow(t *testing.T) {
 	policy := DefaultConversationOrchestrationPolicy()
 	if !policy.RAGEnabled || !policy.SSEEnabled || policy.ToolPolicy != "deny" {
