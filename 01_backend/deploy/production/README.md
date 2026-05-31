@@ -176,3 +176,17 @@ CONFIRM_CONFIG_RESTORE=yes CONFIG_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saa
 - 公网 `/saas-api/api/v1/health`、`/saas-api/api/v1/ready` 返回正常
 - 公网 `/saas/`、`/saas/assets/app.js`、`/saas/assets/app.css` 返回正常
 - `./bin/mu-agent-migrate status` 输出符合预期
+
+
+## 功能冒烟测试（P1 只读端点）
+
+`scripts/smoke-features.sh` 用于部署后快速验证插件工具、工作流与渠道入口的只读端点是否正常。
+
+```bash
+export API_BASE_URL="https://your-domain/saas-api/api/v1"
+export TOKEN="<登录后获取的 JWT>"
+export TENANT_ID="<目标租户 ID>"
+bash scripts/smoke-features.sh
+```
+
+未设置 `TOKEN`/`TENANT_ID` 时脚本会跳过并以 0 退出，便于在缺凭据的流水线中安全调用。每个端点断言返回 HTTP 200 且 `application/json`，任一失败即非零退出。覆盖范围：`/agents/tool-safety-policy`、`/tools`、`/tool-call-logs`、`/mcp-gateway/policy`、`/mcp-servers`、`/plugins`、`/workflows/orchestration-policy`、`/workflow-node-types`、`/workflows`、`/workflows/summary`、`/channel-types`、`/channels`、`/channels/summary`。
