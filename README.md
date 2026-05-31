@@ -1,65 +1,41 @@
 # 智能体族谱SAAS 最终交付包
 
-更新时间：2026-05-27
+更新时间：2026-05-31
 
 ## 1. 目录说明
 
 | 目录/文件 | 说明 |
 |---|---|
-| 01_backend | Go + Gin 后端工程，含迁移、认证、租户、文件上传、知识库写入与检索 |
-| 02_frontend | 免构建静态管理台 MVP，覆盖登录、租户、知识库、Agent、License 和用量 |
-| 02_docs_v1_delivery | MVP 开发和商业交付文档 |
-| 03_智能体族谱SAAS_开发方案.md | 精简版总开发方案 |
-| 04_最终交付验收清单.md | 最终交付验收清单 |
-| manifest.json | 文件清单与 SHA256 摘要 |
+| `01_backend` | Go + Gin 后端工程，含多租户、License、支付、RAG、Webhook、SSE、限流、审计、运维脚本 |
+| `02_frontend` | 免构建静态管理台，覆盖总览、知识库、Agent、族谱、License、用量订单、Webhook、审计和设置 |
+| `02_docs_v1_delivery` | API、数据库、Redis Key、增量验收和交付验收文档 |
+| `03_智能体族谱SAAS_开发方案.md` | 总体开发方案 |
+| `04_最终交付验收清单.md` | 顶层最终交付验收清单 |
+| `manifest.json` | 文件清单与 SHA256 摘要 |
 
 ## 2. 技术基线
 
-- Go go1.26.3
-- Gin
+- Go + Gin
 - PostgreSQL 16 + pgvector
 - Redis 7.4
 - MinIO / S3
-- 静态 HTML/CSS/JavaScript 管理台 MVP
-- Vue3 + TypeScript + Vite + Element Plus（后续工程化目标）
+- 静态 HTML/CSS/JavaScript 管理台
 - Docker Compose
+- systemd + Nginx 私有化部署模板
 
 ## 3. 已完成
 
-- 后端工程骨架；
-- Docker Compose 基础依赖；
-- PostgreSQL/pgvector 迁移；
-- 健康检查和就绪检查；
-- 请求 ID 中间件；
-- 用户注册、登录、JWT 签发与解析；
-- JWT 中间件和当前用户接口；
-- 租户创建、租户列表与 `X-Tenant-ID` 租户上下文；
-- 知识库创建、列表、文档创建、chunk 创建；
-- 1536 维 embedding 写入校验；
-- 文件上传到 MinIO/S3 和租户文件列表；
-- 已上传文本文件生成知识库文档与 pending chunks；
-- file-backed 文档切片重建；
-- 数据库 document_jobs 队列与同步 worker run；
-- 后台常驻文档 worker 进程；
-- pending chunks 查询、单 chunk embedding 写回；
-- 本地 deterministic embedding provider 与同步 embedding run；
-- OpenAI-compatible HTTP embedding provider 接入；
-- OpenAI-compatible HTTP generation provider 接入；
-- KB 向量检索接口；
-- KB 混合检索接口；
-- 当前租户 KB 检索接口；
-- RAG 问答生成闭环接口；
-- Agent 创建、列表、详情、更新、发布、回滚、归档接口；
-- Agent 与知识库绑定/解绑接口，绑定前校验 tenant/kb 访问权限；
-- Agent 测试会话接口，写入 conversation/messages 并返回回答与引用；
-- Agent 多轮会话接口，支持历史消息编排；
-- 套餐、订阅和用量统计 MVP；
-- License 授权 MVP，支持租户内创建、列表、激活和吊销；
-- 前端管理台 MVP，已部署到 `/saas/`；
-- HNSW、全文、Trigram 索引；
-- 检索 Profile 和检索日志；
-- 生产部署模板、Linux amd64 打包脚本、服务器 systemd/Nginx/备份脚本；
-- 文档精简、API 文档和验收清单更新。
+- SaaS 多租户、登录鉴权、角色权限、成员邀请和租户隔离。
+- 知识库文件上传、文档归档、切片、向量化、RAG 检索和问答生成闭环。
+- Agent 创建、编辑、发布、回滚、归档、知识库绑定、多轮会话和 SSE 流式对话。
+- 智能体族谱图谱、关系维护、筛选、结构诊断、统计分析和 CSV 导出。
+- 套餐、订阅、用量统计、额度限制、订单生命周期和支付回调验签。
+- License 在线/离线验证、签名脱敏和授权生命周期管理。
+- Webhook 配置、测试发送、投递记录、重试 Worker、状态摘要和 CSV 导出。
+- API 限流、通用审计、审计筛选分页和 CSV 导出。
+- 管理台中文摘要展示，避免新增黑色 JSON 原文区域。
+- 生产部署模板、Linux amd64 打包、Nginx/systemd、冒烟检查、备份、升级、回滚和恢复演练脚本。
+- `02_docs_v1_delivery/06_交付验收清单.md` 已全部勾选。
 
 ## 4. 验证命令
 
@@ -68,15 +44,36 @@ cd 01_backend
 go test ./...
 ```
 
-当前验证结果：通过。
+```powershell
+D:\Node.js\node.exe --check 02_frontend\assets\app.js
+```
 
-线上入口：
+当前本地验证结果：通过。
+
+## 5. 部署与运维
+
+生产部署模板位于：
+
+```text
+01_backend/deploy/production/
+```
+
+关键脚本：
+
+- `scripts/backup.sh`：数据库和配置备份。
+- `scripts/restore-drill.sh`：恢复到临时库演练并校验。
+- `scripts/restore.sh`：显式确认后的真实恢复。
+- `scripts/upgrade.sh`：发布包升级、迁移、重启和冒烟检查。
+- `scripts/rollback.sh`：运行文件回滚，可选迁移回滚。
+- `scripts/smoke.sh`：健康检查和迁移状态检查。
+
+线上入口记录：
 
 - 管理台：[https://zupu.jiangxinnet.com/saas/](https://zupu.jiangxinnet.com/saas/)
 - 后端 API：[https://zupu.jiangxinnet.com/saas-api/api/v1/ready](https://zupu.jiangxinnet.com/saas-api/api/v1/ready)
 
-## 5. 下一步
+## 6. 后续增强建议
 
-```text
-套餐额度硬限制 → 支付接入 → License 离线签名验签闭环 → 前端工程化
-```
+- Vue3 + TypeScript + Vite + Element Plus 工程化迁移。
+- 真实第三方支付渠道接入。
+- 多实例生产环境 Redis 限流压测和监控告警增强。

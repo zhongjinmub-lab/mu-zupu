@@ -1,10 +1,15 @@
-﻿{
-    "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-30T22:29:29+08:00",
-    "status":  "audit_log_csv_export_increment_verified",
-    "assigned_to":  "Codex 开发助手",
-    "file_count":  219,
+{
+    "project":  "鏅鸿兘浣撴棌璋盨AAS",
+    "generated_at":  "2026-05-31T14:34:22+08:00",
+    "status":  "final_delivery_verified",
+    "assigned_to":  "Codex 寮€鍙戝姪鎵?,
+    "file_count":  220,
     "files":  [
+                  {
+                      "path":  ".gitignore",
+                      "size":  215,
+                      "sha256":  "9926f9c2e13030c91855c479321b0619db183cec99282cf7065976b1e03813c7"
+                  },
                   {
                       "path":  "01_backend\\cmd\\document-worker\\main.go",
                       "size":  1948,
@@ -19,6 +24,11 @@
                       "path":  "01_backend\\cmd\\server\\main.go",
                       "size":  1065,
                       "sha256":  "84f492af99af53f3f90f74c9e9d184b3580cdd1749b72258fcb92ea7be6abbff"
+                  },
+                  {
+                      "path":  "01_backend\\cmd\\webhook-worker\\main.go",
+                      "size":  1515,
+                      "sha256":  "fa3419953bc0d9842e99529bb5c93de9a6b26910cb7d1c628507b55c75fc7d22"
                   },
                   {
                       "path":  "01_backend\\deploy\\docker-compose.yml",
@@ -37,8 +47,8 @@
                   },
                   {
                       "path":  "01_backend\\deploy\\production\\mu-agent-saas.env.example",
-                      "size":  845,
-                      "sha256":  "e3edb9d53f087061ee9859bd7c4ba6a6eba69128d85030e377259c46a019d934"
+                      "size":  1112,
+                      "sha256":  "f1868a3ee011b8b5b9870d84a27156d716ff7af17b17c8fa75184de5ecb22312"
                   },
                   {
                       "path":  "01_backend\\deploy\\production\\nginx\\saas-api-location.conf",
@@ -47,8 +57,8 @@
                   },
                   {
                       "path":  "01_backend\\deploy\\production\\README.md",
-                      "size":  1808,
-                      "sha256":  "7d9f1da7b199bf5bbff71c0073d988a921f86c9b9535c2ac613c85f0baa849d8"
+                      "size":  4130,
+                      "sha256":  "e83d15b95354374e09d1e2929f7522449ac5f262a6080e7acb2bb5c0fb63eb87"
                   },
                   {
                       "path":  "01_backend\\deploy\\production\\scripts\\backup.sh",
@@ -56,9 +66,29 @@
                       "sha256":  "1407f4627eb72608b7d159c88879c797bf7908289c89fa7e22225b0d6f9913fd"
                   },
                   {
+                      "path":  "01_backend\\deploy\\production\\scripts\\restore.sh",
+                      "size":  1949,
+                      "sha256":  "63f2ae448cdaae96cf7442349cc824f08e28cda94018e6e4f3ecf7ef0246ba32"
+                  },
+                  {
+                      "path":  "01_backend\\deploy\\production\\scripts\\restore-drill.sh",
+                      "size":  2081,
+                      "sha256":  "3420c1c26233c5a2435a32b848e0403cd60e771582df987350306e87739f25b2"
+                  },
+                  {
+                      "path":  "01_backend\\deploy\\production\\scripts\\rollback.sh",
+                      "size":  1804,
+                      "sha256":  "4c5147afc0356eba49e28124475b4d9392da7152515116d5a80b64151e63402a"
+                  },
+                  {
                       "path":  "01_backend\\deploy\\production\\scripts\\smoke.sh",
                       "size":  415,
                       "sha256":  "6f6113805abf32ed755313aeeb38c61ae5fff90bb82e5011c7a0126d21106edb"
+                  },
+                  {
+                      "path":  "01_backend\\deploy\\production\\scripts\\upgrade.sh",
+                      "size":  2381,
+                      "sha256":  "0614f69bc31989b5515760f84ecc2164f74df1803a0c76f5d1781aa60ebc153f"
                   },
                   {
                       "path":  "01_backend\\deploy\\production\\systemd\\mu-agent-document-worker.service",
@@ -81,529 +111,34 @@
                       "sha256":  "38a416ab2bb5127e02e8141c852b19604b09d8900dd6c183650df8f5b0dd453d"
                   },
                   {
-                      "path":  "01_backend\\deploy_dist\\mu-agent-document-worker",
-                      "size":  18534466,
-                      "sha256":  "2f55df92f753451fd067842b29cb99d0acb507cb18ce9c5410a92c0b7eb254bf"
-                  },
-                  {
-                      "path":  "01_backend\\deploy_dist\\mu-agent-migrate",
-                      "size":  13426343,
-                      "sha256":  "bdb3aa0716b5e80faeb0b51df4f3610e935fe1b570f2bd45c7db8ea340e31209"
-                  },
-                  {
-                      "path":  "01_backend\\deploy_dist\\mu-agent-server",
-                      "size":  20641844,
-                      "sha256":  "3b6562a8a59df9bfdf950c4a6cfb39403d276c9a25d539eaf8337b66a976c45a"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64.tar.gz",
-                      "size":  13074042,
-                      "sha256":  "655c976828c9572c23fdf90c1d5aa29a33873d20a8fa48e47748034f34e2d041"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\bin\\mu-agent-document-worker",
-                      "size":  12832930,
-                      "sha256":  "4a46427a8f169fd532011a28e22e6f0f6ba23d714bed343dd29f4c6aded3b042"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\bin\\mu-agent-migrate",
-                      "size":  9265314,
-                      "sha256":  "12c10f5a39428b24146e84316515b446a9dbfdda6f3c98cb8077bde94624d302"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\bin\\mu-agent-server",
-                      "size":  14450850,
-                      "sha256":  "71c810f04c1fdfd3b43009ca8392b0a660e40d19103014a7acb71817df18afc4"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\compose.env.example",
-                      "size":  111,
-                      "sha256":  "6ab94933cd39d495515542ff9794a52d9988ba04395df0b9168ff372fc187569"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\docker-compose.yml",
-                      "size":  1269,
-                      "sha256":  "3d2734d21e51255401d0fb77976119eb2f05b2ef4a75949fbeb3c5fa9b5d5935"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000001_init.down.sql",
-                      "size":  601,
-                      "sha256":  "d297b67cc448f2d780294131787184090b5d65f931ae6825d510bc9f2341553e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000001_init.up.sql",
-                      "size":  8853,
-                      "sha256":  "7b637736d5eaace63e81dac61f2a3c2d1cdcf042516d689d737d520a2b43a192"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000002_vector_optimization.down.sql",
-                      "size":  85,
-                      "sha256":  "639627257b920fd95d7c7e45c54bd7cbda7c10e6e7ed6093df4644b364e437a9"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000002_vector_optimization.up.sql",
-                      "size":  2865,
-                      "sha256":  "4e1d9c2298234cf55f03f8fa16c491dd289f1f707b49bd2f0a7d74796d5d7389"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000003_cleanup_and_hardening.down.sql",
-                      "size":  876,
-                      "sha256":  "2f9a725e7bedef0e8278926d94cbd1c43cd5ed3075702587041157bc8bc89a06"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000003_cleanup_and_hardening.up.sql",
-                      "size":  2397,
-                      "sha256":  "3c402bff6914d026f48900b17f214b2d9e2eb7387bbfede0b1d7fb4fe7de7cda"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000004_auth_tenant_kb_mvp.down.sql",
-                      "size":  450,
-                      "sha256":  "23ebe430666d6c473063590a9504411cfc5507e672bf92e1be4e3529fe3d7cb1"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000004_auth_tenant_kb_mvp.up.sql",
-                      "size":  1029,
-                      "sha256":  "3bd04afa70d474c37364800947af3ce014eb30f263a914672298c5d79a2f208d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000005_files_upload.down.sql",
-                      "size":  120,
-                      "sha256":  "1a57ec06b7f32f1a1cd57c84843943d3ba7527b07e81d0df3ec3a3d8c1d15224"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000005_files_upload.up.sql",
-                      "size":  828,
-                      "sha256":  "692b038846e99f65b554fe1e30848e5ed7587f6f2f12073599d335a85c3633e3"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000006_documents_from_file.down.sql",
-                      "size":  106,
-                      "sha256":  "bf92d0b2fdbefa0ea67fcaea82f45a9ae4e6ce0466364eee13bb4faf1be17990"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000006_documents_from_file.up.sql",
-                      "size":  280,
-                      "sha256":  "b02301d159bf82cd62d3e390edc40069767be0c8738f77cfcc5c05efab956583"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000007_rebuild_document_chunks.down.sql",
-                      "size":  345,
-                      "sha256":  "7699f05bc99d20629bfeab829b9546ce7f0622c9aae174a6e5e6dd525dbab672"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000007_rebuild_document_chunks.up.sql",
-                      "size":  429,
-                      "sha256":  "6eafea3f9c9c63a334d722af793dfcf8d962ed03f8ad5fe746cb0d304c46018e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000008_document_jobs.down.sql",
-                      "size":  205,
-                      "sha256":  "6a37b99d75ebf5247f7ec9b841d4dc627af5d862db22015a7d11bd7ea5428c01"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000008_document_jobs.up.sql",
-                      "size":  1487,
-                      "sha256":  "518474c3d893145743661ea071d0377e3e6fb81f20ca405c32c8237664f5f319"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000009_agent_kb_bindings.down.sql",
-                      "size":  268,
-                      "sha256":  "7b0c6b1160fffd9cb9f3c8d7b1a0501db598e6af2eab9a113163fe5789eee8c7"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\migrations\\000009_agent_kb_bindings.up.sql",
-                      "size":  1332,
-                      "sha256":  "e9f1001b563b451395b97298f8fec905364ee11a31343fcf45f2c0e3bca1c33c"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\mu-agent-saas.env.example",
-                      "size":  845,
-                      "sha256":  "e3edb9d53f087061ee9859bd7c4ba6a6eba69128d85030e377259c46a019d934"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\nginx\\saas-api-location.conf",
-                      "size":  480,
-                      "sha256":  "ce1b82665066feb93ab2a15fd576b86faf68711c0ca32e63db062b6e8456d70b"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\README.md",
-                      "size":  1808,
-                      "sha256":  "7d9f1da7b199bf5bbff71c0073d988a921f86c9b9535c2ac613c85f0baa849d8"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\scripts\\backup.sh",
-                      "size":  573,
-                      "sha256":  "1407f4627eb72608b7d159c88879c797bf7908289c89fa7e22225b0d6f9913fd"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\scripts\\smoke.sh",
-                      "size":  415,
-                      "sha256":  "6f6113805abf32ed755313aeeb38c61ae5fff90bb82e5011c7a0126d21106edb"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\systemd\\mu-agent-document-worker.service",
-                      "size":  396,
-                      "sha256":  "08a7bb524924d20f6011eef38909bf37c6e07ba9eddf5b9c3ae88f5df3f89363"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\systemd\\mu-agent-saas.service",
-                      "size":  353,
-                      "sha256":  "db49b579d77153d263fd5868654a0d6e561b41ec3ae1d534cd93c4bb34946327"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\systemd\\mu-agent-saas-backup.service",
-                      "size":  131,
-                      "sha256":  "2349c78b8ceae78bf73b5de4f080c0154bf155c575860d9452c75c9e94e3707d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-chat-20260528-linux-amd64\\systemd\\mu-agent-saas-backup.timer",
-                      "size":  135,
-                      "sha256":  "38a416ab2bb5127e02e8141c852b19604b09d8900dd6c183650df8f5b0dd453d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64.tar.gz",
-                      "size":  13067768,
-                      "sha256":  "896d50a5ef5524b68ae6961b0b8715f22a73430130a65e1d790bc4d4d18324ce"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\bin\\mu-agent-document-worker",
-                      "size":  12832930,
-                      "sha256":  "4a46427a8f169fd532011a28e22e6f0f6ba23d714bed343dd29f4c6aded3b042"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\bin\\mu-agent-migrate",
-                      "size":  9265314,
-                      "sha256":  "12c10f5a39428b24146e84316515b446a9dbfdda6f3c98cb8077bde94624d302"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\bin\\mu-agent-server",
-                      "size":  14430370,
-                      "sha256":  "683a179bae1d8b5af16731da3a0fd2ee227e5465e00c1c2f74a98f1b60e28384"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\compose.env.example",
-                      "size":  111,
-                      "sha256":  "6ab94933cd39d495515542ff9794a52d9988ba04395df0b9168ff372fc187569"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\docker-compose.yml",
-                      "size":  1269,
-                      "sha256":  "3d2734d21e51255401d0fb77976119eb2f05b2ef4a75949fbeb3c5fa9b5d5935"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000001_init.down.sql",
-                      "size":  601,
-                      "sha256":  "d297b67cc448f2d780294131787184090b5d65f931ae6825d510bc9f2341553e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000001_init.up.sql",
-                      "size":  8853,
-                      "sha256":  "7b637736d5eaace63e81dac61f2a3c2d1cdcf042516d689d737d520a2b43a192"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000002_vector_optimization.down.sql",
-                      "size":  85,
-                      "sha256":  "639627257b920fd95d7c7e45c54bd7cbda7c10e6e7ed6093df4644b364e437a9"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000002_vector_optimization.up.sql",
-                      "size":  2865,
-                      "sha256":  "4e1d9c2298234cf55f03f8fa16c491dd289f1f707b49bd2f0a7d74796d5d7389"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000003_cleanup_and_hardening.down.sql",
-                      "size":  876,
-                      "sha256":  "2f9a725e7bedef0e8278926d94cbd1c43cd5ed3075702587041157bc8bc89a06"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000003_cleanup_and_hardening.up.sql",
-                      "size":  2397,
-                      "sha256":  "3c402bff6914d026f48900b17f214b2d9e2eb7387bbfede0b1d7fb4fe7de7cda"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000004_auth_tenant_kb_mvp.down.sql",
-                      "size":  450,
-                      "sha256":  "23ebe430666d6c473063590a9504411cfc5507e672bf92e1be4e3529fe3d7cb1"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000004_auth_tenant_kb_mvp.up.sql",
-                      "size":  1029,
-                      "sha256":  "3bd04afa70d474c37364800947af3ce014eb30f263a914672298c5d79a2f208d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000005_files_upload.down.sql",
-                      "size":  120,
-                      "sha256":  "1a57ec06b7f32f1a1cd57c84843943d3ba7527b07e81d0df3ec3a3d8c1d15224"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000005_files_upload.up.sql",
-                      "size":  828,
-                      "sha256":  "692b038846e99f65b554fe1e30848e5ed7587f6f2f12073599d335a85c3633e3"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000006_documents_from_file.down.sql",
-                      "size":  106,
-                      "sha256":  "bf92d0b2fdbefa0ea67fcaea82f45a9ae4e6ce0466364eee13bb4faf1be17990"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000006_documents_from_file.up.sql",
-                      "size":  280,
-                      "sha256":  "b02301d159bf82cd62d3e390edc40069767be0c8738f77cfcc5c05efab956583"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000007_rebuild_document_chunks.down.sql",
-                      "size":  345,
-                      "sha256":  "7699f05bc99d20629bfeab829b9546ce7f0622c9aae174a6e5e6dd525dbab672"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000007_rebuild_document_chunks.up.sql",
-                      "size":  429,
-                      "sha256":  "6eafea3f9c9c63a334d722af793dfcf8d962ed03f8ad5fe746cb0d304c46018e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000008_document_jobs.down.sql",
-                      "size":  205,
-                      "sha256":  "6a37b99d75ebf5247f7ec9b841d4dc627af5d862db22015a7d11bd7ea5428c01"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000008_document_jobs.up.sql",
-                      "size":  1487,
-                      "sha256":  "518474c3d893145743661ea071d0377e3e6fb81f20ca405c32c8237664f5f319"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000009_agent_kb_bindings.down.sql",
-                      "size":  268,
-                      "sha256":  "7b0c6b1160fffd9cb9f3c8d7b1a0501db598e6af2eab9a113163fe5789eee8c7"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\migrations\\000009_agent_kb_bindings.up.sql",
-                      "size":  1332,
-                      "sha256":  "e9f1001b563b451395b97298f8fec905364ee11a31343fcf45f2c0e3bca1c33c"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\mu-agent-saas.env.example",
-                      "size":  845,
-                      "sha256":  "e3edb9d53f087061ee9859bd7c4ba6a6eba69128d85030e377259c46a019d934"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\nginx\\saas-api-location.conf",
-                      "size":  480,
-                      "sha256":  "ce1b82665066feb93ab2a15fd576b86faf68711c0ca32e63db062b6e8456d70b"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\README.md",
-                      "size":  1808,
-                      "sha256":  "7d9f1da7b199bf5bbff71c0073d988a921f86c9b9535c2ac613c85f0baa849d8"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\scripts\\backup.sh",
-                      "size":  573,
-                      "sha256":  "1407f4627eb72608b7d159c88879c797bf7908289c89fa7e22225b0d6f9913fd"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\scripts\\smoke.sh",
-                      "size":  415,
-                      "sha256":  "6f6113805abf32ed755313aeeb38c61ae5fff90bb82e5011c7a0126d21106edb"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\systemd\\mu-agent-document-worker.service",
-                      "size":  396,
-                      "sha256":  "08a7bb524924d20f6011eef38909bf37c6e07ba9eddf5b9c3ae88f5df3f89363"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\systemd\\mu-agent-saas.service",
-                      "size":  353,
-                      "sha256":  "db49b579d77153d263fd5868654a0d6e561b41ec3ae1d534cd93c4bb34946327"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\systemd\\mu-agent-saas-backup.service",
-                      "size":  131,
-                      "sha256":  "2349c78b8ceae78bf73b5de4f080c0154bf155c575860d9452c75c9e94e3707d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-agent-kb-20260528-linux-amd64\\systemd\\mu-agent-saas-backup.timer",
-                      "size":  135,
-                      "sha256":  "38a416ab2bb5127e02e8141c852b19604b09d8900dd6c183650df8f5b0dd453d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64.tar.gz",
-                      "size":  13049351,
-                      "sha256":  "fe813bce32b916a84f09484cd2738d1b5f47c64bfddd91c0884503fe16179fbd"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\bin\\mu-agent-document-worker",
-                      "size":  12832930,
-                      "sha256":  "4a46427a8f169fd532011a28e22e6f0f6ba23d714bed343dd29f4c6aded3b042"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\bin\\mu-agent-migrate",
-                      "size":  9265314,
-                      "sha256":  "12c10f5a39428b24146e84316515b446a9dbfdda6f3c98cb8077bde94624d302"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\bin\\mu-agent-server",
-                      "size":  14377122,
-                      "sha256":  "87aba27787046f1414bf28d4bcdaa60838a6e17ad52e0202e820ecbd79791e8e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\compose.env.example",
-                      "size":  111,
-                      "sha256":  "6ab94933cd39d495515542ff9794a52d9988ba04395df0b9168ff372fc187569"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\docker-compose.yml",
-                      "size":  1269,
-                      "sha256":  "3d2734d21e51255401d0fb77976119eb2f05b2ef4a75949fbeb3c5fa9b5d5935"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000001_init.down.sql",
-                      "size":  601,
-                      "sha256":  "d297b67cc448f2d780294131787184090b5d65f931ae6825d510bc9f2341553e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000001_init.up.sql",
-                      "size":  8853,
-                      "sha256":  "7b637736d5eaace63e81dac61f2a3c2d1cdcf042516d689d737d520a2b43a192"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000002_vector_optimization.down.sql",
-                      "size":  85,
-                      "sha256":  "639627257b920fd95d7c7e45c54bd7cbda7c10e6e7ed6093df4644b364e437a9"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000002_vector_optimization.up.sql",
-                      "size":  2865,
-                      "sha256":  "4e1d9c2298234cf55f03f8fa16c491dd289f1f707b49bd2f0a7d74796d5d7389"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000003_cleanup_and_hardening.down.sql",
-                      "size":  876,
-                      "sha256":  "2f9a725e7bedef0e8278926d94cbd1c43cd5ed3075702587041157bc8bc89a06"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000003_cleanup_and_hardening.up.sql",
-                      "size":  2397,
-                      "sha256":  "3c402bff6914d026f48900b17f214b2d9e2eb7387bbfede0b1d7fb4fe7de7cda"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000004_auth_tenant_kb_mvp.down.sql",
-                      "size":  450,
-                      "sha256":  "23ebe430666d6c473063590a9504411cfc5507e672bf92e1be4e3529fe3d7cb1"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000004_auth_tenant_kb_mvp.up.sql",
-                      "size":  1029,
-                      "sha256":  "3bd04afa70d474c37364800947af3ce014eb30f263a914672298c5d79a2f208d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000005_files_upload.down.sql",
-                      "size":  120,
-                      "sha256":  "1a57ec06b7f32f1a1cd57c84843943d3ba7527b07e81d0df3ec3a3d8c1d15224"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000005_files_upload.up.sql",
-                      "size":  828,
-                      "sha256":  "692b038846e99f65b554fe1e30848e5ed7587f6f2f12073599d335a85c3633e3"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000006_documents_from_file.down.sql",
-                      "size":  106,
-                      "sha256":  "bf92d0b2fdbefa0ea67fcaea82f45a9ae4e6ce0466364eee13bb4faf1be17990"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000006_documents_from_file.up.sql",
-                      "size":  280,
-                      "sha256":  "b02301d159bf82cd62d3e390edc40069767be0c8738f77cfcc5c05efab956583"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000007_rebuild_document_chunks.down.sql",
-                      "size":  345,
-                      "sha256":  "7699f05bc99d20629bfeab829b9546ce7f0622c9aae174a6e5e6dd525dbab672"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000007_rebuild_document_chunks.up.sql",
-                      "size":  429,
-                      "sha256":  "6eafea3f9c9c63a334d722af793dfcf8d962ed03f8ad5fe746cb0d304c46018e"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000008_document_jobs.down.sql",
-                      "size":  205,
-                      "sha256":  "6a37b99d75ebf5247f7ec9b841d4dc627af5d862db22015a7d11bd7ea5428c01"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\migrations\\000008_document_jobs.up.sql",
-                      "size":  1487,
-                      "sha256":  "518474c3d893145743661ea071d0377e3e6fb81f20ca405c32c8237664f5f319"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\mu-agent-saas.env.example",
-                      "size":  845,
-                      "sha256":  "e3edb9d53f087061ee9859bd7c4ba6a6eba69128d85030e377259c46a019d934"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\nginx\\saas-api-location.conf",
-                      "size":  480,
-                      "sha256":  "ce1b82665066feb93ab2a15fd576b86faf68711c0ca32e63db062b6e8456d70b"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\README.md",
-                      "size":  1808,
-                      "sha256":  "7d9f1da7b199bf5bbff71c0073d988a921f86c9b9535c2ac613c85f0baa849d8"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\scripts\\backup.sh",
-                      "size":  573,
-                      "sha256":  "1407f4627eb72608b7d159c88879c797bf7908289c89fa7e22225b0d6f9913fd"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\scripts\\smoke.sh",
-                      "size":  415,
-                      "sha256":  "6f6113805abf32ed755313aeeb38c61ae5fff90bb82e5011c7a0126d21106edb"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\systemd\\mu-agent-document-worker.service",
-                      "size":  396,
-                      "sha256":  "08a7bb524924d20f6011eef38909bf37c6e07ba9eddf5b9c3ae88f5df3f89363"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\systemd\\mu-agent-saas.service",
-                      "size":  353,
-                      "sha256":  "db49b579d77153d263fd5868654a0d6e561b41ec3ae1d534cd93c4bb34946327"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\systemd\\mu-agent-saas-backup.service",
-                      "size":  131,
-                      "sha256":  "2349c78b8ceae78bf73b5de4f080c0154bf155c575860d9452c75c9e94e3707d"
-                  },
-                  {
-                      "path":  "01_backend\\dist\\mu-agent-saas-rag-ask-20260528-linux-amd64\\systemd\\mu-agent-saas-backup.timer",
-                      "size":  135,
-                      "sha256":  "38a416ab2bb5127e02e8141c852b19604b09d8900dd6c183650df8f5b0dd453d"
+                      "path":  "01_backend\\deploy\\production\\systemd\\mu-agent-webhook-worker.service",
+                      "size":  394,
+                      "sha256":  "035ad35ef1ed9b1e2f66012b39dd30ec5ef6a0a748e9ff08d7be45ae2cb87ce9"
                   },
                   {
                       "path":  "01_backend\\go.mod",
-                      "size":  2540,
-                      "sha256":  "ee930c6591674897679031c2db30f9e7311043209a1ee4099ff604c8a0456863"
+                      "size":  2529,
+                      "sha256":  "161a7e6c01902718939980df5c021c5550087f9b4f72287b0c225e834f3b90bb"
                   },
                   {
                       "path":  "01_backend\\go.sum",
-                      "size":  13999,
-                      "sha256":  "a854d6b56f8a5dd0e8dfae57638602e0bf7fe41142462f3473b84650f8c3020f"
+                      "size":  12981,
+                      "sha256":  "829e122627565b29ca26c31eff6ce8abe1a431b08620d515550a09ef5017676c"
                   },
                   {
                       "path":  "01_backend\\internal\\bootstrap\\app.go",
-                      "size":  4117,
-                      "sha256":  "8dd8adcaa709193ecca5d923e0a14d52405ed949855b4e2e60cbf633a92deb9a"
+                      "size":  6585,
+                      "sha256":  "2aebd0c81e602a78a550f586cdbb7dcbe98afa5e5de68497955da1607810f77b"
                   },
                   {
                       "path":  "01_backend\\internal\\config\\config.go",
-                      "size":  3772,
-                      "sha256":  "b12ed33993681b67e2f00c229dc5a34b4ebe6abe4a78ea192297f61aed3e67b1"
+                      "size":  4971,
+                      "sha256":  "27c0dd41c93530010524bf36f97e30a33d0d5d73ff668992c3b63979d34d0e9f"
                   },
                   {
                       "path":  "01_backend\\internal\\config\\config_test.go",
-                      "size":  2394,
-                      "sha256":  "201ec777007c85a5a2596a070d2636e5273444323db373aea6b1694b43ca0c18"
+                      "size":  3304,
+                      "sha256":  "42a42b4ef77283ecefea7c93758e1fe24f736753a9bdccc66e2c860e3a6e91ac"
                   },
                   {
                       "path":  "01_backend\\internal\\embedding\\http_provider.go",
@@ -636,6 +171,16 @@
                       "sha256":  "1339f5174da138b369e91f6ab83370f452fc1b1a33cb41418723f65420c39eb3"
                   },
                   {
+                      "path":  "01_backend\\internal\\middleware\\rate_limit.go",
+                      "size":  4003,
+                      "sha256":  "ec4c0be8d7c33d780c54c2b27a8836935f3122aa83d0daa3197f05d63fd91281"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\middleware\\rate_limit_test.go",
+                      "size":  3616,
+                      "sha256":  "9c3b40744a8b855a4ad1357919dcded3ae05b7903a8c75141f7930a977267d8f"
+                  },
+                  {
                       "path":  "01_backend\\internal\\middleware\\request_id.go",
                       "size":  353,
                       "sha256":  "40c6b6599cf52cc2de986c24732f22accaf309f60c58d03b0460c1ae7ea333e1"
@@ -657,28 +202,53 @@
                   },
                   {
                       "path":  "01_backend\\internal\\module\\agent\\handler.go",
-                      "size":  10287,
-                      "sha256":  "fffac63287e942e63b3cba50107ddb6daa155d7b34fe73999df76e3319ca80f7"
+                      "size":  25554,
+                      "sha256":  "984cab65c83005c1c8b841d1f9d6344c8b5666c1a7040e5da218899899e9540d"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\agent\\handler_test.go",
+                      "size":  2936,
+                      "sha256":  "35d25320a9534a5c48b9b2832ae871c0ab2e2da7e64005780364d7cc41e960e6"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\agent\\repository.go",
-                      "size":  11626,
-                      "sha256":  "5b67133d15c2aea2d868ab5323b3f2bfb2d748ff46d66706eb8f64ff9a5fe6c1"
+                      "size":  24120,
+                      "sha256":  "245669bf8029064e49edaa6b78c54e8f04ddaa0cce3b524e42353b0d48bac6e5"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\agent\\routes.go",
-                      "size":  681,
-                      "sha256":  "af212786156267bee3ecddb7f460274ad58306086731a839692f63687bcd3944"
+                      "size":  1460,
+                      "sha256":  "e636fb31d307727cbde69a5f42cca2a89eaa4e50f7ebda8a285562da3d2a349a"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\agent\\types.go",
-                      "size":  5402,
-                      "sha256":  "b288b6a2a5ef88321113dbb761f7e755087e761c265335d363f1951495965682"
+                      "size":  15925,
+                      "sha256":  "6b77efa30ce3b9c0028585b95fb5bb81284552307f758656e2bdec4a0fe84dbd"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\agent\\types_test.go",
-                      "size":  1570,
-                      "sha256":  "078cf5ca0b3d9f33b71defbf883c31096289387fc18590cbaea8ac2b177585bb"
+                      "size":  5760,
+                      "sha256":  "381141cfdede4498f612a4791e8ab1615d1444da8094702a33bbe86f5228bad4"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\analytics\\handler.go",
+                      "size":  5172,
+                      "sha256":  "89d93d7c061d5e445b5353928002e92dbca5b6401d15311aa24c7f469be05cbf"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\analytics\\repository.go",
+                      "size":  8794,
+                      "sha256":  "f63eeb9708af04d36d628c896ea53f1058efae5b58c0e190eb8beed71612df84"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\analytics\\routes.go",
+                      "size":  205,
+                      "sha256":  "b735701e07e6a453e018082a547baaa674df2b9aeda45cf38c7678ea88f52b4c"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\analytics\\types.go",
+                      "size":  2291,
+                      "sha256":  "f24c84f11430e6929a52b3714aeba450e57bc5e72d4b68f8fbd8bcd17ed5ed56"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\auth\\handler.go",
@@ -716,9 +286,34 @@
                       "sha256":  "b7b2ba6e831a9c1f600b3bd24324ca3dae78138e79b89d03a444f8407ac64aff"
                   },
                   {
+                      "path":  "01_backend\\internal\\module\\billing\\handler.go",
+                      "size":  9815,
+                      "sha256":  "df8d8a24364633896e1bff405a031a8cc2a40e1557d116c501863ccd20e729f2"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\billing\\repository.go",
+                      "size":  22516,
+                      "sha256":  "021842cf6f12f0f15dd52e8e74e19b23b2fb7bb833b30182f305fccc79b2cc99"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\billing\\routes.go",
+                      "size":  933,
+                      "sha256":  "228cde4d2da3a8c6b659eaa95260d2437ea18d1a5eda1d89900bf5dfc4910db3"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\billing\\types.go",
+                      "size":  9082,
+                      "sha256":  "ddf0b127a8c54304766aa75b04e65c2a3df66ce0625ec213f2f7f94ba54707e8"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\billing\\types_test.go",
+                      "size":  3796,
+                      "sha256":  "829f76edc71d4bb105f11ec09aac1dc43c882cdf0ef2d790b284ab003c05b86c"
+                  },
+                  {
                       "path":  "01_backend\\internal\\module\\file\\handler.go",
-                      "size":  3442,
-                      "sha256":  "14c619605362d60c7001070b1767d1a494d4b6a57fac6b815b31184002768369"
+                      "size":  5617,
+                      "sha256":  "d8d4f2675405139e91ce56dd21eed87bbd417a699a38b576b427b20c286fb4d5"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\file\\repository.go",
@@ -727,8 +322,8 @@
                   },
                   {
                       "path":  "01_backend\\internal\\module\\file\\routes.go",
-                      "size":  167,
-                      "sha256":  "6743511a713a7c681184e3a84f29cbfa441c2f370fea94ac81c49328505f602d"
+                      "size":  328,
+                      "sha256":  "6e6f8f19b8a334a214516f2ab2d00991f9b7df70d482f5860780976585aaf77f"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\file\\types.go",
@@ -757,23 +352,23 @@
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\handler.go",
-                      "size":  16311,
-                      "sha256":  "ec848375469bec88e8ce997254dec3e4c3e06ff8129881b0a3aadcbd411b826e"
+                      "size":  19419,
+                      "sha256":  "6043500ef39e128e9c157f537f7e92fbc5a93a8ee387e9aa8a468dd5f7467c42"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\repository.go",
-                      "size":  21756,
-                      "sha256":  "3e2413eb909a29eebac4657f3e329472f0bc753dde18fb637dbe4486fe1b4717"
+                      "size":  25248,
+                      "sha256":  "5ba222fe049fdfe8223b55b0b578fee449e3a13cae6ea4e3ec43e06503335e96"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\routes.go",
-                      "size":  1159,
-                      "sha256":  "5be89a71a477b2c535fd29116bd0a97335b8b822ac9da77bf07aee6a630363ed"
+                      "size":  1552,
+                      "sha256":  "bdc98f36d70742b1113ec62b383842dc227dbb6ef3a3bc0c593b193caa536555"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\types.go",
-                      "size":  11196,
-                      "sha256":  "ff8d9f089bd2d9215ea5f52c6e457e3b59434f3e02a3c47bb78cae6289afaa30"
+                      "size":  11385,
+                      "sha256":  "5d476e2faffd05176d04df3bf17f4dfccab16ed7635cf6c93bbed44756cc6f67"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\types_test.go",
@@ -782,33 +377,128 @@
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\vector_repository.go",
-                      "size":  5849,
-                      "sha256":  "f7331272bca49e7671ad2486f29a445b9c2770b029c84471541cbd87cec56285"
+                      "size":  8572,
+                      "sha256":  "bda2fe60fee6ca1ae6019a445121f2342b43f00a008eccb6c0335e23cb2addca"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\kb\\vector_repository_test.go",
-                      "size":  970,
-                      "sha256":  "980f8340089c00596a50629f66ec692e2c2f825234b4f2d4a170dc2e9bebcf99"
+                      "size":  2005,
+                      "sha256":  "da48c8ec1e2d9beadf8be821df28cb59cb6785c126874c0308d373e7cf5deace"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\handler.go",
+                      "size":  5040,
+                      "sha256":  "14c05b4bef28623e79bcdaa08843aa6d789bfa01ed2722cfba9003049f93faee"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\repository.go",
+                      "size":  4759,
+                      "sha256":  "c16fc45a95812a9372e5b3ce0a1d67fe7ad5e08956287ae8db43ff34a9ec3a2c"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\routes.go",
+                      "size":  445,
+                      "sha256":  "9264ece61d7d8c9005e8044b9ea8bcdae8a2d2d6a405cf9e5b017e8869bfa157"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\types.go",
+                      "size":  2345,
+                      "sha256":  "aaaf776160b6dbc56cd6a77dd5a5c9f0cdef88fd83e8d38fb92bad87bd31ee50"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\types_test.go",
+                      "size":  1299,
+                      "sha256":  "87f1bcbd986dbbd15f142cba1bf8d50d2a5278bc136310afc5f3721ac03f09a4"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\verifier.go",
+                      "size":  4359,
+                      "sha256":  "1a3851e57428dd54c25e6ce469f7856196eef4ab7ef749b4817749c476502cae"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\license\\verifier_test.go",
+                      "size":  2999,
+                      "sha256":  "77652c21501dfe8314ace568f6d653346f02408f37b3431bb44cf88ca73d58cf"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\settings\\handler.go",
+                      "size":  10692,
+                      "sha256":  "c4dc27aa177013fea5dde6bf98660a3ecd17ea3cd781451bf09a9963866e9a2b"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\settings\\handler_test.go",
+                      "size":  11282,
+                      "sha256":  "aa645db32cfd69cdf70fff899399b37753c16b8092818b34480a30cf308be799"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\settings\\routes.go",
+                      "size":  387,
+                      "sha256":  "73bb974a78613ccb044defa9f6ddd92d51ff0659239f7801a7393c3b7c402636"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\settings\\types.go",
+                      "size":  3281,
+                      "sha256":  "b27a59ec9c26075aedad18156e5cd17bc31fa42a6d2ef35b7c70a10889f59b6b"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\tenant\\handler.go",
-                      "size":  1507,
-                      "sha256":  "d7148cc6f9e6470c20fd7d2071b62ca99760e95c4d65b5af7f094763b0745a91"
+                      "size":  13336,
+                      "sha256":  "cd0892621e356d618c922b5fc0f46fedf28ce2117dac0d7235efca5d5161198b"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\tenant\\middleware.go",
-                      "size":  1163,
-                      "sha256":  "d3825c342e9e06193b155815ecd32ea46682eabda61be13f7db90949582d261a"
+                      "size":  2980,
+                      "sha256":  "300e3672069291591a7a2af38c4c6f8c6e5a7cfb6171b16cb091966e92e90a41"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\tenant\\middleware_test.go",
+                      "size":  2390,
+                      "sha256":  "708b23695c789b04b21697c3c7ba198dc7d7d10883512f57218b4a9d100b7492"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\tenant\\repository.go",
-                      "size":  2415,
-                      "sha256":  "ec24a491bd881849a42055f63fe9dbbb9e8d026c4629f93747fbf07bc320324f"
+                      "size":  15363,
+                      "sha256":  "e2c80163605373fae3105d3ae97c32b209a8238aa724c2960be6213d71d95c84"
                   },
                   {
                       "path":  "01_backend\\internal\\module\\tenant\\types.go",
-                      "size":  657,
-                      "sha256":  "ea52e21c0c261b355fee361a18d50e5389201c5afabbe663920775c9d927d120"
+                      "size":  10837,
+                      "sha256":  "cc7a96e9504b3816e766dc633af07c6fa54c1d3bea86d2cb0f8aabcdc19615b8"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\tenant\\types_test.go",
+                      "size":  4880,
+                      "sha256":  "61892d5755ba2b804d44c8ba456e9ad1d45d61bc635da115294bad08f439a2aa"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\webhook\\handler.go",
+                      "size":  9237,
+                      "sha256":  "b9a527a4b5ba7cb06830b123515e19b9655c15ef7917cf3895551c5b46a61155"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\webhook\\repository.go",
+                      "size":  15773,
+                      "sha256":  "52ba79b0a73d08095ad52dac887919d1794142df45114c02577827faa047fc90"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\webhook\\routes.go",
+                      "size":  704,
+                      "sha256":  "0346949bc7c4dc77f4a9fe57f8e86964da8b1a38cdd6daad23c99df2a5a590e5"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\webhook\\service.go",
+                      "size":  5437,
+                      "sha256":  "8a49557680c9a975282a060d15e93aab3fa26faa7de9428134da55c1bfcc6c5f"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\webhook\\service_test.go",
+                      "size":  6086,
+                      "sha256":  "5737ae8ea2e88888380288ca24d938cfd4fffc0f7a3450d9908d1c9f6f780d54"
+                  },
+                  {
+                      "path":  "01_backend\\internal\\module\\webhook\\types.go",
+                      "size":  6528,
+                      "sha256":  "b820750601ad340c94bf99a7dfcc3361ade3905f41fbdea9622f3a81e7e09534"
                   },
                   {
                       "path":  "01_backend\\Makefile",
@@ -906,6 +596,116 @@
                       "sha256":  "e9f1001b563b451395b97298f8fec905364ee11a31343fcf45f2c0e3bca1c33c"
                   },
                   {
+                      "path":  "01_backend\\migrations\\000010_usage_billing_mvp.down.sql",
+                      "size":  267,
+                      "sha256":  "8ffe0a31167e6e8ca426fa7ffaeef740a236e0182f11e50f9e78268b15b1b9b1"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000010_usage_billing_mvp.up.sql",
+                      "size":  2093,
+                      "sha256":  "31b06e113307938e2880515969acda7e9b0e2a5864053410f33c8f53a254ad2e"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000011_license_mvp.down.sql",
+                      "size":  133,
+                      "sha256":  "41c789fc2bdd4807d54516f3ac3e08e68959241db56f65b099d4960d1b722607"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000011_license_mvp.up.sql",
+                      "size":  1116,
+                      "sha256":  "eb2ed6d5913a31e226e13eab9dae1309b4419000535a112c2d5b7cef2eab9be9"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000012_ensure_free_plan.down.sql",
+                      "size":  90,
+                      "sha256":  "fbfd3caa3778dd29a9c24d82f9c9efc82555ee7295d3151d7b39f40d0c2ded06"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000012_ensure_free_plan.up.sql",
+                      "size":  358,
+                      "sha256":  "52eeacaaabe033b891f1a017861695d70d3d28c3e1a8754c8f4cb8e009fa07d2"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000013_orders_payments_mvp.down.sql",
+                      "size":  242,
+                      "sha256":  "06f26d4088f74f193efc2ab4f88177e6b94177f905f6afa142d2cb060d432a08"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000013_orders_payments_mvp.up.sql",
+                      "size":  1987,
+                      "sha256":  "a7dc2921d490b31785559eacc55da4fa2f8852548cc9d1100b0047757b64a732"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000014_payment_lifecycle_audit.down.sql",
+                      "size":  165,
+                      "sha256":  "28f7e8a5d081c0eca66176d1c5865749e44c2384a66cf1f989918ec71ff0a4a1"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000014_payment_lifecycle_audit.up.sql",
+                      "size":  753,
+                      "sha256":  "dc9f3a7ae7d43a48088dbebfe0139e5973826151c4ad6ac323895784fc57083d"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000015_tenant_members_audit_rbac.down.sql",
+                      "size":  284,
+                      "sha256":  "70bfa9013dc851da07fde49ff0459d7cb6e5a596bcb118c8b4553d1a65b0ad4e"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000015_tenant_members_audit_rbac.up.sql",
+                      "size":  507,
+                      "sha256":  "2b5aaed41e5abb2711cee39e1902a1ccd34fa59aee13d80eddb6550c24e7f3e0"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000016_tenant_invitations.down.sql",
+                      "size":  158,
+                      "sha256":  "2850b9f7575bdd71e98c031deefb92abab3830ead4c7cc6921ea4c74fcec70b1"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000016_tenant_invitations.up.sql",
+                      "size":  1155,
+                      "sha256":  "43b2ca56bdb41af18b57bcda4b231a6e5a6e6a1f7b824f0f3f89238a5e88ae7f"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000017_audit_logs_filter_indexes.down.sql",
+                      "size":  172,
+                      "sha256":  "a5d1afdbd4ee77bb6e8a9734d1709dc823b3aff393e253363c25b1a483b65952"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000017_audit_logs_filter_indexes.up.sql",
+                      "size":  383,
+                      "sha256":  "e5ac5ae9c8d7dcb448b049267da7aab51ecf022e682386c5f68fbeb7789ddf5a"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000018_webhooks.down.sql",
+                      "size":  81,
+                      "sha256":  "8380549e15af900b67e83d3874c1846c679e5aca7cf0757a51b56a3730199973"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000018_webhooks.up.sql",
+                      "size":  1423,
+                      "sha256":  "82f53f3dd82d6d048e431f58a171c40f561f2d4dfbfde9bd7146d21c28f3f683"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000019_webhook_retries.down.sql",
+                      "size":  171,
+                      "sha256":  "2f17fc4900b07178e80002d24c5b2ab25e375cc5b3971136ab46ecaa2e3f47fa"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000019_webhook_retries.up.sql",
+                      "size":  341,
+                      "sha256":  "0face0c090c5810269128cdfa96d96b262ee09a3f69006bfbbe3ac1d4216aef0"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000020_agent_genealogy.down.sql",
+                      "size":  195,
+                      "sha256":  "f077cbf71bbb000a8102a647de8a85a12dfd1cb93ea24d18d1eda93edffdb087"
+                  },
+                  {
+                      "path":  "01_backend\\migrations\\000020_agent_genealogy.up.sql",
+                      "size":  938,
+                      "sha256":  "3d0a3166a6e61d6904b5e5d8e304a15a90766d460072659354e7aeaede1c911d"
+                  },
+                  {
                       "path":  "01_backend\\pkg\\database\\postgres.go",
                       "size":  429,
                       "sha256":  "836d5d27c3a08178313e4d3f327d8017f9b7cf125dec63c796b2c6770e33969d"
@@ -922,181 +722,386 @@
                   },
                   {
                       "path":  "01_backend\\README.md",
-                      "size":  7918,
-                      "sha256":  "3f98eca982a41d514c6ca695935f7a39e6b70de03c2f6358253d2ab796ba6d02"
+                      "size":  13551,
+                      "sha256":  "df52cdf6542042a709090e7863b99a1c0e7c7fbd267ea540d6669260c2d532fb"
                   },
                   {
                       "path":  "01_backend\\scripts\\build_release.ps1",
-                      "size":  2089,
-                      "sha256":  "10346bc14802712563e2455f23378f2854a0e105ee8acd816034287b8a722186"
+                      "size":  2523,
+                      "sha256":  "232cf9c43642997a95b77a4db4200a5c9420294205ce259b32893868a1d46947"
                   },
                   {
                       "path":  "01_backend\\scripts\\build_release.sh",
-                      "size":  1330,
-                      "sha256":  "f1daaae61dcae183e7fa17d367859623bc680a96235174cc0da25a6fb07b8dbb"
+                      "size":  1765,
+                      "sha256":  "2d23e7ad4b1fed8f2bce600947f176d94b7ae4fd611f15ac99a8c993276bce55"
                   },
                   {
-                      "path":  "01_backend\\向量存储与索引优化说明.md",
+                      "path":  "01_backend\\scripts\\release_scripts_test.go",
+                      "size":  3034,
+                      "sha256":  "d6be44ead8ec8cb3d7a4b9c369fcf77c106a0441d69184aa4323872d096d41da"
+                  },
+                  {
+                      "path":  "01_backend\\鍚戦噺瀛樺偍涓庣储寮曚紭鍖栬鏄?md",
                       "size":  1614,
                       "sha256":  "4de4028101540f51d191278a23bb926bc200075b0785fe1fc9a62867c6e6889a"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\01_开发任务清单.md",
+                      "path":  "02_docs_v1_delivery\\01_寮€鍙戜换鍔℃竻鍗?md",
                       "size":  1985,
                       "sha256":  "2f8a42865f50a51138602bf41a398d06678ad5466a77ac5487fb09949fd9ef94"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\02_MVP一期开发排期.md",
+                      "path":  "02_docs_v1_delivery\\02_MVP涓€鏈熷紑鍙戞帓鏈?md",
                       "size":  1579,
                       "sha256":  "e9e2c3dda6d001fdb832a01d29cff0c64d195450577601500f372d5c57772957"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\03_数据库表结构_v1.sql",
+                      "path":  "02_docs_v1_delivery\\03_鏁版嵁搴撹〃缁撴瀯_v1.sql",
                       "size":  12940,
                       "sha256":  "52cbb29a2c66546fe4649a0fe889c501c23104f62addb89412ef5390cc19d6a5"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\04_API接口清单.md",
-                      "size":  18001,
-                      "sha256":  "dd96f1ccc504d9b2e106932c2fcff4f756584f40a1f69d865ef1f74b5bf2d69f"
+                      "path":  "02_docs_v1_delivery\\04_API鎺ュ彛娓呭崟.md",
+                      "size":  43474,
+                      "sha256":  "e7ff1783d1d8e1d69899359c159bc27be55d3215318d6284c02ab3b4b37d2bab"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\05_Redis_Key设计.md",
-                      "size":  1944,
-                      "sha256":  "d2547c12df40755d121543dcf4e26d090b72e2a9e357210ca4220c9ddc79de48"
+                      "path":  "02_docs_v1_delivery\\05_Redis_Key璁捐.md",
+                      "size":  2432,
+                      "sha256":  "074d367903d9510179d83aca925af90371ebf603b5c78e74d55d8502cd711cbf"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\06_交付验收清单.md",
-                      "size":  2886,
-                      "sha256":  "8ff5a21a2290f7c9e3ddc9922d0062bbbde4c128170af1357dacf6b61cfac174"
+                      "path":  "02_docs_v1_delivery\\06_浜や粯楠屾敹娓呭崟.md",
+                      "size":  3021,
+                      "sha256":  "6ae662697c60ec1ac297eb85bacf60fc5984615ff0bb54171ab57bdb869e77f1"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent编辑管理台增量验收.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_KB鏂囨。鍒楄〃澧為噺楠屾敹.md",
+                      "size":  1497,
+                      "sha256":  "f68c104eb772cdf04a8920cefeb64ccee2f5b46ae173ecf95df0c6e77299c2a8"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_KB鏂囨。璇︽儏涓嶤hunk鍒楄〃澧為噺楠屾敹.md",
+                      "size":  1189,
+                      "sha256":  "dc8d3676f9da88b0a11cd812d27aa4ec42b7c26d25b545d26a749727cff4d880"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_KB鏂囦欢閾捐矾绠＄悊鍙颁笌涓枃RAG澧為噺楠屾敹.md",
+                      "size":  1558,
+                      "sha256":  "9ca0b38e768340b3f96040ecfb2616b2a6a5cfc510a2b553a2e0ae48c52d9c20"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_RBAC瀹¤澧為噺楠屾敹.md",
+                      "size":  2199,
+                      "sha256":  "93c894fb1b8e7c661b396d3f19115df73d6dc201c9c69cedd21f718eaca1fe96"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_绠＄悊鍙板璁℃棩蹇楃瓫閫夊垎椤靛閲忛獙鏀?md",
+                      "size":  1263,
+                      "sha256":  "53b51a42ee87121fff077d33d130d4cb03f2b9b2a4fd70936fcc06c479f2de3c"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_绠＄悊鍙颁腑鏂囨樉绀轰慨澶嶅閲忛獙鏀?md",
+                      "size":  1371,
+                      "sha256":  "3079b62b313a53aebf272af1603dd9dcad9dcc44679f105414a1c7f86b54f397"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_瑙掕壊鏉冮檺鎷︽埅澧為噺楠屾敹.md",
+                      "size":  2042,
+                      "sha256":  "6125fbbf67736f1e711252bdacd096b98094912a8effdc6b2d1021e383732673"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_瀹¤鏃ュ織绛涢€夊垎椤靛閲忛獙鏀?md",
+                      "size":  2125,
+                      "sha256":  "b30d8d8bfc1fd40d424f52aceca94a016d8221c67a20b37f20f6fe631b7d6743"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_閫氱敤瀹¤涓棿浠跺閲忛獙鏀?md",
+                      "size":  1544,
+                      "sha256":  "0c7f4b5b6604367a7d51d97db603677bbdc7c68f9bb0cdc243e3da2c8ba5c118"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_鏀粯闂幆澧為噺楠屾敹.md",
+                      "size":  2138,
+                      "sha256":  "f68a17e279e0090dbabe61653b12c140495ea0446d2c6047e1ec0386c24fa31c"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-28_绉熸埛閭€璇峰閲忛獙鏀?md",
+                      "size":  2258,
+                      "sha256":  "959b8931a0181939225b146fdf81fd96860b94c96a4a72e49a55bed455574993"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent缂栬緫绠＄悊鍙板閲忛獙鏀?md",
                       "size":  759,
                       "sha256":  "cbf3152ffc0078cc636d2d69e5243172472bec8e5cbea6b51bc0cea3a375829c"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent多轮会话管理台增量验收.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent澶氳疆浼氳瘽绠＄悊鍙板閲忛獙鏀?md",
                       "size":  1019,
                       "sha256":  "2834f39ec3dcb24dadb0ab96db4fa8fc903cfca38379a4eab2317f3355521d0a"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent归档管理台增量验收.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent褰掓。绠＄悊鍙板閲忛獙鏀?md",
                       "size":  737,
                       "sha256":  "5f8b21dcd19f95d49d17f637a9f7b22e946c8eef18a865f2c863dca7ee0c1b1f"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent知识库绑定管理台增量验收.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent鐭ヨ瘑搴撶粦瀹氱鐞嗗彴澧為噺楠屾敹.md",
                       "size":  957,
                       "sha256":  "ad0141d18eddaf8645b862e29e0d394564af7b5dbe76531f2fdadeb10de3f128"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_总后台布局参考图改造增量验收.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_KB鏂囨。褰掓。澧為噺楠屾敹.md",
+                      "size":  924,
+                      "sha256":  "7f050b34b87f9eb22dbb09b541af0d13fc82b3890eecfe09c7af5a48bd898d28"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-29_鏂囦欢涓嬭浇澧為噺楠屾敹.md",
+                      "size":  810,
+                      "sha256":  "138042c8febc7853c33b26fe6112463eb3685e87de496113d529743b015900f9"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-29_鎬诲悗鍙板竷灞€鍙傝€冨浘鏀归€犲閲忛獙鏀?md",
                       "size":  1015,
                       "sha256":  "9b6187687d51d8269870d0b283f0c4633db86d87ffb2f0c083702f71896f41e4"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_总后台排行与动态增量验收.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_鎬诲悗鍙版帓琛屼笌鍔ㄦ€佸閲忛獙鏀?md",
                       "size":  903,
                       "sha256":  "7f11fc9ae858d46488010d255ffef665fd8700f38b032325f7ec68ecd578c7ed"
                   },
                   {
+                      "path":  "02_docs_v1_delivery\\2026-05-29_鎬诲悗鍙扮湡瀹炴暟鎹€昏UI浼樺寲澧為噺楠屾敹.md",
+                      "size":  1201,
+                      "sha256":  "5c088aae7a5f46d45c73767193ce7410d183d9cbbe0ddcc53c53b462f31fe8d9"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-30_瀹¤鏃ュ織CSV瀵煎嚭澧為噺楠屾敹.md",
+                      "size":  1006,
+                      "sha256":  "75c96994b33c4262255f57343f0ae6e9023fcfc23535f5c312e8a6592f89945c"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-30_缁熻API涓庢暟鎹垎鏋愰潰鏉垮閲忛獙鏀?md",
+                      "size":  1096,
+                      "sha256":  "c10d666f505f718fb233bc8d2afc829a6091ab08df970fce2ec5d8758bc7a492"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent_SSE绠＄悊鍙颁綋楠屽寮哄閲忛獙鏀?md",
+                      "size":  1922,
+                      "sha256":  "9c5d3e5cc30aae4a522e0d4c1c0c3b6e37cdf644f2e51e05b7e591e67b822276"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent_SSE娴佸紡浣撻獙鍔犲浐澧為噺楠屾敹.md",
+                      "size":  1065,
+                      "sha256":  "64275abe1ac211630116cdbec41f89fb4aa028f6fe8fdf644827cb1e49324ebc"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent澶氳疆浼氳瘽缂栨帓绛栫暐澧為噺楠屾敹.md",
+                      "size":  1286,
+                      "sha256":  "4da724872e96f97c956e5a92a1a6d390e87c75f7118b99442af2e473e6a1619f"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent宸ュ叿瀹夊叏绛栫暐澧為噺楠屾敹.md",
+                      "size":  1347,
+                      "sha256":  "ee3ff6ffad0047b333fe64dab0df8224abe60482e0d362ed5491b0d85cb13a05"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_API闄愭祦涓庡璁￠棴鐜憳瑕佸閲忛獙鏀?md",
+                      "size":  1619,
+                      "sha256":  "9332b3cc434f275f0ee2a64e486bfa0456aa3332e4bf5b991ebdede7e7364730"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_License鍦ㄧ嚎绂荤嚎鎺堟潈楠岃瘉澧為噺楠屾敹.md",
+                      "size":  1453,
+                      "sha256":  "e3f65bd381aab616f0d2d80ff05ad4f68bfd884fa807238901ea58978490fdfd"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Redis闄愭祦澧為噺楠屾敹.md",
+                      "size":  2773,
+                      "sha256":  "2181a815e3709c9dc017331a151e6efa0b28628a6fd978fd488e546129c1bc49"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook_SSE_闄愭祦澧為噺楠屾敹.md",
+                      "size":  3444,
+                      "sha256":  "f85171f3789d34b9173a3aa96f652d6e9e7a2f4379ad5e13427ece8eb0cc82c9"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鍗曟潯鎶曢€掓墜鍔ㄩ噸璇曞閲忛獙鏀?md",
+                      "size":  1451,
+                      "sha256":  "e1afea4bd9b343c9c3b53e664a0c02b72273c9f50451023a421feaffb6685aaa"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook閰嶇疆缂栬緫涓庡瘑閽ヤ繚鐣欏閲忛獙鏀?md",
+                      "size":  1707,
+                      "sha256":  "d2a347afb68ea12b3523f2b75976e6b284aab712c2351ebb14df7b85a41b52a2"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook绛惧悕瀵嗛挜鍝嶅簲鑴辨晱澧為噺楠屾敹.md",
+                      "size":  1598,
+                      "sha256":  "306ef135f7e0604986fc7ce710cb31b4b5ed38efb189c80026dfe3dfafb2fd96"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掕褰旵SV瀵煎嚭澧為噺楠屾敹.md",
+                      "size":  1456,
+                      "sha256":  "b5467ff55fc6dc06b502087bc412da689a2239dd7d9e473fb5f04ee72118e396"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掕褰曠瓫閫夊閲忛獙鏀?md",
+                      "size":  1742,
+                      "sha256":  "89fba42aba9830fffcf1f963d37ca282f4b69937b671a45ff9ac4e5cecba818d"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掕褰曟椂闂磋寖鍥寸瓫閫夊閲忛獙鏀?md",
+                      "size":  1422,
+                      "sha256":  "2c563cee184ea59a1245e00d6219433b3b8f07b4beb7afc46199aa34e70ddac4"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掓憳瑕佺瓫閫夊彛寰勭粺涓€澧為噺楠屾敹.md",
+                      "size":  1336,
+                      "sha256":  "63b322b1fab74f6fc62ab61230ce7cd20b2fb45e8577cbed6acae559ef198755"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掔姸鎬佹憳瑕佸閲忛獙鏀?md",
+                      "size":  1771,
+                      "sha256":  "e2558a9d7bd2f5fd8711fcc18f2a4edf495af064dd3b6c3c6c780752048b281a"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook閲嶈瘯Worker澧為噺楠屾敹.md",
+                      "size":  2400,
+                      "sha256":  "11fe58263397cd5e389aac5c28a26640c378854f9e17f34d8cdce9769ed33aef"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鐗堟湰鍗囩骇涓庡洖婊氳剼鏈閲忛獙鏀?md",
+                      "size":  2012,
+                      "sha256":  "a306f240a2c0f5ffcb51a4105c9f3ce50a87a0a5ab374311d60f20f9dd5fd74d"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_瑙掕壊鏉冮檺鐭╅樀澧為噺楠屾敹.md",
+                      "size":  1263,
+                      "sha256":  "5a8e0a9ce6f9f7fb2da7ee93c74e9a65da5051cf915fc8fb490cb6407edbf9b0"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏁忔劅瀛楁淇濇姢鎽樿澧為噺楠屾敹.md",
+                      "size":  1429,
+                      "sha256":  "511e0c9f91badfb7c650d5e8013cf8fe5dcc8e1200aa16a08cf4940275b03247"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鍓嶇婧愮爜瀹屾暣鎬ц鏄庡閲忛獙鏀?md",
+                      "size":  1593,
+                      "sha256":  "f274bf813d746414a637b7c475afd55e9f904015970b3607460f7a65be3dd583"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏁版嵁鍒嗘瀽鎽樿CSV瀵煎嚭澧為噺楠屾敹.md",
+                      "size":  1707,
+                      "sha256":  "e2dbe562003dbcdae59d9afd41e7a255c064be0771b90eea7dac78c6ff25d6c4"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏁版嵁搴撳浠芥仮澶嶆紨缁冭剼鏈閲忛獙鏀?md",
+                      "size":  2253,
+                      "sha256":  "7b9b85106f6883064e9567d6913a5ae3243ea74bd94289090de12817c3c37ded"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_濂楅璁㈤槄棰濆害鐘舵€佸閲忛獙鏀?md",
+                      "size":  1181,
+                      "sha256":  "5884604d553788ae7b5c13e9f072be172665b69537caefdb3a4140d7806640c6"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_闄愭祦绛栫暐鎺ュ彛涓庤缃〉鍔ㄦ€佸睍绀哄閲忛獙鏀?md",
+                      "size":  2174,
+                      "sha256":  "147ac9cf3e599fef19d64b7dfdc0d4e8f752b9e9a55c55dc8ed7aab9c9a74bf1"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_杩愯鐩戞帶鎽樿鎺ュ彛涓庤缃〉灞曠ず澧為噺楠屾敹.md",
+                      "size":  1779,
+                      "sha256":  "6aab2a3d547835233e18a10029ab9fd0dac0df5697329625656c48a2f2aac3b4"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_杩愯閰嶇疆鎽樿鎺ュ彛涓庤缃〉灞曠ず澧為噺楠屾敹.md",
+                      "size":  1813,
+                      "sha256":  "3414beeec1f05108980b3a6dcd13fb105f93e47dc944fa41cbc38239e52e7b1f"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏀粯鍥炶皟楠岀涓庡箓绛夊閲忛獙鏀?md",
+                      "size":  1260,
+                      "sha256":  "cc389a729da4890d5b1a1315125930614aaf5510dbd515db54dba7b10ce3bb1c"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋盋SV瀵煎嚭澧為噺楠屾敹.md",
+                      "size":  1550,
+                      "sha256":  "15f690e56a1bdd6c6868b89492bc03068a0c637b50a40abad3db22bc13675c25"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋卞叧绯荤淮鎶ゅ閲忛獙鏀?md",
+                      "size":  1902,
+                      "sha256":  "8ebc00f58e59d57596ce17a3d7d79432dcc3e0e4742866846b9fc15ce79f12d2"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋辩粨鏋勮瘖鏂憳瑕佸閲忛獙鏀?md",
+                      "size":  1850,
+                      "sha256":  "41b9c4356c8e668ee651c83e922f70fa9799cf6f3764cc9c290e3f581b3bb22a"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋辩瓫閫夊閲忛獙鏀?md",
+                      "size":  2053,
+                      "sha256":  "abe7e417a3f0ea05f493740f9c8fcab8f743318d80c065ce8a82303026b82e67"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋辩粺璁″垎鏋愬閲忛獙鏀?md",
+                      "size":  2011,
+                      "sha256":  "141db1561782d32031b99a8755b13dfb8c6e4360b5a83f0f3a88bb15f5a61446"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋卞浘璋卞彧璇绘帴鍙ｅ閲忛獙鏀?md",
+                      "size":  1833,
+                      "sha256":  "c0195a9a7e5973acf1bc5f966925694ce2b3680bb6a9e1650d778b897a5c6604"
+                  },
+                  {
                       "path":  "02_docs_v1_delivery\\README.md",
-                      "size":  969,
-                      "sha256":  "4ae74055612eb451648c52668c78ad72c06faf63acfdd2268ea7f370cb49d36b"
+                      "size":  1838,
+                      "sha256":  "f78345bdacff90aa9fc59a467f95b010a58df0bd00d0844657e56472e4c41514"
                   },
                   {
                       "path":  "02_frontend\\assets\\app.css",
-                      "size":  12306,
-                      "sha256":  "d1378000e2499184e3563074146ffc3cb79bc391f9340dbac4b76bb504fd82e6"
+                      "size":  19097,
+                      "sha256":  "36947c249945a4b7db813815af0c88d3bb1324e29b6e73737a5b456d6c0192be"
                   },
                   {
                       "path":  "02_frontend\\assets\\app.js",
-                      "size":  52235,
-                      "sha256":  "dd752294ec8be14d5845feffeb57ba07329801f6967b69c7219c7ac4c59cbeb9"
-                  },
-                  {
-                      "path":  "02_frontend\\dist-frontend-admin-layout-20260529-100000.tar.gz",
-                      "size":  207808,
-                      "sha256":  "8d856cce96eec1f83d54dff8805f7bbce519cf6d0c941dc7bc428edaa0fd98c1"
-                  },
-                  {
-                      "path":  "02_frontend\\dist-frontend-admin-rankings-20260529-100800.tar.gz",
-                      "size":  282357,
-                      "sha256":  "28f3c5642fdc82b1e16b0fd8f94a02d7878074ad2e8592317e5533fac9db79dc"
-                  },
-                  {
-                      "path":  "02_frontend\\dist-frontend-agent-archive-20260529-093500.tar.gz",
-                      "size":  14880,
-                      "sha256":  "7580b1d2f81880bd14f7e6b3d722460d4bc94c219cd48536debd243c0e735848"
-                  },
-                  {
-                      "path":  "02_frontend\\dist-frontend-agent-conversations-20260529-091920.tar.gz",
-                      "size":  14381,
-                      "sha256":  "7ab7584f1a01b3cd6f9e66afbee4b92c3ba1fe11132786cbaea25b6a5d506c2b"
-                  },
-                  {
-                      "path":  "02_frontend\\dist-frontend-agent-edit-20260529-094000.tar.gz",
-                      "size":  15257,
-                      "sha256":  "02869328ebe36d84c8f900d48fb6891143bfff589a007cd281da74859ec115fd"
-                  },
-                  {
-                      "path":  "02_frontend\\dist-frontend-agent-kb-bindings-20260529-093000.tar.gz",
-                      "size":  14738,
-                      "sha256":  "29194e2c5cfd789091c7412c1e67060ba7373cc4360ec862abcb092994b07360"
+                      "size":  120365,
+                      "sha256":  "e2a74ee75f5b19d690b447a45afca03bda5b76a52ea3a9c474e548d40ec0270d"
                   },
                   {
                       "path":  "02_frontend\\index.html",
-                      "size":  25924,
-                      "sha256":  "f502f52f3d27f88a0a48f91e2ff4b798d857ae1b1f317e7f87234a917cf4894c"
+                      "size":  39587,
+                      "sha256":  "244238ad8206cff8871f7af3aab640ab0e8bfe12dfec3ced486df07b22f915e1"
                   },
                   {
                       "path":  "02_frontend\\README.md",
-                      "size":  999,
-                      "sha256":  "ace13a58516859319323754f6674c11b9b7cd1f3bd0abd69ba741f28d216444c"
+                      "size":  2679,
+                      "sha256":  "3173ee44ccf9b4282721a44f8f658f06205869d847f9e563e8db9173aaeccb6f"
                   },
                   {
-                      "path":  "02_frontend\\ui-desktop-admin-layout.png",
-                      "size":  106050,
-                      "sha256":  "5be94f69a136c6652f569014ca35e0f47d56aeceec19637550b933f75c9533ba"
-                  },
-                  {
-                      "path":  "02_frontend\\ui-desktop-admin-rankings.png",
-                      "size":  143146,
-                      "sha256":  "d0f24cc9e79ad44fe4c1e96b72be658ac8aea81fd04a1c4c118a3989e5a0fbcc"
-                  },
-                  {
-                      "path":  "02_frontend\\ui-mobile-admin-layout.png",
-                      "size":  105606,
-                      "sha256":  "f1014b4c13117e5803d9022ec0ebbcf578cd81279f224b14fce05d47ac11eedc"
-                  },
-                  {
-                      "path":  "02_frontend\\ui-mobile-admin-rankings.png",
-                      "size":  146124,
-                      "sha256":  "b5c3451c00cb8a003c09adfccb63f53db869d9ccf8f79e11f5dc002d550ddf86"
-                  },
-                  {
-                      "path":  "03_智能体族谱SAAS_开发方案.md",
+                      "path":  "03_鏅鸿兘浣撴棌璋盨AAS_寮€鍙戞柟妗?md",
                       "size":  6741,
                       "sha256":  "1909ed1b4a8bcb799faec25c16cbaf8ae17a12a3d796ac3433b209c0a8b78e2d"
                   },
                   {
-                      "path":  "04_最终交付验收清单.md",
-                      "size":  6836,
-                      "sha256":  "f9767768f217c90aff22f287cd7159515283df998da3574e4d658d8da988b968"
+                      "path":  "04_鏈€缁堜氦浠橀獙鏀舵竻鍗?md",
+                      "size":  8946,
+                      "sha256":  "f6001ee4f3fce3d02bf396d63d1b954f03506acdf40461bbc725ac12b8c61629"
                   },
                   {
                       "path":  "README.md",
-                      "size":  2293,
-                      "sha256":  "67938b5f502dfb8f8c4b6cf4abb8ccd28a8d718af3c232ed1add5001d7c87b9a"
+                      "size":  2940,
+                      "sha256":  "d5b3525b9e537b1331d4202179d8f5e6d9f6ee3104fc35eb60d8664deed85cc8"
                   },
                   {
-                      "path":  "给_Codex_开发启动指令.md",
+                      "path":  "缁檁Codex_寮€鍙戝惎鍔ㄦ寚浠?md",
                       "size":  5993,
                       "sha256":  "48c1e8a38e89e7b97f69116b330d4634309f78f5a1188dff8e711c6fea33f07a"
                   },
                   {
-                      "path":  "给_聊天窗口_族谱开发_启动指令.md",
+                      "path":  "缁檁鑱婂ぉ绐楀彛_鏃忚氨寮€鍙慱鍚姩鎸囦护.md",
                       "size":  4014,
                       "sha256":  "85fd6bc0b1d749d2ea5055904def71d51aa3ff2eee8d97df62ffefbb93560a91"
                   }
