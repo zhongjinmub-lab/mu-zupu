@@ -74,9 +74,11 @@ Invoke-Check "git_diff_whitespace" {
 
 Invoke-Check "delivery_checklists_done" {
     $checkFiles = @(
-        (Get-OneFile -Directory $Root -Filter "04_*.md"),
-        (Get-OneFile -Directory (Join-Path $Root "02_docs_v1_delivery") -Filter "06_*.md")
-    )
+        (Get-ChildItem -LiteralPath $Root -Filter "*.md" -File),
+        (Get-ChildItem -LiteralPath (Join-Path $Root "01_backend") -Filter "*.md" -File),
+        (Get-ChildItem -LiteralPath (Join-Path $Root "02_frontend") -Filter "*.md" -File),
+        (Get-ChildItem -LiteralPath (Join-Path $Root "02_docs_v1_delivery") -Filter "*.md" -File)
+    ) | ForEach-Object { $_.FullName }
 
     foreach ($path in $checkFiles) {
         $content = Get-Content -Encoding UTF8 -LiteralPath $path -Raw
