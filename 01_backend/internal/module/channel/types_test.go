@@ -96,3 +96,28 @@ func TestBuildChannelEmbedDisabledAddsHint(t *testing.T) {
 		t.Fatalf("disabled channel should include a not-enabled hint: %#v", embed.Instructions)
 	}
 }
+
+func TestUpdateChannelRequestNormalizeAndValidate(t *testing.T) {
+	req := UpdateChannelRequest{Name: "  新名称  "}
+	req.Normalize()
+	if req.Name != "新名称" {
+		t.Fatalf("normalized name = %q", req.Name)
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected valid update: %v", err)
+	}
+
+	// 仅更新配置也应通过。
+	configOnly := UpdateChannelRequest{Config: map[string]any{"theme": "dark"}}
+	configOnly.Normalize()
+	if err := configOnly.Validate(); err != nil {
+		t.Fatalf("config-only update should be valid: %v", err)
+	}
+
+	// 名称与配置都为空应报错。
+	empty := UpdateChannelRequest{}
+	empty.Normalize()
+	if err := empty.Validate(); err == nil {
+		t.Fatal("expected error when neither name nor config provided")
+	}
+}

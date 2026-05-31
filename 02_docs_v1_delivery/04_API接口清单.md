@@ -1103,6 +1103,7 @@ P1「渠道入口」第一增量，引入 Agent 渠道接入点持久化。新�
 - `GET /channel-connect/{channel_key}`（公开，仅 IP 限流，不经登录与租户中间件）：外部接入方凭 `channel_key` 拉取已启用渠道的接入配置，返回 `channel_key`、`type`、`name`、`agent_id`、`status`、`connected`。仅返回接入所需最小信息；渠道不存在或未启用返回 404。该端点是 Web 嵌入组件 / H5 页面初始化的第一步。
 - `POST /channels`：创建渠道，请求体 `{agent_id, type, name, config}`，仅允许 active 类型；绑定的 agent 不存在返回 404。
 - `POST /channels/{channel_id}/enable`、`/disable`：启用/禁用渠道。
+- `PUT /channels/{channel_id}`：更新渠道名称与配置（名称与配置至少其一）。
 - `DELETE /channels/{channel_id}`：归档（软删除）渠道。
 
 写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`channel_key` 为公开接入凭据（形如 `ch_xxxx`），在租户内唯一。后续将基于 `channel_key` 提供 Web 嵌入脚本、H5 页面与开放 API 接入，并补充公众号/企业微信回调验签。管理台新增“渠道接入”面板，展示渠道类型目录、新建渠道表单与渠道列表（含 channel_key、启用/禁用/删除）。

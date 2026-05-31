@@ -2338,6 +2338,7 @@ function renderChannels(error = "") {
         <div class="item-meta">接入凭据 channel_key：${escapeHtml(ch.channel_key || "-")}</div>
         <div class="item-actions">
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-embed="${escapeHtml(ch.id || "")}" type="button">接入代码</button>` : ""}
+          ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-rename="${escapeHtml(ch.id || "")}" type="button">重命名</button>` : ""}
           ${ch.status === "disabled" ? `<button class="button small" data-channel-enable="${escapeHtml(ch.id || "")}" type="button">启用</button>` : ""}
           ${ch.status === "enabled" ? `<button class="button small secondary" data-channel-disable="${escapeHtml(ch.id || "")}" type="button">禁用</button>` : ""}
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-archive="${escapeHtml(ch.id || "")}" type="button">删除</button>` : ""}
@@ -2407,6 +2408,17 @@ async function loadChannelEmbed(channelID) {
   state.channelEmbeds[channelID] = embed;
   renderChannels();
   toast("已生成接入代码");
+}
+
+// renameChannel 通过弹窗输入新名称并更新渠道。
+async function renameChannel(channelID) {
+  if (!channelID) return;
+  const current = (state.channels || []).find((ch) => ch.id === channelID);
+  const name = (window.prompt("输入新的渠道名称", current ? current.name : "") || "").trim();
+  if (!name) return;
+  await api(`/channels/${channelID}`, { method: "PUT", body: { name } });
+  await loadChannels();
+  toast("渠道已重命名");
 }
 
 async function loadToolCallLogs() {
@@ -3668,6 +3680,7 @@ function bindEvents() {
     const channelDisableId = target.dataset?.channelDisable;
     const channelArchiveId = target.dataset?.channelArchive;
     const channelEmbedId = target.dataset?.channelEmbed;
+    const channelRenameId = target.dataset?.channelRename;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3714,6 +3727,9 @@ function bindEvents() {
       }
       if (channelEmbedId) {
         await loadChannelEmbed(channelEmbedId);
+      }
+      if (channelRenameId) {
+        await renameChannel(channelRenameId);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

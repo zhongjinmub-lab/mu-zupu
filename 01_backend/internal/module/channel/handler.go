@@ -189,3 +189,28 @@ func (h Handler) ConnectChannel(c *gin.Context) {
 		"connected":   true,
 	})
 }
+
+// UpdateChannel 更新渠道名称与配置。
+func (h Handler) UpdateChannel(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	var req UpdateChannelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	req.Normalize()
+	if err := req.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	item, err := h.Repo.Update(c.Request.Context(), t.ID, c.Param("channel_id"), req)
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	response.OK(c, item)
+}

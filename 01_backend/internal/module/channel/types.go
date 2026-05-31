@@ -148,3 +148,25 @@ func BuildChannelEmbed(ch Channel, baseURL string) ChannelEmbed {
 	}
 	return embed
 }
+
+// UpdateChannelRequest 是更新渠道接入点的请求体，名称与配置至少提供其一。
+type UpdateChannelRequest struct {
+	Name   string         `json:"name"`
+	Config map[string]any `json:"config"`
+}
+
+// Normalize 归一化更新请求字段。
+func (r *UpdateChannelRequest) Normalize() {
+	r.Name = strings.TrimSpace(r.Name)
+}
+
+// Validate 校验更新请求：名称与配置至少其一，名称长度不超过 128。
+func (r UpdateChannelRequest) Validate() error {
+	if r.Name == "" && r.Config == nil {
+		return errors.New("name or config is required")
+	}
+	if r.Name != "" && len([]rune(r.Name)) > 128 {
+		return errors.New("name must be at most 128 characters")
+	}
+	return nil
+}

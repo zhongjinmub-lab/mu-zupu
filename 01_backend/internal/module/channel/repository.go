@@ -178,3 +178,37 @@ WHERE channel_key = $1 AND status = 'enabled' AND deleted_at IS NULL`
 	}
 	return scanChannel(rows)
 }
+
+// Update 更新渠道的名称与配置（按当前租户隔离），未提供的字段保持原值。
+func (r Repository) Update(ctx context.Context, tenantID, channelID string, req UpdateChannelRequest) (Channel, error) {
+	current, err := r.Get(ctx, tenantID, channelID)
+	if err != nil {
+		return Channel{}, err
+	}
+	name := req.Name
+	if name == "" {
+		name = current.Name
+	}
+	configValue := current.Config
+	if req.Config != nil {
+		configValue = req.Config
+	}
+	config, err := marshalConfig(configValue)
+	if err != nil {
+		return Channel{}, err
+	}
+	const q = `
+UPDATE agent_channels
+SET name = $3, config = $4::jsonb, updated_at = now()
+WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+RETURNING ` + channelColumns
+	rows, err := r.DB.Query(ctx, q, channelID, tenantID, name, config)
+	if err != nil {
+		return Channel{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return Channel{}, ErrChannelNotFound
+	}
+	return scanChannel(rows)
+}
