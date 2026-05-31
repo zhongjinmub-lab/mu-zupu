@@ -234,6 +234,35 @@ function renderAnalytics() {
     `).join("");
   }
 
+  const genealogy = data.genealogy || {};
+  const genealogyGrid = $("#analyticsGenealogyGrid");
+  if (genealogyGrid) {
+    const items = [
+      ["节点", genealogy.nodes],
+      ["关系", genealogy.edges],
+      ["根节点", genealogy.roots],
+      ["孤立节点", genealogy.isolated],
+    ];
+    genealogyGrid.innerHTML = items.map(([label, value]) => `
+      <article><span>${escapeHtml(label)}</span><strong>${Number(value || 0).toLocaleString()}</strong></article>
+    `).join("");
+  }
+
+  const genealogyRelations = $("#analyticsGenealogyRelations");
+  if (genealogyRelations) {
+    const rows = genealogy.relation_types || [];
+    const max = Math.max(1, ...rows.map((item) => Number(item.count || 0)));
+    genealogyRelations.innerHTML = rows.map((item) => {
+      const width = Math.max(6, Math.round((Number(item.count || 0) / max) * 100));
+      return `
+        <article class="bar-row">
+          <div><strong>${escapeHtml(relationLabel(item.status))}</strong><span>${Number(item.count || 0).toLocaleString()}</span></div>
+          <i style="width:${width}%"></i>
+        </article>
+      `;
+    }).join("") || empty("暂无族谱关系");
+  }
+
   const riskList = $("#analyticsRiskList");
   if (riskList) {
     riskList.innerHTML = (data.risks || []).map((item) => `

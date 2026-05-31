@@ -24,6 +24,10 @@ func (r Repository) Summary(ctx context.Context, tenantID string) (Summary, erro
 	if err != nil {
 		return Summary{}, err
 	}
+	genealogy, err := r.genealogySummary(ctx, tenantID)
+	if err != nil {
+		return Summary{}, err
+	}
 	usageTrend, err := r.usageTrend(ctx, tenantID)
 	if err != nil {
 		return Summary{}, err
@@ -38,6 +42,7 @@ func (r Repository) Summary(ctx context.Context, tenantID string) (Summary, erro
 		GeneratedAt:   time.Now().UTC(),
 		Resource:      resource,
 		Business:      business,
+		Genealogy:     genealogy,
 		UsageTrend:    usageTrend,
 		RecentActions: recentActions,
 		Risks:         risks,
@@ -125,6 +130,72 @@ func (r Repository) statusCounts(ctx context.Context, table, tenantID string) ([
 		items = append(items, item)
 	}
 	return items, rows.Err()
+}
+
+func (r Repository) genealogySummary(ctx context.Context, tenantID string) (GenealogySummary, error) {
+	const totalsQ = `
+WITH active_agents AS (
+  SELECT id
+  FROM agents
+  WHERE tenant_id = $1 AND deleted_at IS NULL
+),
+valid_edges AS (
+  SELECT g.parent_agent_id, g.child_agent_id, g.relation_type
+  FROM agent_genealogy g
+  JOIN active_agents child ON child.id = g.child_agent_id
+  LEFT JOIN active_agents parent ON parent.id = g.parent_agent_id
+  WHERE g.tenant_id = $1
+    AND (g.parent_agent_id IS NULL OR parent.id IS NOT NULL)
+)
+SELECT
+  (SELECT COUNT(*) FROM active_agents),
+  (SELECT COUNT(*) FROM valid_edges),
+  (SELECT COUNT(*)
+   FROM active_agents a
+   WHERE NOT EXISTS (
+     SELECT 1 FROM valid_edges e
+     WHERE e.child_agent_id = a.id AND e.parent_agent_id IS NOT NULL
+   )),
+  (SELECT COUNT(*)
+   FROM active_agents a
+   WHERE NOT EXISTS (SELECT 1 FROM valid_edges e WHERE e.child_agent_id = a.id)
+     AND NOT EXISTS (SELECT 1 FROM valid_edges e WHERE e.parent_agent_id = a.id))`
+	var item GenealogySummary
+	if err := r.DB.QueryRow(ctx, totalsQ, tenantID).Scan(&item.Nodes, &item.Edges, &item.Roots, &item.Isolated); err != nil {
+		return GenealogySummary{}, err
+	}
+
+	const relationQ = `
+WITH active_agents AS (
+  SELECT id
+  FROM agents
+  WHERE tenant_id = $1 AND deleted_at IS NULL
+)
+SELECT g.relation_type, COUNT(*)
+FROM agent_genealogy g
+JOIN active_agents child ON child.id = g.child_agent_id
+LEFT JOIN active_agents parent ON parent.id = g.parent_agent_id
+WHERE g.tenant_id = $1
+  AND (g.parent_agent_id IS NULL OR parent.id IS NOT NULL)
+GROUP BY g.relation_type
+ORDER BY g.relation_type ASC`
+	rows, err := r.DB.Query(ctx, relationQ, tenantID)
+	if err != nil {
+		return GenealogySummary{}, err
+	}
+	defer rows.Close()
+	item.RelationTypes = make([]StatusCount, 0)
+	for rows.Next() {
+		var relation StatusCount
+		if err := rows.Scan(&relation.Status, &relation.Count); err != nil {
+			return GenealogySummary{}, err
+		}
+		item.RelationTypes = append(item.RelationTypes, relation)
+	}
+	if err := rows.Err(); err != nil {
+		return GenealogySummary{}, err
+	}
+	return item, nil
 }
 
 func (r Repository) usageTrend(ctx context.Context, tenantID string) ([]UsageTrendItem, error) {

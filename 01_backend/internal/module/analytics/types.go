@@ -7,6 +7,7 @@ type Summary struct {
 	GeneratedAt   time.Time          `json:"generated_at"`
 	Resource      ResourceSummary    `json:"resource"`
 	Business      BusinessSummary    `json:"business"`
+	Genealogy     GenealogySummary   `json:"genealogy"`
 	UsageTrend    []UsageTrendItem   `json:"usage_trend"`
 	RecentActions []RecentActionItem `json:"recent_actions"`
 	Risks         []RiskItem         `json:"risks"`
@@ -34,6 +35,14 @@ type BusinessSummary struct {
 	PaidOrders      int64         `json:"paid_orders"`
 	PendingOrders   int64         `json:"pending_orders"`
 	FailedPayments  int64         `json:"failed_payments"`
+}
+
+type GenealogySummary struct {
+	Nodes         int64         `json:"nodes"`
+	Edges         int64         `json:"edges"`
+	Roots         int64         `json:"roots"`
+	Isolated      int64         `json:"isolated"`
+	RelationTypes []StatusCount `json:"relation_types"`
 }
 
 type StatusCount struct {

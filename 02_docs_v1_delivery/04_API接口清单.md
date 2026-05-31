@@ -48,7 +48,7 @@
 | POST | /payment-orders | 创建 mock 支付单 | tenant |
 | POST | /payments/{payment_id}/query | 查询当前租户支付单 | tenant |
 | POST | /payment-callbacks/{channel} | mock 支付回调 | tenant |
-| GET | /analytics/summary | 当前租户统计汇总，包含资源、经营、用量趋势、最近操作和风险 | tenant |
+| GET | /analytics/summary | 当前租户统计汇总，包含资源、经营、智能体族谱、用量趋势、最近操作和风险 | tenant |
 | GET | /licenses | 当前租户 License 列表 | tenant |
 | POST | /licenses | 创建当前租户 License | tenant |
 | POST | /licenses/{license_id}/verify | 验证当前租户 License 离线签名和状态 | tenant |
@@ -752,3 +752,19 @@ CSV 字段：
 | `created_at` | 创建时间 |
 
 管理台智能体页“智能体族谱图谱”区域已新增“导出 CSV”按钮，导出时不展示黑色 JSON 原文区域，直接下载 CSV 文件。
+
+## 2026-05-31 增量：智能体族谱统计分析
+
+`GET /analytics/summary` 已新增 `genealogy` 字段，用于在数据分析面板展示当前租户智能体族谱结构。
+
+统计口径：
+
+| 字段 | 说明 |
+|---|---|
+| `nodes` | 当前租户未归档智能体数量 |
+| `edges` | 当前租户有效族谱关系数量；子智能体必须未归档，父智能体为空或未归档 |
+| `roots` | 没有有效父节点关系的未归档智能体数量 |
+| `isolated` | 既没有有效父节点关系，也没有有效子节点关系的未归档智能体数量 |
+| `relation_types` | 按 `fork`、`inherit`、`compose`、`route` 等关系类型聚合的数量 |
+
+管理台“数据分析面板”已新增“智能体族谱结构”区域，展示节点、关系、根节点、孤立节点和关系类型分布。所有结果使用中文摘要展示，不新增黑色 JSON 原文区域。
