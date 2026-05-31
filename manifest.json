@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T15:53:51+08:00",
+    "generated_at":  "2026-05-31T15:58:47+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  225,
+    "file_count":  226,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -57,13 +57,13 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/README.md",
-                      "size":  4971,
-                      "sha256":  "fdf973915ea889002d30c73590713715eb348591352442f0acd5bf12f8ae415e"
+                      "size":  5268,
+                      "sha256":  "945b36f9affc8faaafe486ec8f37bb40eb2d2266f666299b0a513c5dd73d3c1e"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/backup.sh",
-                      "size":  573,
-                      "sha256":  "1407f4627eb72608b7d159c88879c797bf7908289c89fa7e22225b0d6f9913fd"
+                      "size":  650,
+                      "sha256":  "0ea40e6c90fd80203a626dda76a4db9729eda704675f058565958764000273d4"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/restore.sh",
@@ -737,8 +737,8 @@
                   },
                   {
                       "path":  "01_backend/scripts/release_scripts_test.go",
-                      "size":  3502,
-                      "sha256":  "5d16146913729edc7879068fdf9ad4cf09d9071baa26e06b1311ce99a26ba7da"
+                      "size":  4053,
+                      "sha256":  "bce1417135e57c007a9e8d0cfe16f9119befbdda5dcd19610ad4a5bd8ab56e27"
                   },
                   {
                       "path":  "01_backend/向量存储与索引优化说明.md",
@@ -1001,6 +1001,11 @@
                       "sha256":  "f274bf813d746414a637b7c475afd55e9f904015970b3607460f7a65be3dd583"
                   },
                   {
+                      "path":  "02_docs_v1_delivery/2026-05-31_生产备份前端与站点模板归档增量验收.md",
+                      "size":  1003,
+                      "sha256":  "fdd6da7c71028d9785a7e771c2693894d8be66057b90857d31c5121004cc04fb"
+                  },
+                  {
                       "path":  "02_docs_v1_delivery/2026-05-31_生产冒烟检查公网入口增强增量验收.md",
                       "size":  1261,
                       "sha256":  "02bafd9204455f65f01127b2f28f769df1a7f38280de6646f1a384b2d90be0e6"
@@ -1112,8 +1117,8 @@
                   },
                   {
                       "path":  "README.md",
-                      "size":  3272,
-                      "sha256":  "03e75d5d6284bb61fdcd5cb708b61f230ff2e61e4c4da888e474f4e3af9d74c5"
+                      "size":  3320,
+                      "sha256":  "e64970d64a7869a518fd8475e84a42539ed28518d93fb98c94f08cf964a5102f"
                   },
                   {
                       "path":  "verify_delivery.ps1",

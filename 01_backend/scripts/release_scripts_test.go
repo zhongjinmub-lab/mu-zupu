@@ -80,6 +80,24 @@ func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	}
 }
 
+func TestProductionBackupIncludesRuntimeAndFrontendFiles(t *testing.T) {
+	root := repoRoot(t)
+	backup := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "backup.sh"))
+	for _, want := range []string{
+		"mu-agent-saas/docker-compose.yml",
+		"mu-agent-saas/mu-agent-saas.env",
+		"mu-agent-saas/migrations",
+		"mu-agent-saas/scripts",
+		"mu-agent-saas/frontend",
+		"mu-agent-saas/nginx",
+		"mu-agent-saas/systemd",
+	} {
+		if !strings.Contains(backup, want) {
+			t.Fatalf("backup.sh should include %s in config archive", want)
+		}
+	}
+}
+
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	wd, err := os.Getwd()

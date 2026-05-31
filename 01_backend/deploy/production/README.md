@@ -107,6 +107,11 @@ MIGRATION_STEPS=1 ./scripts/rollback.sh
 /opt/mu-agent-saas/scripts/backup.sh
 ```
 
+`backup.sh` 会生成两类备份：
+
+- `mu_agent_saas_<timestamp>.sql.gz`：PostgreSQL 数据库备份。
+- `mu_agent_saas_config_<timestamp>.tar.gz`：运行配置归档，包含 `docker-compose.yml`、`mu-agent-saas.env`、`migrations/`、`scripts/`、`frontend/`、`nginx/` 和 `systemd/`。
+
 `smoke.sh` 默认检查：
 
 - `https://zupu.jiangxinnet.com/saas-api/api/v1/health`

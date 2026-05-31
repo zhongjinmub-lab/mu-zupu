@@ -13,7 +13,10 @@ tar -C /opt -czf "$CFG_FILE" \
   mu-agent-saas/docker-compose.yml \
   mu-agent-saas/mu-agent-saas.env \
   mu-agent-saas/migrations \
-  mu-agent-saas/scripts
+  mu-agent-saas/scripts \
+  mu-agent-saas/frontend \
+  mu-agent-saas/nginx \
+  mu-agent-saas/systemd
 
 find "$BACKUP_DIR" -type f -name '*.gz' -mtime +14 -delete
 
