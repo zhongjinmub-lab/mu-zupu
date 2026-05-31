@@ -101,6 +101,22 @@ func (s Service) RetryDue(ctx context.Context, limit int) RetrySummary {
 	return summary
 }
 
+func (s Service) RetryDelivery(ctx context.Context, tenantID, deliveryID string) (Delivery, error) {
+	job, err := s.Repo.GetRetryJob(ctx, tenantID, deliveryID)
+	if err != nil {
+		return Delivery{}, err
+	}
+	if job.Delivery.Status != "failed" {
+		return Delivery{}, ErrDeliveryNotRetryable
+	}
+	if job.Endpoint.Status != StatusActive {
+		return Delivery{}, ErrDeliveryNotRetryable
+	}
+	result := s.send(ctx, job.Endpoint, job.Event, job.Delivery.RetryCount+1)
+	result.NextRetryAt = s.nextRetryAt(result)
+	return s.Repo.UpdateDeliveryAttempt(ctx, job.Delivery.ID, result)
+}
+
 func (s Service) send(ctx context.Context, endpoint Endpoint, event Event, retryCount int) Delivery {
 	body, _ := json.Marshal(event)
 	start := time.Now()

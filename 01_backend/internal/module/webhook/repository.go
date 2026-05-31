@@ -244,6 +244,36 @@ RETURNING d.id::text, d.tenant_id::text, COALESCE(d.endpoint_id::text, ''), d.ev
 	return jobs, nil
 }
 
+func (r Repository) GetRetryJob(ctx context.Context, tenantID, deliveryID string) (RetryJob, error) {
+	const q = `
+SELECT d.id::text, d.tenant_id::text, COALESCE(d.endpoint_id::text, ''), d.event_type, d.target_url, d.status,
+       COALESCE(d.http_status, 0), d.request_body, COALESCE(d.response_body, ''), COALESCE(d.error_message, ''),
+       d.duration_ms, d.retry_count, d.next_retry_at, d.last_attempt_at, d.created_at,
+       e.id::text, e.tenant_id::text, e.name, e.url, COALESCE(e.secret, ''), e.events, e.status, e.created_at, e.updated_at
+FROM webhook_deliveries d
+JOIN webhook_endpoints e ON e.id = d.endpoint_id
+WHERE d.id = $1
+  AND d.tenant_id = $2
+  AND e.tenant_id = $2
+  AND e.deleted_at IS NULL`
+	rows, err := r.DB.Query(ctx, q, deliveryID, tenantID)
+	if err != nil {
+		return RetryJob{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return RetryJob{}, rows.Err()
+		}
+		return RetryJob{}, ErrDeliveryNotFound
+	}
+	job, err := scanRetryJob(rows)
+	if err != nil {
+		return RetryJob{}, err
+	}
+	return job, rows.Err()
+}
+
 func (r Repository) UpdateDeliveryAttempt(ctx context.Context, deliveryID string, result Delivery) (Delivery, error) {
 	const q = `
 UPDATE webhook_deliveries

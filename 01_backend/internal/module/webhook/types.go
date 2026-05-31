@@ -156,7 +156,7 @@ func (q DeliveryQuery) Validate() error {
 	}
 	if q.EndpointID != "" {
 		if _, err := uuid.Parse(q.EndpointID); err != nil {
-			return errors.New("endpoint_id must be a valid uuid")
+			return ErrEndpointIDMustBeUUID
 		}
 	}
 	if q.Status != "" && q.Status != "success" && q.Status != "failed" {
@@ -201,4 +201,10 @@ func validateURL(raw string) error {
 	return nil
 }
 
-var ErrEndpointNotFound = errors.New("webhook endpoint not found")
+var (
+	ErrEndpointNotFound     = errors.New("webhook endpoint not found")
+	ErrDeliveryNotFound     = errors.New("webhook delivery not found")
+	ErrDeliveryNotRetryable = errors.New("webhook delivery is not retryable")
+	ErrDeliveryIDMustBeUUID = errors.New("delivery_id must be a valid uuid")
+	ErrEndpointIDMustBeUUID = errors.New("endpoint_id must be a valid uuid")
+)

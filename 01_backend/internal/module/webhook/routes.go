@@ -16,4 +16,5 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	admin.PUT("/webhooks/:webhook_id", h.UpdateEndpoint)
 	admin.DELETE("/webhooks/:webhook_id", h.DeleteEndpoint)
 	admin.POST("/webhooks/:webhook_id/test", h.TestEndpoint)
+	admin.POST("/webhook-deliveries/:delivery_id/retry", h.RetryDelivery)
 }

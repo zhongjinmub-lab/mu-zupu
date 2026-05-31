@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"mu-agent-saas/internal/module/tenant"
 	"mu-agent-saas/pkg/response"
@@ -136,9 +137,40 @@ func (h Handler) ListDeliveries(c *gin.Context) {
 	response.OK(c, gin.H{"items": items})
 }
 
+func (h Handler) RetryDelivery(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	deliveryID := c.Param("delivery_id")
+	if _, err := uuid.Parse(deliveryID); err != nil {
+		writeWebhookError(c, ErrDeliveryIDMustBeUUID)
+		return
+	}
+	item, err := h.Service.RetryDelivery(c.Request.Context(), t.ID, deliveryID)
+	if err != nil {
+		writeWebhookError(c, err)
+		return
+	}
+	response.OK(c, item)
+}
+
 func writeWebhookError(c *gin.Context, err error) {
 	if errors.Is(err, ErrEndpointNotFound) {
 		response.Error(c, http.StatusNotFound, 40490, "webhook endpoint not found")
+		return
+	}
+	if errors.Is(err, ErrDeliveryNotFound) {
+		response.Error(c, http.StatusNotFound, 40491, "webhook delivery not found")
+		return
+	}
+	if errors.Is(err, ErrDeliveryNotRetryable) {
+		response.Error(c, http.StatusBadRequest, 40093, "webhook delivery is not retryable")
+		return
+	}
+	if errors.Is(err, ErrDeliveryIDMustBeUUID) || errors.Is(err, ErrEndpointIDMustBeUUID) {
+		response.Error(c, http.StatusBadRequest, 40094, err.Error())
 		return
 	}
 	response.Error(c, http.StatusInternalServerError, 50090, err.Error())

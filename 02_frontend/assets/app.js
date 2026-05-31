@@ -977,6 +977,7 @@ function renderWebhookDeliveries() {
         <div class="item-meta">目标：${escapeHtml(item.target_url)} / HTTP ${item.http_status || "-"}</div>
         <div class="item-meta">耗时：${Number(item.duration_ms || 0).toLocaleString()} ms / 重试：${Number(item.retry_count || 0).toLocaleString()} 次 / ${formatDateTime(item.created_at)}</div>
         ${item.error_message ? `<div class="item-meta danger-text">错误：${escapeHtml(item.error_message)}</div>` : ""}
+        ${ok ? "" : `<div class="item-actions"><button class="button small secondary" data-webhook-delivery-retry="${escapeHtml(item.id)}">立即重试</button></div>`}
       </article>
     `;
   }).join("") || empty("暂无投递记录");
@@ -1924,6 +1925,7 @@ function bindEvents() {
     const webhookTestId = target.dataset?.webhookTest;
     const webhookToggleId = target.dataset?.webhookToggle;
     const webhookDeleteId = target.dataset?.webhookDelete;
+    const webhookDeliveryRetryId = target.dataset?.webhookDeliveryRetry;
     const conversationSelectId = target.closest("[data-conversation-select]")?.dataset.conversationSelect;
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const viewLink = target.closest("[data-view-link]")?.dataset.viewLink;
@@ -1986,7 +1988,13 @@ function bindEvents() {
         await api(`/webhooks/${webhookDeleteId}`, { method: "DELETE" });
         await Promise.allSettled([loadWebhooks(), loadWebhookDeliveries()]);
         toast("Webhook 已删除");
-      }      if (publishId) {
+      }
+      if (webhookDeliveryRetryId) {
+        const delivery = await api(`/webhook-deliveries/${webhookDeliveryRetryId}/retry`, { method: "POST", body: {} });
+        await loadWebhookDeliveries();
+        toast(delivery.status === "success" ? "Webhook 重试发送成功" : "Webhook 重试发送失败");
+      }
+      if (publishId) {
         await api(`/agents/${publishId}/publish`, { method: "POST" });
         await loadAgents();
       }
