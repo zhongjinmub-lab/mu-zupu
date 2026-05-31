@@ -27,6 +27,8 @@ const state = {
   workflowValidation: null,
   workflows: [],
   workflowRuns: [],
+  channels: [],
+  channelTypes: [],
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -2291,6 +2293,102 @@ function workflowRunStepLabel(status) {
   }[status] || status || "未知";
 }
 
+// loadChannels 拉取渠道类型目录与当前租户渠道列表并渲染。
+async function loadChannels() {
+  if (!state.tenantId) return;
+  const [types, channels] = await Promise.all([
+    api("/channel-types"),
+    api("/channels"),
+  ]);
+  state.channelTypes = types.items || [];
+  state.channels = channels.items || [];
+  renderChannels();
+}
+
+function renderChannels(error = "") {
+  const typeEl = $("#channelTypeBox");
+  if (typeEl) {
+    if (error) {
+      typeEl.innerHTML = empty(`渠道加载失败：${error}`);
+    } else {
+      typeEl.innerHTML = (state.channelTypes || []).map((ct) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(ct.name || ct.type)}</strong>
+            <span class="badge ${ct.installable ? "ok" : "warn"}">${escapeHtml(ct.installable ? "可用" : "待对接")}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(ct.type || "-")} / ${escapeHtml(ct.category || "-")}</div>
+          <div class="item-meta">${escapeHtml(ct.description || "")}</div>
+        </article>
+      `).join("") || empty("暂无渠道类型");
+    }
+  }
+  const listEl = $("#channelListBox");
+  if (listEl) {
+    const channels = state.channels || [];
+    listEl.innerHTML = channels.map((ch) => `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(ch.name || ch.channel_key)}</strong>
+          <span class="badge ${ch.status === "enabled" ? "ok" : (ch.status === "archived" ? "danger" : "warn")}">${escapeHtml(channelStatusLabel(ch.status))}</span>
+        </div>
+        <div class="item-meta">${escapeHtml(channelTypeLabel(ch.type))} / Agent ${escapeHtml(ch.agent_id || "-")}</div>
+        <div class="item-meta">接入凭据 channel_key：${escapeHtml(ch.channel_key || "-")}</div>
+        <div class="item-actions">
+          ${ch.status === "disabled" ? `<button class="button small" data-channel-enable="${escapeHtml(ch.id || "")}" type="button">启用</button>` : ""}
+          ${ch.status === "enabled" ? `<button class="button small secondary" data-channel-disable="${escapeHtml(ch.id || "")}" type="button">禁用</button>` : ""}
+          ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-archive="${escapeHtml(ch.id || "")}" type="button">删除</button>` : ""}
+        </div>
+      </article>
+    `).join("") || empty("暂无渠道");
+  }
+  // 填充新建渠道表单中的 Agent 下拉。
+  fillSelect("#channelCreateForm select[name='agent_id']", state.agents, "选择 Agent");
+}
+
+function channelStatusLabel(status) {
+  return {
+    enabled: "已启用",
+    disabled: "已禁用",
+    archived: "已归档",
+  }[status] || status || "未知";
+}
+
+function channelTypeLabel(type) {
+  const item = (state.channelTypes || []).find((ct) => ct.type === type);
+  return item ? item.name : (type || "未知渠道");
+}
+
+// createChannel 读取新建渠道表单，创建渠道接入点。
+async function createChannel() {
+  const form = $("#channelCreateForm");
+  if (!form) return;
+  const agentID = (form.querySelector('select[name="agent_id"]').value || "").trim();
+  const type = (form.querySelector('select[name="type"]').value || "").trim();
+  const name = (form.querySelector('input[name="name"]').value || "").trim();
+  if (!agentID) throw new Error("请选择 Agent");
+  if (!name) throw new Error("请填写渠道名称");
+  await api("/channels", { method: "POST", body: { agent_id: agentID, type, name } });
+  form.reset();
+  await loadChannels();
+  toast("渠道已创建");
+}
+
+// toggleChannel 启用/禁用/删除指定渠道后刷新列表。
+async function toggleChannel(channelID, action) {
+  if (!channelID) return;
+  if (action === "archive") {
+    if (!window.confirm("确认删除该渠道？")) return;
+    await api(`/channels/${channelID}`, { method: "DELETE" });
+    await loadChannels();
+    toast("渠道已删除");
+    return;
+  }
+  await api(`/channels/${channelID}/${action}`, { method: "POST" });
+  await loadChannels();
+  toast(action === "enable" ? "渠道已启用" : "渠道已禁用");
+}
+
 async function loadToolCallLogs() {
   if (!state.tenantId) return;
   const data = await api(`/tool-call-logs${toolCallLogQuery()}`);
@@ -2867,6 +2965,7 @@ async function refreshAll() {
     loadPlugins(),
     loadWorkflow(),
     loadWorkflows(),
+    loadChannels(),
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
@@ -2937,6 +3036,7 @@ function bindEvents() {
       loadPlugins(),
       loadWorkflow(),
       loadWorkflows(),
+      loadChannels(),
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
@@ -3433,6 +3533,11 @@ function bindEvents() {
     event.preventDefault();
     createWorkflow().catch((err) => toast(err.message));
   });
+  $("#loadChannelsBtn").addEventListener("click", () => loadChannels().then(() => toast("渠道已刷新")).catch((err) => renderChannels(err.message)));
+  $("#channelCreateForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    createChannel().catch((err) => toast(err.message));
+  });
   $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     agentGenealogyFiltersFromForm();
@@ -3539,6 +3644,9 @@ function bindEvents() {
     const workflowPublishId = target.dataset?.workflowPublish;
     const workflowArchiveId = target.dataset?.workflowArchive;
     const workflowRunId = target.dataset?.workflowRun;
+    const channelEnableId = target.dataset?.channelEnable;
+    const channelDisableId = target.dataset?.channelDisable;
+    const channelArchiveId = target.dataset?.channelArchive;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3573,6 +3681,15 @@ function bindEvents() {
       }
       if (workflowRunId) {
         await runWorkflow(workflowRunId);
+      }
+      if (channelEnableId) {
+        await toggleChannel(channelEnableId, "enable");
+      }
+      if (channelDisableId) {
+        await toggleChannel(channelDisableId, "disable");
+      }
+      if (channelArchiveId) {
+        await toggleChannel(channelArchiveId, "archive");
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

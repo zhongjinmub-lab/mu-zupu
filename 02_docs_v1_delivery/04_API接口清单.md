@@ -1090,3 +1090,17 @@ P1「工作流」第三增量，引入安全的 dry-run 执行引擎与执行日
 - `GET /workflows/{workflow_id}/runs`：返回该工作流的运行记录（执行日志），按时间倒序，默认 20 条、最大 100。
 
 两个接口都按当前 `X-Tenant-ID` 租户隔离；`run` 走 `RequireTenantWriter`。`run` 复用 `Get`（已排除归档工作流），因此草稿与已发布工作流均可 dry-run。后续接入真实执行引擎时，`tool`/`llm` 节点将遵循既有工具安全策略与插件启用状态，`human_approval` 节点对接真实人工确认，失败/拒绝/确认均写入审计。管理台“工作流编排”面板的工作流定义列表新增“试运行”按钮，并新增“运行记录（执行日志）”展示区，用中文展示状态与各步骤。
+
+
+## 2026-05-31 增量：Agent 渠道接入（Web/H5/API）
+
+P1「渠道入口」第一增量，引入 Agent 渠道接入点持久化。新增 `agent_channels` 表（唯一约束 `tenant_id + channel_key`，软删除，`channel_key` 由库默认生成）。
+
+- `GET /channel-types`：内置渠道类型目录。`web`（网页嵌入）、`h5`（移动 H5）、`api`（开放 API）为 active 可创建；`wechat_official`（微信公众号）、`wechat_work`（企业微信）为 planned，待后续对接回调与凭据。
+- `GET /channels`：当前租户未归档渠道列表。
+- `GET /channels/{channel_id}`：渠道详情。
+- `POST /channels`：创建渠道，请求体 `{agent_id, type, name, config}`，仅允许 active 类型；绑定的 agent 不存在返回 404。
+- `POST /channels/{channel_id}/enable`、`/disable`：启用/禁用渠道。
+- `DELETE /channels/{channel_id}`：归档（软删除）渠道。
+
+写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`channel_key` 为公开接入凭据（形如 `ch_xxxx`），在租户内唯一。后续将基于 `channel_key` 提供 Web 嵌入脚本、H5 页面与开放 API 接入，并补充公众号/企业微信回调验签。管理台新增“渠道接入”面板，展示渠道类型目录、新建渠道表单与渠道列表（含 channel_key、启用/禁用/删除）。
