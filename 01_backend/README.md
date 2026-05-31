@@ -286,9 +286,10 @@ scripts/build_release.sh
 - `backup.sh`：备份数据库和关键配置；
 - `restore-drill.sh`：恢复到临时库演练并校验 `schema_migrations`；
 - `restore.sh`：显式确认后的真实恢复；
+- `restore-config.sh`：显式确认后的运行配置、前端静态文件、Nginx 和 systemd 模板恢复；
 - `upgrade.sh`：发布包升级、迁移、重启和冒烟；
 - `rollback.sh`：运行文件回滚，可选迁移回滚；
-- `smoke.sh`：健康、就绪、服务和迁移状态检查。
+- `smoke.sh`：公网 API、前端静态资源、Nginx 配置、服务和迁移状态检查。
 
 ## 10. 2026-05-28 支付闭环增强
 

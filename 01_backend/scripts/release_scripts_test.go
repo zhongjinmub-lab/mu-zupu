@@ -45,9 +45,15 @@ func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	root := repoRoot(t)
 	readme := readFile(t, filepath.Join(root, "deploy", "production", "README.md"))
-	for _, want := range []string{"升级", "回滚", "备份恢复演练", "backup.sh", "smoke.sh", "restore-drill.sh", "MIGRATION_STEPS"} {
+	backendReadme := readFile(t, filepath.Join(root, "README.md"))
+	for _, want := range []string{"升级", "回滚", "备份恢复演练", "backup.sh", "smoke.sh", "restore-drill.sh", "restore-config.sh", "MIGRATION_STEPS"} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("production README should mention %s", want)
+		}
+	}
+	for _, want := range []string{"restore-config.sh", "公网 API", "前端静态资源", "Nginx 配置"} {
+		if !strings.Contains(backendReadme, want) {
+			t.Fatalf("backend README should mention %s", want)
 		}
 	}
 

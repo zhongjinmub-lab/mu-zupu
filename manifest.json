@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T16:05:17+08:00",
+    "generated_at":  "2026-05-31T16:09:08+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  228,
+    "file_count":  229,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -727,8 +727,8 @@
                   },
                   {
                       "path":  "01_backend/README.md",
-                      "size":  17767,
-                      "sha256":  "27a3ec665c15e401a5795d8708c76c3950570a2b0b955a5a7c7a076918cc5faf"
+                      "size":  17910,
+                      "sha256":  "3fc8eb28545e74a804de79c469522f2118e8403bb8a0c6dac0c14403c23bb7ba"
                   },
                   {
                       "path":  "01_backend/scripts/build_release.ps1",
@@ -742,8 +742,8 @@
                   },
                   {
                       "path":  "01_backend/scripts/release_scripts_test.go",
-                      "size":  4445,
-                      "sha256":  "724a571656005dcf55f65160496ee9e7241387928631fbf0bb5ef8b71536aa58"
+                      "size":  4743,
+                      "sha256":  "18b30da87f0be6003282f29cc2a3722d741ab1b817a3e842ffd1beeb5654f28f"
                   },
                   {
                       "path":  "01_backend/向量存储与索引优化说明.md",
@@ -984,6 +984,11 @@
                       "path":  "02_docs_v1_delivery/2026-05-31_版本升级与回滚脚本增量验收.md",
                       "size":  2012,
                       "sha256":  "a306f240a2c0f5ffcb51a4105c9f3ce50a87a0a5ab374311d60f20f9dd5fd74d"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery/2026-05-31_后端运维入口文档同步增量验收.md",
+                      "size":  908,
+                      "sha256":  "abfc4c129679aa8afae7ae3a31abbc2ca63d03029d1128ad21a73f9c4def3e84"
                   },
                   {
                       "path":  "02_docs_v1_delivery/2026-05-31_角色权限矩阵增量验收.md",
