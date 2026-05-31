@@ -30,6 +30,10 @@
           <el-icon><Share /></el-icon>
           <span>族谱图</span>
         </el-menu-item>
+        <el-menu-item index="/channels">
+          <el-icon><Promotion /></el-icon>
+          <span>渠道接入</span>
+        </el-menu-item>
         <el-menu-item index="/licenses">
           <el-icon><Key /></el-icon>
           <span>授权</span>
@@ -85,7 +89,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Monitor, Cpu, Reading, Share, Key,
-  DataAnalysis, Connection, Setting, ArrowDown,
+  DataAnalysis, Connection, Setting, ArrowDown, Promotion,
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

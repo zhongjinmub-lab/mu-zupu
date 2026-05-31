@@ -50,6 +50,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '族谱图' },
       },
       {
+        path: 'channels',
+        name: 'Channels',
+        component: () => import('@/views/ChannelView.vue'),
+        meta: { title: '渠道接入' },
+      },
+      {
         path: 'licenses',
         name: 'Licenses',
         component: () => import('@/views/LicenseView.vue'),
