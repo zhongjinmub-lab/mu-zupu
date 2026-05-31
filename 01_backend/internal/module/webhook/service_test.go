@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -80,6 +81,29 @@ func TestMaxRetryStopsScheduling(t *testing.T) {
 	next = service.nextRetryAt(Delivery{Status: "success", RetryCount: 0})
 	if next != nil {
 		t.Fatalf("expected no retry for success, got %s", next)
+	}
+}
+
+func TestEndpointJSONHidesSecret(t *testing.T) {
+	body, err := json.Marshal(Endpoint{
+		ID:        "endpoint-1",
+		TenantID:  "tenant-1",
+		Name:      "支付通知",
+		URL:       "https://example.com/webhook",
+		Secret:    "should-not-leak",
+		HasSecret: true,
+		Events:    []string{EventOrderPaid},
+		Status:    StatusActive,
+	})
+	if err != nil {
+		t.Fatalf("marshal endpoint: %v", err)
+	}
+	text := string(body)
+	if strings.Contains(text, "should-not-leak") || strings.Contains(text, "\"secret\"") {
+		t.Fatalf("expected endpoint json hide secret, got %s", text)
+	}
+	if !strings.Contains(text, "\"has_secret\":true") {
+		t.Fatalf("expected endpoint json include has_secret, got %s", text)
 	}
 }
 

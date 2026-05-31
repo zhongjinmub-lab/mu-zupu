@@ -1089,7 +1089,7 @@ function fillWebhookForm(webhookID) {
   form.elements.name.value = item.name || "";
   form.elements.url.value = item.url || "";
   form.elements.secret.value = "";
-  form.elements.secret.placeholder = item.secret ? "留空则保留原密钥，填写则替换" : "可选，用于 HMAC 签名";
+  form.elements.secret.placeholder = item.has_secret ? "留空则保留原密钥，填写则替换" : "可选，用于 HMAC 签名";
   form.elements.status.value = item.status || "active";
   const selectedEvents = new Set(item.events || []);
   Array.from(form.elements.events.options).forEach((option) => {

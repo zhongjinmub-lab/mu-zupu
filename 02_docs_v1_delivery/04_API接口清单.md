@@ -643,3 +643,19 @@ Generation provider 配置：
 | `status` | 状态，可选，支持 `active`、`disabled`；用于启停 Webhook |
 
 管理台 Webhook 列表已新增“编辑”按钮。点击后会把名称、接收地址、订阅事件和状态载入表单；签名密钥输入框不展示已有密钥原文，留空保存时保留原密钥，填写新密钥时才会替换。启用/停用 Webhook 只提交状态字段，不会清空签名密钥。
+
+## 2026-05-31 增量：Webhook 签名密钥响应脱敏
+
+Webhook 配置相关响应不再返回 `secret` 原文，避免接口响应、浏览器状态或日志中泄漏签名密钥。
+
+| 字段 | 说明 |
+|---|---|
+| `has_secret` | 是否已配置签名密钥；`true` 表示当前 Webhook 已有密钥，`false` 表示未配置 |
+
+适用接口：
+
+- `GET /webhooks`
+- `POST /webhooks`
+- `PUT /webhooks/{webhook_id}`
+
+内部投递、测试发送和重试 Worker 仍会从数据库读取真实密钥用于 HMAC 签名，但不会通过 JSON 响应返回给前端。管理台编辑 Webhook 时根据 `has_secret` 展示中文提示，密钥输入框始终为空，留空保存会保留原密钥。

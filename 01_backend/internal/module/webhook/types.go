@@ -25,7 +25,8 @@ type Endpoint struct {
 	TenantID  string    `json:"tenant_id"`
 	Name      string    `json:"name"`
 	URL       string    `json:"url"`
-	Secret    string    `json:"secret,omitempty"`
+	Secret    string    `json:"-"`
+	HasSecret bool      `json:"has_secret"`
 	Events    []string  `json:"events"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`

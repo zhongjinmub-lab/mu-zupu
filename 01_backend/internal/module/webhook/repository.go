@@ -391,6 +391,7 @@ func scanEndpoint(rows pgx.Rows) (Endpoint, error) {
 	if err := rows.Scan(&item.ID, &item.TenantID, &item.Name, &item.URL, &item.Secret, &events, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
 		return Endpoint{}, err
 	}
+	item.HasSecret = item.Secret != ""
 	_ = json.Unmarshal(events, &item.Events)
 	return item, nil
 }
@@ -448,6 +449,7 @@ func scanRetryJob(rows pgx.Rows) (RetryJob, error) {
 		delivery.RequestBody = map[string]any{}
 	}
 	_ = json.Unmarshal(endpointEvents, &endpoint.Events)
+	endpoint.HasSecret = endpoint.Secret != ""
 	return RetryJob{
 		Delivery: delivery,
 		Endpoint: endpoint,
