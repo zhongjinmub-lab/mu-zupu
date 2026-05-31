@@ -67,13 +67,50 @@ ORDER BY created_at DESC`
 	return out, rows.Err()
 }
 
-func (r Repository) GenealogyGraph(ctx context.Context, tenantID string) (GenealogyGraph, error) {
+func (r Repository) GenealogyGraph(ctx context.Context, tenantID string, query GenealogyGraphQuery) (GenealogyGraph, error) {
+	query.Normalize()
 	const nodeQ = `
-SELECT id::text, name, code, COALESCE(description, ''), status, created_at
-FROM agents
-WHERE tenant_id = $1 AND deleted_at IS NULL
+WITH active_agents AS (
+  SELECT id, name, code, COALESCE(description, '') AS description, status, created_at
+  FROM agents
+  WHERE tenant_id = $1 AND deleted_at IS NULL
+),
+matched_edges AS (
+  SELECT g.parent_agent_id, g.child_agent_id
+  FROM agent_genealogy g
+  JOIN active_agents child ON child.id = g.child_agent_id
+  LEFT JOIN active_agents parent ON parent.id = g.parent_agent_id
+  WHERE g.tenant_id = $1
+    AND ($2 = '' OR g.relation_type = $2)
+    AND (g.parent_agent_id IS NULL OR parent.id IS NOT NULL)
+    AND (
+      $3 = ''
+      OR child.name ILIKE '%' || $3 || '%'
+      OR child.code ILIKE '%' || $3 || '%'
+      OR child.description ILIKE '%' || $3 || '%'
+      OR parent.name ILIKE '%' || $3 || '%'
+      OR parent.code ILIKE '%' || $3 || '%'
+      OR parent.description ILIKE '%' || $3 || '%'
+    )
+)
+SELECT id::text, name, code, description, status, created_at
+FROM active_agents a
+WHERE ($2 = '' AND $3 = '')
+   OR (
+     $3 <> ''
+     AND (
+       a.name ILIKE '%' || $3 || '%'
+       OR a.code ILIKE '%' || $3 || '%'
+       OR a.description ILIKE '%' || $3 || '%'
+     )
+   )
+   OR EXISTS (
+     SELECT 1
+     FROM matched_edges e
+     WHERE e.child_agent_id = a.id OR e.parent_agent_id = a.id
+   )
 ORDER BY created_at ASC`
-	nodeRows, err := r.DB.Query(ctx, nodeQ, tenantID)
+	nodeRows, err := r.DB.Query(ctx, nodeQ, tenantID, query.RelationType, query.Q)
 	if err != nil {
 		return GenealogyGraph{}, err
 	}
@@ -105,8 +142,18 @@ WHERE g.tenant_id = $1
   AND child.tenant_id = $1
   AND child.deleted_at IS NULL
   AND (parent.id IS NULL OR (parent.tenant_id = $1 AND parent.deleted_at IS NULL))
+  AND ($2 = '' OR g.relation_type = $2)
+  AND (
+    $3 = ''
+    OR child.name ILIKE '%' || $3 || '%'
+    OR child.code ILIKE '%' || $3 || '%'
+    OR COALESCE(child.description, '') ILIKE '%' || $3 || '%'
+    OR parent.name ILIKE '%' || $3 || '%'
+    OR parent.code ILIKE '%' || $3 || '%'
+    OR COALESCE(parent.description, '') ILIKE '%' || $3 || '%'
+  )
 ORDER BY g.created_at ASC`
-	edgeRows, err := r.DB.Query(ctx, edgeQ, tenantID)
+	edgeRows, err := r.DB.Query(ctx, edgeQ, tenantID, query.RelationType, query.Q)
 	if err != nil {
 		return GenealogyGraph{}, err
 	}

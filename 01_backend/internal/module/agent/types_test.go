@@ -72,6 +72,36 @@ func TestCreateGenealogyEdgeRequestNormalizeAndValidate(t *testing.T) {
 	}
 }
 
+func TestGenealogyGraphQueryNormalizeAndValidate(t *testing.T) {
+	req := GenealogyGraphQuery{
+		Q:            "  客服助手  ",
+		RelationType: " ROUTE ",
+	}
+	req.Normalize()
+	if req.Q != "客服助手" || req.RelationType != "route" {
+		t.Fatalf("normalized query = %#v", req)
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected valid genealogy graph query: %v", err)
+	}
+
+	req.RelationType = ""
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected empty relation type to be valid: %v", err)
+	}
+
+	req.RelationType = "unknown"
+	if err := req.Validate(); err == nil {
+		t.Fatal("expected invalid relation_type error")
+	}
+
+	req.RelationType = ""
+	req.Q = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+	if err := req.Validate(); err == nil {
+		t.Fatal("expected q length validation error")
+	}
+}
+
 func TestTestChatRequestNormalizeAndValidate(t *testing.T) {
 	req := TestChatRequest{Message: " hello ", KnowledgeBaseID: " kb-1 ", TopK: 99, CandidateK: 1, MinScore: -1, MaxTokens: 9000, Temperature: 9}
 	req.Normalize()

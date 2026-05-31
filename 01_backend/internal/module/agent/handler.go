@@ -89,7 +89,12 @@ func (h Handler) GenealogyGraph(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
-	graph, err := h.Repo.GenealogyGraph(c.Request.Context(), t.ID)
+	query := genealogyGraphQueryFromRequest(c)
+	if err := query.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40045, err.Error())
+		return
+	}
+	graph, err := h.Repo.GenealogyGraph(c.Request.Context(), t.ID, query)
 	if err != nil {
 		writeAgentError(c, err)
 		return
@@ -103,7 +108,12 @@ func (h Handler) ExportGenealogyGraph(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
-	graph, err := h.Repo.GenealogyGraph(c.Request.Context(), t.ID)
+	query := genealogyGraphQueryFromRequest(c)
+	if err := query.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40045, err.Error())
+		return
+	}
+	graph, err := h.Repo.GenealogyGraph(c.Request.Context(), t.ID, query)
 	if err != nil {
 		writeAgentError(c, err)
 		return
@@ -146,6 +156,15 @@ func (h Handler) ExportGenealogyGraph(c *gin.Context) {
 		})
 	}
 	writer.Flush()
+}
+
+func genealogyGraphQueryFromRequest(c *gin.Context) GenealogyGraphQuery {
+	query := GenealogyGraphQuery{
+		Q:            c.Query("q"),
+		RelationType: c.Query("relation_type"),
+	}
+	query.Normalize()
+	return query
 }
 
 func (h Handler) CreateGenealogyEdge(c *gin.Context) {

@@ -14,6 +14,10 @@ const state = {
   pendingChunks: [],
   agents: [],
   agentGenealogy: { nodes: [], edges: [] },
+  agentGenealogyFilters: {
+    q: "",
+    relation_type: "",
+  },
   agentBindings: [],
   conversations: [],
   selectedConversationId: "",
@@ -842,6 +846,8 @@ function renderAgents() {
   fillSelect("#agentChatForm select[name='agent_id']", state.agents, "选择智能体");
   fillSelect("#agentBindingForm select[name='agent_id']", state.agents, "选择智能体");
   fillSelect("#agentConversationForm select[name='agent_id']", state.agents, "选择智能体");
+  fillSelect("#agentGenealogyForm select[name='parent_agent_id']", state.agents, "根节点", true);
+  fillSelect("#agentGenealogyForm select[name='child_agent_id']", state.agents, "选择子智能体");
   renderMetrics();
 }
 
@@ -867,13 +873,17 @@ function renderAgentGenealogy(error = "") {
   }
   const nodes = state.agentGenealogy.nodes || [];
   const edges = state.agentGenealogy.edges || [];
-  fillSelect("#agentGenealogyForm select[name='parent_agent_id']", nodes, "根节点", true);
-  fillSelect("#agentGenealogyForm select[name='child_agent_id']", nodes, "选择子智能体");
+  fillSelect("#agentGenealogyForm select[name='parent_agent_id']", state.agents, "根节点", true);
+  fillSelect("#agentGenealogyForm select[name='child_agent_id']", state.agents, "选择子智能体");
+  const filters = [];
+  if (state.agentGenealogyFilters.q) filters.push(`关键词：${state.agentGenealogyFilters.q}`);
+  if (state.agentGenealogyFilters.relation_type) filters.push(`关系：${relationLabel(state.agentGenealogyFilters.relation_type)}`);
   const roots = nodes.filter((node) => !edges.some((edge) => edge.child_agent_id === node.id && edge.parent_agent_id));
   summaryEl.innerHTML = `
     <article><strong>${nodes.length.toLocaleString()}</strong><span>智能体节点</span></article>
     <article><strong>${edges.length.toLocaleString()}</strong><span>族谱关系</span></article>
     <article><strong>${roots.length.toLocaleString()}</strong><span>根节点</span></article>
+    <article><strong>${filters.length ? "已筛选" : "全部"}</strong><span>${escapeHtml(filters.join(" / ") || "当前范围")}</span></article>
   `;
   graphEl.innerHTML = nodes.map((node, index) => {
     const outCount = edges.filter((edge) => edge.parent_agent_id === node.id).length;
@@ -1365,10 +1375,31 @@ async function loadAgents() {
   renderAgents();
 }
 
+function agentGenealogyFiltersFromForm() {
+  const form = $("#agentGenealogyFilterForm");
+  if (!form) return state.agentGenealogyFilters;
+  const data = formData(form);
+  state.agentGenealogyFilters = {
+    q: (data.q || "").trim(),
+    relation_type: data.relation_type || "",
+  };
+  return state.agentGenealogyFilters;
+}
+
+function agentGenealogyQuery() {
+  const params = new URLSearchParams();
+  Object.entries(state.agentGenealogyFilters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 async function loadAgentGenealogy() {
   if (!state.tenantId) return;
+  agentGenealogyFiltersFromForm();
   try {
-    state.agentGenealogy = await api("/agent-genealogy/graph");
+    state.agentGenealogy = await api(`/agent-genealogy/graph${agentGenealogyQuery()}`);
     renderAgentGenealogy();
   } catch (err) {
     renderAgentGenealogy(err.message);
@@ -1547,7 +1578,9 @@ async function exportAuditLogs() {
 
 async function exportAgentGenealogy() {
   if (!state.tenantId) return;
-  const url = `${state.apiBase}/agent-genealogy/export`;
+  agentGenealogyFiltersFromForm();
+  const qs = agentGenealogyQuery().replace(/^\?/, "");
+  const url = `${state.apiBase}/agent-genealogy/export${qs ? `?${qs}` : ""}`;
   const headers = {};
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
   if (state.tenantId) headers["X-Tenant-ID"] = state.tenantId;
@@ -2336,6 +2369,16 @@ function bindEvents() {
   $("#loadDocumentJobsBtn").addEventListener("click", () => loadDocumentJobs().catch((err) => toast(err.message)));
   $("#loadPendingChunksBtn").addEventListener("click", () => loadPendingChunks().catch((err) => toast(err.message)));
   $("#loadAgentsBtn").addEventListener("click", () => loadAgents().catch((err) => toast(err.message)));
+  $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    agentGenealogyFiltersFromForm();
+    loadAgentGenealogy().then(() => toast("智能体族谱筛选已应用")).catch((err) => toast(err.message));
+  });
+  $("#resetAgentGenealogyFilterBtn").addEventListener("click", () => {
+    state.agentGenealogyFilters = { q: "", relation_type: "" };
+    $("#agentGenealogyFilterForm").reset();
+    loadAgentGenealogy().then(() => toast("智能体族谱筛选已重置")).catch((err) => toast(err.message));
+  });
   $("#exportAgentGenealogyBtn").addEventListener("click", () => exportAgentGenealogy().then(() => toast("智能体族谱已导出")).catch((err) => toast(err.message)));
   $("#loadAgentGenealogyBtn").addEventListener("click", () => loadAgentGenealogy().then(() => toast("智能体族谱已刷新")).catch((err) => toast(err.message)));
   $("#loadAgentBindingsBtn").addEventListener("click", () => loadAgentBindings().catch((err) => toast(err.message)));

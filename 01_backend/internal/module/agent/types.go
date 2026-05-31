@@ -46,6 +46,11 @@ type GenealogyGraph struct {
 	Edges []GenealogyEdge `json:"edges"`
 }
 
+type GenealogyGraphQuery struct {
+	Q            string `json:"q"`
+	RelationType string `json:"relation_type"`
+}
+
 type CreateGenealogyEdgeRequest struct {
 	ParentAgentID string `json:"parent_agent_id"`
 	ChildAgentID  string `json:"child_agent_id" binding:"required"`
@@ -225,6 +230,26 @@ func (r CreateGenealogyEdgeRequest) Validate() error {
 		return errors.New("parent_agent_id and child_agent_id cannot be same")
 	}
 	switch r.RelationType {
+	case "fork", "inherit", "compose", "route":
+		return nil
+	default:
+		return errors.New("relation_type must be fork, inherit, compose or route")
+	}
+}
+
+func (q *GenealogyGraphQuery) Normalize() {
+	q.Q = strings.TrimSpace(q.Q)
+	q.RelationType = strings.ToLower(strings.TrimSpace(q.RelationType))
+}
+
+func (q GenealogyGraphQuery) Validate() error {
+	if len([]rune(q.Q)) > 80 {
+		return errors.New("q must be less than 80 characters")
+	}
+	if q.RelationType == "" {
+		return nil
+	}
+	switch q.RelationType {
 	case "fork", "inherit", "compose", "route":
 		return nil
 	default:

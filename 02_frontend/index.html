@@ -359,6 +359,20 @@
                   <button id="loadAgentGenealogyBtn" class="button small secondary" type="button">刷新</button>
                 </div>
               </div>
+              <form id="agentGenealogyFilterForm" class="filter-form compact">
+                <label>关键词<input name="q" placeholder="名称、编码或描述" /></label>
+                <label>关系类型
+                  <select name="relation_type">
+                    <option value="">全部关系</option>
+                    <option value="fork">派生</option>
+                    <option value="inherit">继承</option>
+                    <option value="compose">组合</option>
+                    <option value="route">路由</option>
+                  </select>
+                </label>
+                <button class="button small secondary" type="submit">筛选</button>
+                <button id="resetAgentGenealogyFilterBtn" class="button small secondary" type="button">重置</button>
+              </form>
               <form id="agentGenealogyForm" class="inline-form">
                 <select name="parent_agent_id">
                   <option value="">根节点</option>
