@@ -728,3 +728,27 @@ Webhook 配置相关响应不再返回 `secret` 原文，避免接口响应、�
 - 已存在 `A → B → C`，不允许创建 `C → A`。
 
 该校验只在存在父智能体时执行；根节点关系不会形成环路。
+
+## 2026-05-31 增量：智能体族谱 CSV 导出
+
+`GET /agent-genealogy/export` 用于导出当前租户下的智能体族谱节点和关系，返回 `text/csv` 文件。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | tenant |
+| 租户隔离 | 固定使用当前 `X-Tenant-ID`，只导出当前租户数据 |
+| 导出范围 | 当前租户未归档智能体节点，以及当前租户下的族谱关系 |
+
+CSV 字段：
+
+| 字段 | 说明 |
+|---|---|
+| `section` | 行类型，`node` 表示节点，`edge` 表示关系 |
+| `id` | 节点 ID 或关系 ID |
+| `name`、`code`、`status`、`description` | 节点信息，仅 `node` 行有值 |
+| `parent_agent_id`、`parent_name` | 父智能体信息，仅 `edge` 行有值；根节点关系可为空 |
+| `child_agent_id`、`child_name` | 子智能体信息，仅 `edge` 行有值 |
+| `relation_type` | 关系类型，仅 `edge` 行有值 |
+| `created_at` | 创建时间 |
+
+管理台智能体页“智能体族谱图谱”区域已新增“导出 CSV”按钮，导出时不展示黑色 JSON 原文区域，直接下载 CSV 文件。

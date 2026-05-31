@@ -1,11 +1,13 @@
 package agent
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -93,6 +95,57 @@ func (h Handler) GenealogyGraph(c *gin.Context) {
 		return
 	}
 	response.OK(c, graph)
+}
+
+func (h Handler) ExportGenealogyGraph(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	graph, err := h.Repo.GenealogyGraph(c.Request.Context(), t.ID)
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	filename := "agent-genealogy-" + time.Now().Format("20060102-150405") + ".csv"
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+	writer := csv.NewWriter(c.Writer)
+	_ = writer.Write([]string{"section", "id", "name", "code", "status", "description", "parent_agent_id", "parent_name", "child_agent_id", "child_name", "relation_type", "created_at"})
+	for _, node := range graph.Nodes {
+		_ = writer.Write([]string{
+			"node",
+			node.ID,
+			node.Name,
+			node.Code,
+			node.Status,
+			node.Description,
+			"",
+			"",
+			"",
+			"",
+			"",
+			node.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	for _, edge := range graph.Edges {
+		_ = writer.Write([]string{
+			"edge",
+			edge.ID,
+			"",
+			"",
+			"",
+			"",
+			edge.ParentAgentID,
+			edge.ParentName,
+			edge.ChildAgentID,
+			edge.ChildName,
+			edge.RelationType,
+			edge.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	writer.Flush()
 }
 
 func (h Handler) CreateGenealogyEdge(c *gin.Context) {

@@ -8,6 +8,7 @@ import (
 
 func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/agent-genealogy/graph", h.GenealogyGraph)
+	rg.GET("/agent-genealogy/export", h.ExportGenealogyGraph)
 	rg.GET("/agents", h.ListAgents)
 	rg.GET("/agents/:agent_id", h.GetAgent)
 	rg.GET("/agents/:agent_id/conversations", h.ListConversations)
