@@ -204,8 +204,34 @@ LIMIT $` + fmt.Sprint(limitArg)
 	return items, rows.Err()
 }
 
-func (r Repository) DeliverySummary(ctx context.Context, tenantID string) (DeliverySummary, error) {
-	const q = `
+func (r Repository) DeliverySummary(ctx context.Context, query DeliveryQuery) (DeliverySummary, error) {
+	query.Normalize()
+	if err := query.Validate(); err != nil {
+		return DeliverySummary{}, err
+	}
+	args := []any{query.TenantID}
+	filters := []string{"tenant_id = $1"}
+	if query.EndpointID != "" {
+		args = append(args, query.EndpointID)
+		filters = append(filters, fmt.Sprintf("endpoint_id = $%d::uuid", len(args)))
+	}
+	if query.EventType != "" {
+		args = append(args, query.EventType)
+		filters = append(filters, fmt.Sprintf("event_type = $%d", len(args)))
+	}
+	if query.Status != "" {
+		args = append(args, query.Status)
+		filters = append(filters, fmt.Sprintf("status = $%d", len(args)))
+	}
+	if !query.From.IsZero() {
+		args = append(args, query.From)
+		filters = append(filters, fmt.Sprintf("created_at >= $%d", len(args)))
+	}
+	if !query.To.IsZero() {
+		args = append(args, query.To)
+		filters = append(filters, fmt.Sprintf("created_at <= $%d", len(args)))
+	}
+	q := `
 SELECT
     COUNT(*)::int,
     COUNT(*) FILTER (WHERE status = 'success')::int,
@@ -215,9 +241,9 @@ SELECT
     COUNT(*) FILTER (WHERE status = 'failed' AND next_retry_at IS NULL)::int,
     MAX(last_attempt_at)
 FROM webhook_deliveries
-WHERE tenant_id = $1`
+WHERE ` + strings.Join(filters, " AND ")
 	var item DeliverySummary
-	if err := r.DB.QueryRow(ctx, q, tenantID).Scan(
+	if err := r.DB.QueryRow(ctx, q, args...).Scan(
 		&item.Total,
 		&item.Success,
 		&item.Failed,

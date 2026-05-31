@@ -528,6 +528,16 @@ Generation provider 配置：
 | 租户隔离 | 固定使用当前 `X-Tenant-ID`，不接受客户端覆盖 `tenant_id` |
 | 返回内容 | 总投递、成功、失败、已排队重试、已到期重试、需要人工处理、最近尝试时间 |
 
+支持查询参数：
+
+| 参数 | 说明 |
+|---|---|
+| `endpoint_id` | Webhook 配置 ID，可选，必须是合法 UUID |
+| `event_type` | 事件类型，可选，例如 `webhook.test`、`order.paid` |
+| `status` | 投递状态，可选，支持 `success`、`failed` |
+| `from` | 创建时间起点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
+| `to` | 创建时间终点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
+
 响应 `data` 示例：
 
 ```json
@@ -542,7 +552,7 @@ Generation provider 配置：
 }
 ```
 
-管理台 Webhook 页面已新增“投递状态摘要”，使用中文摘要卡片展示，不展示黑色 JSON 原文区域。
+管理台 Webhook 页面“投递状态摘要”会复用当前筛选条件，和投递记录列表、CSV 导出保持同一统计口径。
 
 ## 2026-05-31 增量：运行配置只读摘要
 

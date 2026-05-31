@@ -1463,7 +1463,7 @@ async function loadWebhooks() {
 
 async function loadWebhookDeliverySummary() {
   if (!state.tenantId) return;
-  state.webhookDeliverySummary = await api("/webhook-deliveries/summary");
+  state.webhookDeliverySummary = await api(`/webhook-deliveries/summary${webhookDeliveryQuery()}`);
   renderWebhookDeliverySummary();
 }
 
@@ -2137,6 +2137,7 @@ function bindEvents() {
   $("#loadInvitationsBtn").addEventListener("click", () => loadInvitations().catch((err) => toast(err.message)));
   $("#loadWebhooksBtn").addEventListener("click", () => loadWebhooks().catch((err) => toast(err.message)));
   $("#loadWebhookDeliverySummaryBtn").addEventListener("click", () => {
+    webhookDeliveryFiltersFromForm();
     loadWebhookDeliverySummary().then(() => toast("投递摘要已刷新")).catch((err) => renderWebhookDeliverySummary(err.message));
   });
   $("#exportWebhookDeliveriesBtn").addEventListener("click", () => exportWebhookDeliveries().then(() => toast("Webhook 投递记录已导出")).catch((err) => toast(err.message)));

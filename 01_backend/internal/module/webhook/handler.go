@@ -159,7 +159,17 @@ func (h Handler) DeliverySummary(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
-	item, err := h.Repo.DeliverySummary(c.Request.Context(), t.ID)
+	query, err := h.deliveryQueryFromRequest(c, t.ID, 50)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	query.Normalize()
+	if err := query.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	item, err := h.Repo.DeliverySummary(c.Request.Context(), query)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, 50092, err.Error())
 		return
@@ -247,6 +257,27 @@ func (h Handler) RetryDelivery(c *gin.Context) {
 		return
 	}
 	response.OK(c, item)
+}
+
+func (h Handler) deliveryQueryFromRequest(c *gin.Context, tenantID string, defaultLimit int) (DeliveryQuery, error) {
+	from, err := parseDeliveryTime(c.Query("from"))
+	if err != nil {
+		return DeliveryQuery{}, errors.New("from must be RFC3339 or YYYY-MM-DD")
+	}
+	to, err := parseDeliveryTime(c.Query("to"))
+	if err != nil {
+		return DeliveryQuery{}, errors.New("to must be RFC3339 or YYYY-MM-DD")
+	}
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultLimit)))
+	return DeliveryQuery{
+		TenantID:   tenantID,
+		EndpointID: c.Query("endpoint_id"),
+		EventType:  c.Query("event_type"),
+		Status:     c.Query("status"),
+		From:       from,
+		To:         to,
+		Limit:      limit,
+	}, nil
 }
 
 func formatOptionalTime(value *time.Time) string {
