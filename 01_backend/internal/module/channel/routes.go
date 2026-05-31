@@ -21,3 +21,8 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write.POST("/channels/:channel_id/disable", h.DisableChannel)
 	write.DELETE("/channels/:channel_id", h.ArchiveChannel)
 }
+
+// RegisterPublicRoutes 注册面向外部接入方的公开渠道端点（不经登录与租户中间件，仅做 IP 限流）。
+func RegisterPublicRoutes(rg *gin.RouterGroup, h Handler) {
+	rg.GET("/channel-connect/:channel_key", h.ConnectChannel)
+}
