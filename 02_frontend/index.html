@@ -402,6 +402,16 @@
               </div>
               <textarea id="workflowDefinitionInput" rows="8" placeholder='{"nodes":[{"id":"n_start","type":"start"},{"id":"n_llm","type":"llm"},{"id":"n_end","type":"end"}],"edges":[{"from":"n_start","to":"n_llm"},{"from":"n_llm","to":"n_end"}]}'></textarea>
               <div id="workflowValidationBox" class="list"></div>
+              <div class="panel-subhead">
+                <strong>工作流定义</strong>
+                <button id="loadWorkflowsBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <form id="workflowCreateForm" class="filter-form">
+                <input name="name" placeholder="工作流名称" />
+                <input name="code" placeholder="编码（小写字母数字 - _）" />
+                <button class="button small" type="submit">用上方校验框的定义创建</button>
+              </form>
+              <div id="workflowListBox" class="list"></div>
             </section>
             <section class="panel">
               <div class="panel-head">

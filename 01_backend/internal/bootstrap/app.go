@@ -168,7 +168,7 @@ func NewApp(cfg config.Config) (*App, error) {
 	filemodule.RegisterRoutes(tenantScoped, filemodule.NewHandler(filemodule.NewRepository(db), storageClient, cfg.UploadMaxBytes, billingRepo))
 	kb.RegisterRoutesWithHandler(tenantScoped, kb.NewHandlerWithStorageAndGeneration(db, storageClient, embedder, generator, billingRepo))
 	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntimeAndWebhook(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo, webhookService), rateLimiter.TenantAndUserScoped("agent_stream", rateLimitShare(cfg.RateLimitTenantPerMinute, 3), rateLimitShare(cfg.RateLimitUserPerMinute, 3)))
-	workflow.RegisterRoutes(tenantScoped, workflow.NewHandler())
+	workflow.RegisterRoutes(tenantScoped, workflow.NewHandler(workflow.NewRepository(db)))
 	return &App{Router: r, DB: db, RedisClient: redisClient}, nil
 }
 

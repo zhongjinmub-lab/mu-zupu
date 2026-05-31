@@ -1,8 +1,10 @@
 package workflow
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 )
 
 // WorkflowNode 表示工作流图中的一个节点。
@@ -255,4 +257,125 @@ func topoSort(nodeOrder []string, adj map[string][]string, indeg map[string]int)
 		}
 	}
 	return order, len(order) == len(nodeOrder)
+}
+
+// 工作流状态常量。
+const (
+	StatusDraft     = "draft"
+	StatusPublished = "published"
+	StatusArchived  = "archived"
+)
+
+// Workflow 表示一个持久化的工作流定义。
+type Workflow struct {
+	ID          string        `json:"id"`
+	TenantID    string        `json:"tenant_id"`
+	Name        string        `json:"name"`
+	Code        string        `json:"code"`
+	Description string        `json:"description"`
+	Definition  WorkflowGraph `json:"definition"`
+	Status      string        `json:"status"`
+	Version     int           `json:"version"`
+	CreatedBy   string        `json:"created_by,omitempty"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+}
+
+// CreateWorkflowRequest 是创建工作流的请求体。
+type CreateWorkflowRequest struct {
+	Name        string        `json:"name" binding:"required"`
+	Code        string        `json:"code" binding:"required"`
+	Description string        `json:"description"`
+	Definition  WorkflowGraph `json:"definition"`
+}
+
+// UpdateWorkflowRequest 是更新工作流的请求体，Definition 为 nil 时不更新定义。
+type UpdateWorkflowRequest struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Definition  *WorkflowGraph `json:"definition"`
+}
+
+// Normalize 归一化创建请求字段。
+func (r *CreateWorkflowRequest) Normalize() {
+	r.Name = strings.TrimSpace(r.Name)
+	r.Code = strings.ToLower(strings.TrimSpace(r.Code))
+	r.Description = strings.TrimSpace(r.Description)
+	if r.Definition.Nodes == nil {
+		r.Definition.Nodes = []WorkflowNode{}
+	}
+	if r.Definition.Edges == nil {
+		r.Definition.Edges = []WorkflowEdge{}
+	}
+}
+
+// Validate 校验创建请求的基础字段（图结构由 ValidateWorkflowGraph 单独诊断）。
+func (r CreateWorkflowRequest) Validate() error {
+	if r.Name == "" {
+		return errors.New("name is required")
+	}
+	if err := validateWorkflowCode(r.Code); err != nil {
+		return err
+	}
+	if len(r.Definition.Nodes) == 0 {
+		return errors.New("definition.nodes is required")
+	}
+	if len(r.Definition.Nodes) > maxWorkflowNodes {
+		return errors.New("workflow nodes exceed the maximum limit")
+	}
+	return nil
+}
+
+// Normalize 归一化更新请求字段。
+func (r *UpdateWorkflowRequest) Normalize() {
+	r.Name = strings.TrimSpace(r.Name)
+	r.Description = strings.TrimSpace(r.Description)
+}
+
+// Validate 校验更新请求字段。
+func (r UpdateWorkflowRequest) Validate() error {
+	if r.Name != "" && len([]rune(r.Name)) > 128 {
+		return errors.New("name must be at most 128 characters")
+	}
+	if r.Definition != nil {
+		if len(r.Definition.Nodes) == 0 {
+			return errors.New("definition.nodes is required")
+		}
+		if len(r.Definition.Nodes) > maxWorkflowNodes {
+			return errors.New("workflow nodes exceed the maximum limit")
+		}
+	}
+	return nil
+}
+
+// validateWorkflowCode 校验工作流编码：非空、不超过 64 字符、仅限小写字母数字与 - _。
+func validateWorkflowCode(code string) error {
+	if code == "" {
+		return errors.New("code is required")
+	}
+	if len(code) > 64 {
+		return errors.New("code must be at most 64 characters")
+	}
+	for _, ch := range code {
+		if (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '_' {
+			continue
+		}
+		return errors.New("code only supports lowercase letters, numbers, hyphen and underscore")
+	}
+	return nil
+}
+
+// marshalDefinition 将工作流图序列化为 JSON 字符串，用于写入 JSONB 列。
+func marshalDefinition(graph WorkflowGraph) (string, error) {
+	if graph.Nodes == nil {
+		graph.Nodes = []WorkflowNode{}
+	}
+	if graph.Edges == nil {
+		graph.Edges = []WorkflowEdge{}
+	}
+	b, err := json.Marshal(graph)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
