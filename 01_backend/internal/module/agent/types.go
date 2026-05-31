@@ -46,6 +46,12 @@ type GenealogyGraph struct {
 	Edges []GenealogyEdge `json:"edges"`
 }
 
+type CreateGenealogyEdgeRequest struct {
+	ParentAgentID string `json:"parent_agent_id"`
+	ChildAgentID  string `json:"child_agent_id" binding:"required"`
+	RelationType  string `json:"relation_type"`
+}
+
 type KnowledgeBaseBinding struct {
 	ID              string         `json:"id"`
 	TenantID        string         `json:"tenant_id"`
@@ -200,6 +206,30 @@ func (r UpdateAgentRequest) Validate() error {
 		return errors.New("name must be at most 128 characters")
 	}
 	return nil
+}
+
+func (r *CreateGenealogyEdgeRequest) Normalize() {
+	r.ParentAgentID = strings.TrimSpace(r.ParentAgentID)
+	r.ChildAgentID = strings.TrimSpace(r.ChildAgentID)
+	r.RelationType = strings.ToLower(strings.TrimSpace(r.RelationType))
+	if r.RelationType == "" {
+		r.RelationType = "fork"
+	}
+}
+
+func (r CreateGenealogyEdgeRequest) Validate() error {
+	if r.ChildAgentID == "" {
+		return errors.New("child_agent_id is required")
+	}
+	if r.ParentAgentID != "" && r.ParentAgentID == r.ChildAgentID {
+		return errors.New("parent_agent_id and child_agent_id cannot be same")
+	}
+	switch r.RelationType {
+	case "fork", "inherit", "compose", "route":
+		return nil
+	default:
+		return errors.New("relation_type must be fork, inherit, compose or route")
+	}
 }
 
 func (r *BindKnowledgeBaseRequest) Normalize() {

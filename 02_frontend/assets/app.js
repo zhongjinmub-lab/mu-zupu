@@ -838,6 +838,8 @@ function renderAgentGenealogy(error = "") {
   }
   const nodes = state.agentGenealogy.nodes || [];
   const edges = state.agentGenealogy.edges || [];
+  fillSelect("#agentGenealogyForm select[name='parent_agent_id']", nodes, "根节点", true);
+  fillSelect("#agentGenealogyForm select[name='child_agent_id']", nodes, "选择子智能体");
   const roots = nodes.filter((node) => !edges.some((edge) => edge.child_agent_id === node.id && edge.parent_agent_id));
   summaryEl.innerHTML = `
     <article><strong>${nodes.length.toLocaleString()}</strong><span>智能体节点</span></article>
@@ -862,8 +864,11 @@ function renderAgentGenealogy(error = "") {
         <span class="badge">${escapeHtml(relationLabel(edge.relation_type))}</span>
       </div>
       <div class="item-meta">${escapeHtml(edge.parent_agent_id || "root")} / ${escapeHtml(edge.child_agent_id)} / ${formatDateTime(edge.created_at)}</div>
+      <div class="item-actions">
+        <button class="button small danger" data-agent-genealogy-delete="${escapeHtml(edge.id)}">删除关系</button>
+      </div>
     </article>
-  `).join("") || empty("暂无族谱关系，后续可通过关系维护能力补充");
+  `).join("") || empty("暂无族谱关系，可通过上方表单新增");
 }
 
 function resetAgentForm() {
@@ -1998,6 +2003,30 @@ function bindEvents() {
 
   $("#resetAgentFormBtn").addEventListener("click", resetAgentForm);
 
+  $("#agentGenealogyForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = formData(event.currentTarget);
+    if (data.parent_agent_id && data.parent_agent_id === data.child_agent_id) {
+      toast("父智能体和子智能体不能相同");
+      return;
+    }
+    try {
+      await api("/agent-genealogy/edges", {
+        method: "POST",
+        body: {
+          parent_agent_id: data.parent_agent_id,
+          child_agent_id: data.child_agent_id,
+          relation_type: data.relation_type,
+        },
+      });
+      event.currentTarget.reset();
+      await loadAgentGenealogy();
+      toast("族谱关系已新增");
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+
   $("#agentChatForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = formData(event.currentTarget);
@@ -2307,6 +2336,7 @@ function bindEvents() {
     const webhookToggleId = target.dataset?.webhookToggle;
     const webhookDeleteId = target.dataset?.webhookDelete;
     const webhookDeliveryRetryId = target.dataset?.webhookDeliveryRetry;
+    const agentGenealogyDeleteId = target.dataset?.agentGenealogyDelete;
     const conversationSelectId = target.closest("[data-conversation-select]")?.dataset.conversationSelect;
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const viewLink = target.closest("[data-view-link]")?.dataset.viewLink;
@@ -2326,6 +2356,12 @@ function bindEvents() {
         await api(`/agents/${agentID}/knowledge-bases/${agentKbUnbindId}`, { method: "DELETE" });
         await loadAgentBindings();
         toast("知识库已解绑");
+      }
+      if (agentGenealogyDeleteId) {
+        if (!window.confirm("确认删除该族谱关系？")) return;
+        await api(`/agent-genealogy/edges/${agentGenealogyDeleteId}`, { method: "DELETE" });
+        await loadAgentGenealogy();
+        toast("族谱关系已删除");
       }
       if (conversationSelectId) {
         await loadMessages(conversationSelectId);

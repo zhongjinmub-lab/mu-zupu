@@ -126,6 +126,69 @@ ORDER BY g.created_at ASC`
 	return GenealogyGraph{Nodes: nodes, Edges: edges}, nil
 }
 
+func (r Repository) CreateGenealogyEdge(ctx context.Context, tenantID string, req CreateGenealogyEdgeRequest) (GenealogyEdge, error) {
+	if _, err := r.Get(ctx, tenantID, req.ChildAgentID); err != nil {
+		return GenealogyEdge{}, err
+	}
+	if req.ParentAgentID != "" {
+		if _, err := r.Get(ctx, tenantID, req.ParentAgentID); err != nil {
+			return GenealogyEdge{}, err
+		}
+	}
+	var exists bool
+	if err := r.DB.QueryRow(ctx, `
+SELECT EXISTS (
+  SELECT 1
+  FROM agent_genealogy
+  WHERE tenant_id = $1
+    AND parent_agent_id IS NOT DISTINCT FROM NULLIF($2, '')::uuid
+    AND child_agent_id = $3
+    AND relation_type = $4
+)`, tenantID, req.ParentAgentID, req.ChildAgentID, req.RelationType).Scan(&exists); err != nil {
+		return GenealogyEdge{}, err
+	}
+	if exists {
+		return GenealogyEdge{}, ErrGenealogyEdgeExists
+	}
+	const q = `
+INSERT INTO agent_genealogy(tenant_id, parent_agent_id, child_agent_id, relation_type)
+VALUES ($1, NULLIF($2, '')::uuid, $3, $4)
+RETURNING id::text,
+          COALESCE(parent_agent_id::text, ''),
+          COALESCE((SELECT name FROM agents WHERE id = parent_agent_id), ''),
+          child_agent_id::text,
+          (SELECT name FROM agents WHERE id = child_agent_id),
+          relation_type,
+          created_at`
+	rows, err := r.DB.Query(ctx, q, tenantID, req.ParentAgentID, req.ChildAgentID, req.RelationType)
+	if err != nil {
+		return GenealogyEdge{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return GenealogyEdge{}, rows.Err()
+		}
+		return GenealogyEdge{}, ErrGenealogyEdgeNotFound
+	}
+	item, err := scanGenealogyEdge(rows)
+	if err != nil {
+		return GenealogyEdge{}, err
+	}
+	return item, rows.Err()
+}
+
+func (r Repository) DeleteGenealogyEdge(ctx context.Context, tenantID, edgeID string) error {
+	tag, err := r.DB.Exec(ctx, `DELETE FROM agent_genealogy WHERE id = $1 AND tenant_id = $2`, edgeID, tenantID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrGenealogyEdgeNotFound
+	}
+	return nil
+}
+
 func (r Repository) Get(ctx context.Context, tenantID, agentID string) (Agent, error) {
 	const q = `
 SELECT id::text, tenant_id::text, name, code, COALESCE(description, ''), COALESCE(system_prompt, ''),
@@ -539,6 +602,14 @@ func scanMessage(rows pgx.Rows) (Message, error) {
 	return item, err
 }
 
+func scanGenealogyEdge(rows pgx.Rows) (GenealogyEdge, error) {
+	var item GenealogyEdge
+	err := rows.Scan(
+		&item.ID, &item.ParentAgentID, &item.ParentName, &item.ChildAgentID, &item.ChildName, &item.RelationType, &item.CreatedAt,
+	)
+	return item, err
+}
+
 func jsonObject(v map[string]any) (string, error) {
 	if v == nil {
 		return "{}", nil
@@ -548,7 +619,9 @@ func jsonObject(v map[string]any) (string, error) {
 }
 
 var (
-	ErrAgentNotFound        = errors.New("agent not found")
-	ErrBindingNotFound      = errors.New("agent knowledge base binding not found")
-	ErrConversationNotFound = errors.New("conversation not found")
+	ErrAgentNotFound         = errors.New("agent not found")
+	ErrBindingNotFound       = errors.New("agent knowledge base binding not found")
+	ErrConversationNotFound  = errors.New("conversation not found")
+	ErrGenealogyEdgeNotFound = errors.New("agent genealogy edge not found")
+	ErrGenealogyEdgeExists   = errors.New("agent genealogy edge already exists")
 )

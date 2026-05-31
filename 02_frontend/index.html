@@ -356,6 +356,19 @@
                 </div>
                 <button id="loadAgentGenealogyBtn" class="button small secondary" type="button">刷新</button>
               </div>
+              <form id="agentGenealogyForm" class="inline-form">
+                <select name="parent_agent_id">
+                  <option value="">根节点</option>
+                </select>
+                <select name="child_agent_id" required></select>
+                <select name="relation_type">
+                  <option value="fork">派生</option>
+                  <option value="inherit">继承</option>
+                  <option value="compose">组合</option>
+                  <option value="route">路由</option>
+                </select>
+                <button class="button" type="submit">新增关系</button>
+              </form>
               <div id="agentGenealogySummary" class="analytics-grid genealogy-summary"></div>
               <div id="agentGenealogyGraph" class="genealogy-graph"></div>
               <div id="agentGenealogyEdges" class="list"></div>

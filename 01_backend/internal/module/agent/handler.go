@@ -95,6 +95,43 @@ func (h Handler) GenealogyGraph(c *gin.Context) {
 	response.OK(c, graph)
 }
 
+func (h Handler) CreateGenealogyEdge(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	var req CreateGenealogyEdgeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	req.Normalize()
+	if err := req.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	item, err := h.Repo.CreateGenealogyEdge(c.Request.Context(), t.ID, req)
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	response.OK(c, item)
+}
+
+func (h Handler) DeleteGenealogyEdge(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	if err := h.Repo.DeleteGenealogyEdge(c.Request.Context(), t.ID, c.Param("edge_id")); err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"deleted": true})
+}
+
 func (h Handler) GetAgent(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {
@@ -660,10 +697,14 @@ func writeAgentError(c *gin.Context, err error) {
 		response.Error(c, http.StatusNotFound, 40441, "agent knowledge base binding not found")
 	case errors.Is(err, ErrConversationNotFound):
 		response.Error(c, http.StatusNotFound, 40442, "conversation not found")
+	case errors.Is(err, ErrGenealogyEdgeNotFound):
+		response.Error(c, http.StatusNotFound, 40443, "agent genealogy edge not found")
+	case errors.Is(err, ErrGenealogyEdgeExists):
+		response.Error(c, http.StatusConflict, 40941, "agent genealogy edge already exists")
 	default:
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			response.Error(c, http.StatusConflict, 40940, "agent code or binding already exists")
+			response.Error(c, http.StatusConflict, 40940, "agent code, binding or genealogy edge already exists")
 			return
 		}
 		response.Error(c, http.StatusInternalServerError, 50040, err.Error())

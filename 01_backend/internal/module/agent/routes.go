@@ -26,4 +26,6 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write.DELETE("/agents/:agent_id", h.ArchiveAgent)
 	write.POST("/agents/:agent_id/knowledge-bases", h.BindKnowledgeBase)
 	write.DELETE("/agents/:agent_id/knowledge-bases/:kb_id", h.UnbindKnowledgeBase)
+	write.POST("/agent-genealogy/edges", h.CreateGenealogyEdge)
+	write.DELETE("/agent-genealogy/edges/:edge_id", h.DeleteGenealogyEdge)
 }

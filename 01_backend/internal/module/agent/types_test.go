@@ -34,6 +34,44 @@ func TestBindKnowledgeBaseRequestValidate(t *testing.T) {
 	}
 }
 
+func TestCreateGenealogyEdgeRequestNormalizeAndValidate(t *testing.T) {
+	req := CreateGenealogyEdgeRequest{
+		ParentAgentID: " parent-1 ",
+		ChildAgentID:  " child-1 ",
+		RelationType:  " INHERIT ",
+	}
+	req.Normalize()
+	if req.ParentAgentID != "parent-1" || req.ChildAgentID != "child-1" || req.RelationType != "inherit" {
+		t.Fatalf("normalized request = %#v", req)
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected valid genealogy edge request: %v", err)
+	}
+
+	req.RelationType = ""
+	req.Normalize()
+	if req.RelationType != "fork" {
+		t.Fatalf("expected default relation_type fork, got %q", req.RelationType)
+	}
+
+	req.ChildAgentID = ""
+	if err := req.Validate(); err == nil {
+		t.Fatal("expected missing child_agent_id error")
+	}
+
+	req.ChildAgentID = "agent-1"
+	req.ParentAgentID = "agent-1"
+	if err := req.Validate(); err == nil {
+		t.Fatal("expected same parent and child error")
+	}
+
+	req.ParentAgentID = "agent-2"
+	req.RelationType = "unknown"
+	if err := req.Validate(); err == nil {
+		t.Fatal("expected invalid relation_type error")
+	}
+}
+
 func TestTestChatRequestNormalizeAndValidate(t *testing.T) {
 	req := TestChatRequest{Message: " hello ", KnowledgeBaseID: " kb-1 ", TopK: 99, CandidateK: 1, MinScore: -1, MaxTokens: 9000, Temperature: 9}
 	req.Normalize()
