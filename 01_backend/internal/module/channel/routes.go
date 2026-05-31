@@ -11,6 +11,7 @@ import (
 func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/channel-types", h.ListChannelTypes)
 	rg.GET("/channels", h.ListChannels)
+	rg.GET("/channels/summary", h.ChannelsSummary)
 	rg.GET("/channels/:channel_id", h.GetChannel)
 	rg.GET("/channels/:channel_id/embed", h.ChannelEmbed)
 

@@ -121,3 +121,25 @@ func TestUpdateChannelRequestNormalizeAndValidate(t *testing.T) {
 		t.Fatal("expected error when neither name nor config provided")
 	}
 }
+
+func TestSummarizeChannels(t *testing.T) {
+	channels := []Channel{
+		{Type: "web", Status: StatusEnabled},
+		{Type: "web", Status: StatusDisabled},
+		{Type: "api", Status: StatusEnabled},
+	}
+	summary := SummarizeChannels(channels)
+	if summary.Total != 3 || summary.Enabled != 2 || summary.Disabled != 1 {
+		t.Fatalf("unexpected summary counts: %#v", summary)
+	}
+	if summary.ByType["web"] != 2 || summary.ByType["api"] != 1 {
+		t.Fatalf("unexpected by-type distribution: %#v", summary.ByType)
+	}
+}
+
+func TestSummarizeChannelsEmpty(t *testing.T) {
+	summary := SummarizeChannels(nil)
+	if summary.Total != 0 || len(summary.ByType) != 0 {
+		t.Fatalf("empty summary should be zero-valued: %#v", summary)
+	}
+}

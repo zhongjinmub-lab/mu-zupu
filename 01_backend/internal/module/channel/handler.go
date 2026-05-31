@@ -214,3 +214,18 @@ func (h Handler) UpdateChannel(c *gin.Context) {
 	}
 	response.OK(c, item)
 }
+
+// ChannelsSummary 返回当前租户渠道的概览统计（复用 List 后做纯函数聚合）。
+func (h Handler) ChannelsSummary(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	items, err := h.Repo.List(c.Request.Context(), t.ID)
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	response.OK(c, SummarizeChannels(items))
+}

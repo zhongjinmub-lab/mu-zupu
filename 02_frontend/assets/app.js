@@ -2307,6 +2307,25 @@ async function loadChannels() {
 }
 
 function renderChannels(error = "") {
+  const summaryEl = $("#channelSummaryBox");
+  if (summaryEl) {
+    const list = state.channels || [];
+    const byType = {};
+    let enabled = 0;
+    let disabled = 0;
+    list.forEach((ch) => {
+      if (ch.status === "enabled") enabled += 1;
+      else if (ch.status === "disabled") disabled += 1;
+      if (ch.type) byType[ch.type] = (byType[ch.type] || 0) + 1;
+    });
+    const dist = Object.keys(byType).map((key) => `${escapeHtml(channelTypeLabel(key))}×${byType[key]}`).join("、");
+    summaryEl.innerHTML = `
+      <span>渠道总数：${list.length}</span>
+      <span>已启用：${enabled}</span>
+      <span>已禁用：${disabled}</span>
+      <span>类型分布：${dist || "-"}</span>
+    `;
+  }
   const typeEl = $("#channelTypeBox");
   if (typeEl) {
     if (error) {

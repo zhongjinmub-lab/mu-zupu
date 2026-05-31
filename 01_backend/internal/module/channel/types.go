@@ -170,3 +170,29 @@ func (r UpdateChannelRequest) Validate() error {
 	}
 	return nil
 }
+
+// ChannelSummary 表示当前租户渠道的概览统计。
+type ChannelSummary struct {
+	Total    int            `json:"total"`
+	Enabled  int            `json:"enabled"`
+	Disabled int            `json:"disabled"`
+	ByType   map[string]int `json:"by_type"`
+}
+
+// SummarizeChannels 对渠道列表做概览聚合：总数、启用/禁用数与按类型分布。纯函数。
+func SummarizeChannels(channels []Channel) ChannelSummary {
+	summary := ChannelSummary{ByType: map[string]int{}}
+	for _, ch := range channels {
+		summary.Total++
+		switch ch.Status {
+		case StatusEnabled:
+			summary.Enabled++
+		case StatusDisabled:
+			summary.Disabled++
+		}
+		if ch.Type != "" {
+			summary.ByType[ch.Type]++
+		}
+	}
+	return summary
+}
