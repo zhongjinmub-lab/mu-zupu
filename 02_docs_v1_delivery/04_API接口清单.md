@@ -41,6 +41,9 @@
 | GET | /agents/{agent_id}/conversations/{conversation_id}/messages | 会话消息列表 | tenant |
 | GET | /agents/tool-safety-policy | Agent 工具安全策略摘要 | tenant |
 | GET | /agents/conversation-orchestration-policy | Agent 多轮会话编排策略摘要 | tenant |
+| GET | /mcp-gateway/policy | MCP 网关安全策略摘要 | tenant |
+| GET | /mcp-servers | MCP 服务目录，返回只读服务、危险服务、传输方式、安全状态和审计动作 | tenant |
+| POST | /mcp-servers/{server_id}/test | MCP 连通性测试，当前只执行 dry-run 预检，不建立真实连接 | tenant writer |
 | DELETE | /agents/{agent_id} | 归档 Agent | tenant |
 | POST | /agents/{agent_id}/knowledge-bases | 绑定当前租户 KB | tenant |
 | GET | /agents/{agent_id}/knowledge-bases | Agent 已绑定 KB 列表 | tenant |
@@ -1005,3 +1008,14 @@ CSV 字段：
 两个接口都必须携带 `Authorization: Bearer <token>` 和 `X-Tenant-ID: <tenant_id>`；服务端固定按当前租户隔离查询，不接受客户端覆盖 `tenant_id`。当同时传入 `from` 和 `to` 时校验起点不能晚于终点。配套新增 `000021_tool_call_logs_filter_indexes` 迁移，为 `tenant_id + status/agent_id/tool_name + created_at DESC, id DESC` 建立筛选索引。
 
 管理台“Agent 工具安全策略”的“工具调用日志”区已新增筛选栏（agent_id、tool_name、状态、时间范围、数量）和“导出 CSV”按钮，所有结果使用中文摘要展示，不展示黑色 JSON 原文区域。
+
+
+## 2026-05-31 增量：MCP 网关安全策略与连通性 dry-run
+
+P1「插件工具」继续推进 MCP 网关首版，采用与工具安全策略一致的安全默认 + dry-run 模式，本版不新增数据库表，不建立任何真实 MCP 连接。
+
+- `GET /mcp-gateway/policy`：返回 MCP 网关安全摘要，默认 `enabled=false`、`default_action=deny`、`audit_action=agent.mcp.call`、`danger_confirmation=true`，并给出 `transport_support`（stdio/sse/http）、护栏与后续执行要求。
+- `GET /mcp-servers`：返回同一策略下的 MCP 服务目录。`kb_resource`（知识库资源服务，sse）与 `agent_catalog`（Agent 工具目录服务，http）为计划中的只读服务；`external_http`（外部 HTTP MCP）与 `local_stdio`（本地命令 MCP）为危险服务，默认 `blocked` 且要求人工确认。
+- `POST /mcp-servers/{server_id}/test`：连通性 dry-run 预检。只读服务返回 `dry_run_ok` 中文摘要，危险服务返回 `blocked` 中文说明，均不建立真实连接、不执行外部动作。测试会复用 `tool_call_logs`，以 `mcp:<server_code>` 记录工具名、传输方式、参数 key 摘要与结果摘要，不保存敏感明文。
+
+`POST /mcp-servers/{server_id}/test` 需要 `tenant writer/admin` 权限（复用 `RequireTenantWriter`），并携带 `Authorization` 与 `X-Tenant-ID`。后续启用真实 MCP 网关前，外部 MCP Server 必须配置出站白名单防止 SSRF 与数据外泄，连接失败、拒绝和人工确认都要进入审计日志。管理台“MCP 网关安全策略”用中文卡片展示网关状态、服务目录、传输方式、连通性测试结果、危险确认、审计动作和后续执行要求，不展示黑色 JSON 原文。

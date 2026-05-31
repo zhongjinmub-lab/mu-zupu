@@ -17,6 +17,9 @@ const state = {
   tools: [],
   toolTestResults: {},
   toolCallLogs: [],
+  mcpGatewayPolicy: null,
+  mcpServers: [],
+  mcpTestResults: {},
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -1883,6 +1886,79 @@ async function testTool(toolCode) {
   toast(result.allowed ? "工具安全测试通过" : "工具测试已被安全策略阻断");
 }
 
+async function loadMCPGateway() {
+  if (!state.tenantId) return;
+  const [policy, servers] = await Promise.all([
+    api("/mcp-gateway/policy"),
+    api("/mcp-servers"),
+  ]);
+  state.mcpGatewayPolicy = policy;
+  state.mcpServers = servers.items || [];
+  renderMCPGateway();
+}
+
+function renderMCPGateway(error = "") {
+  const el = $("#mcpGatewayBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`MCP 网关策略加载失败：${error}`);
+    return;
+  }
+  const policy = state.mcpGatewayPolicy;
+  if (!policy) {
+    el.innerHTML = empty("暂无 MCP 网关策略");
+    return;
+  }
+  const servers = state.mcpServers.length ? state.mcpServers : [...(policy.available_servers || []), ...(policy.dangerous_servers || [])];
+  el.innerHTML = `
+    <div class="summary-grid compact-summary">
+      <span>网关状态：${policy.enabled ? "已启用" : "默认关闭"}</span>
+      <span>默认动作：${policy.default_action === "deny" ? "拒绝连接" : escapeHtml(policy.default_action || "-")}</span>
+      <span>权限要求：${escapeHtml(policy.permission_role || "-")}</span>
+      <span>审计动作：${escapeHtml(policy.audit_action || "-")}</span>
+      <span>危险确认：${policy.danger_confirmation ? "必须人工确认" : "未要求确认"}</span>
+      <span>传输支持：${escapeHtml((policy.transport_support || []).join("、") || "-")}</span>
+    </div>
+    <div class="list">
+      ${servers.map((server) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(server.name || server.code)}</strong>
+            <span class="badge ${server.status === "blocked" ? "danger" : "warn"}">${escapeHtml(server.status || "planned")}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(server.code || "-")} / ${escapeHtml(server.transport || "-")} / ${escapeHtml(server.category || "-")} / ${server.requires_confirmation ? "需要确认" : "无需确认"}</div>
+          <div class="item-meta">${escapeHtml(server.description || "")}</div>
+          <div class="item-meta">能力：${escapeHtml((server.capabilities || []).join("、") || "-")}</div>
+          ${state.mcpTestResults[server.code] ? `
+            <div class="tool-test-result ${state.mcpTestResults[server.code].allowed ? "ok" : "blocked"}">
+              <strong>${escapeHtml(state.mcpTestResults[server.code].allowed ? "连通性预检通过" : "连接已阻断")}</strong>
+              <span>${escapeHtml(state.mcpTestResults[server.code].message || "")}</span>
+              <span>${escapeHtml(state.mcpTestResults[server.code].input_summary || "")}</span>
+            </div>
+          ` : ""}
+          <div class="item-actions">
+            <button class="button small secondary" data-mcp-test="${escapeHtml(server.code || "")}" type="button">连通性测试</button>
+          </div>
+        </article>
+      `).join("") || empty("暂无 MCP 服务")}
+    </div>
+    <div class="item-meta">护栏：${escapeHtml((policy.guardrails || []).join("；") || "-")}</div>
+    <div class="item-meta">后续执行要求：${escapeHtml((policy.future_execution_notes || []).join("；") || "-")}</div>
+  `;
+}
+
+async function testMCPServer(serverCode) {
+  if (!serverCode) return;
+  const result = await api(`/mcp-servers/${encodeURIComponent(serverCode)}/test`, {
+    method: "POST",
+    body: { input: { source: "admin_console", checked_at: new Date().toISOString() } },
+  });
+  state.mcpTestResults[serverCode] = result;
+  await loadToolCallLogs();
+  renderMCPGateway();
+  toast(result.allowed ? "MCP 连通性预检通过" : "MCP 连接已被安全策略阻断");
+}
+
 async function loadToolCallLogs() {
   if (!state.tenantId) return;
   const data = await api(`/tool-call-logs${toolCallLogQuery()}`);
@@ -2455,6 +2531,7 @@ async function refreshAll() {
     loadDocuments(),
     loadAgents(),
     loadToolSafetyPolicy(),
+    loadMCPGateway(),
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
@@ -2521,6 +2598,7 @@ function bindEvents() {
       loadDocuments(),
       loadAgents(),
       loadToolSafetyPolicy(),
+      loadMCPGateway(),
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
@@ -3008,6 +3086,7 @@ function bindEvents() {
   $("#loadPendingChunksBtn").addEventListener("click", () => loadPendingChunks().catch((err) => toast(err.message)));
   $("#loadAgentsBtn").addEventListener("click", () => loadAgents().catch((err) => toast(err.message)));
   $("#loadToolSafetyPolicyBtn").addEventListener("click", () => loadToolSafetyPolicy().then(() => toast("工具安全策略已刷新")).catch((err) => renderToolSafetyPolicy(err.message)));
+  $("#loadMCPGatewayBtn").addEventListener("click", () => loadMCPGateway().then(() => toast("MCP 网关策略已刷新")).catch((err) => renderMCPGateway(err.message)));
   $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     agentGenealogyFiltersFromForm();
@@ -3108,6 +3187,7 @@ function bindEvents() {
     const conversationSelectId = target.closest("[data-conversation-select]")?.dataset.conversationSelect;
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const toolTestId = target.dataset?.toolTest;
+    const mcpTestId = target.dataset?.mcpTest;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3124,6 +3204,9 @@ function bindEvents() {
       }
       if (toolTestId) {
         await testTool(toolTestId);
+      }
+      if (mcpTestId) {
+        await testMCPServer(mcpTestId);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

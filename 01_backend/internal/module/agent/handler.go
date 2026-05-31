@@ -246,6 +246,52 @@ func (h Handler) ConversationOrchestrationPolicy(c *gin.Context) {
 	response.OK(c, DefaultConversationOrchestrationPolicy())
 }
 
+func (h Handler) MCPGatewayPolicy(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, DefaultMCPGatewayPolicy())
+}
+
+func (h Handler) ListMCPServers(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, gin.H{"items": DefaultMCPServerCatalog()})
+}
+
+func (h Handler) TestMCPServer(c *gin.Context) {
+	started := time.Now()
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	item, ok := FindMCPCatalogItem(c.Param("server_id"))
+	if !ok {
+		response.Error(c, http.StatusNotFound, 40421, "MCP 服务不存在")
+		return
+	}
+	var req MCPTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	result := BuildMCPTestResult(item, req)
+	_ = h.Repo.InsertToolCallLog(c.Request.Context(), t.ID, "", "", "mcp:"+item.Code, result.Status, map[string]any{
+		"input_summary": result.InputSummary,
+		"transport":     result.Transport,
+		"dry_run":       true,
+	}, map[string]any{
+		"allowed":               result.Allowed,
+		"requires_confirmation": result.RequiresConfirmation,
+		"message":               result.Message,
+	}, int(time.Since(started).Milliseconds()))
+	response.OK(c, result)
+}
+
 func (h Handler) GenealogyGraph(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {
