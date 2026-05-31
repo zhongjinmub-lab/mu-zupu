@@ -277,3 +277,25 @@ func TestSimulateWorkflowRunBlockedOnInvalidGraph(t *testing.T) {
 		t.Fatal("blocked run should carry validation issues")
 	}
 }
+
+func TestSummarizeWorkflows(t *testing.T) {
+	workflows := []Workflow{
+		{Status: StatusDraft},
+		{Status: StatusDraft},
+		{Status: StatusPublished},
+	}
+	summary := SummarizeWorkflows(workflows)
+	if summary.Total != 3 || summary.Draft != 2 || summary.Published != 1 {
+		t.Fatalf("unexpected summary: %#v", summary)
+	}
+	if summary.ByStatus[StatusDraft] != 2 || summary.ByStatus[StatusPublished] != 1 {
+		t.Fatalf("unexpected by-status distribution: %#v", summary.ByStatus)
+	}
+}
+
+func TestSummarizeWorkflowsEmpty(t *testing.T) {
+	summary := SummarizeWorkflows(nil)
+	if summary.Total != 0 || len(summary.ByStatus) != 0 {
+		t.Fatalf("empty summary should be zero-valued: %#v", summary)
+	}
+}

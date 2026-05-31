@@ -478,3 +478,29 @@ func marshalJSONValue(v any) (string, error) {
 	}
 	return string(b), nil
 }
+
+// WorkflowSummary 表示当前租户工作流定义的概览统计。
+type WorkflowSummary struct {
+	Total     int            `json:"total"`
+	Draft     int            `json:"draft"`
+	Published int            `json:"published"`
+	ByStatus  map[string]int `json:"by_status"`
+}
+
+// SummarizeWorkflows 对工作流列表做概览聚合：总数、草稿/已发布数与按状态分布。纯函数。
+func SummarizeWorkflows(workflows []Workflow) WorkflowSummary {
+	summary := WorkflowSummary{ByStatus: map[string]int{}}
+	for _, wf := range workflows {
+		summary.Total++
+		switch wf.Status {
+		case StatusDraft:
+			summary.Draft++
+		case StatusPublished:
+			summary.Published++
+		}
+		if wf.Status != "" {
+			summary.ByStatus[wf.Status]++
+		}
+	}
+	return summary
+}

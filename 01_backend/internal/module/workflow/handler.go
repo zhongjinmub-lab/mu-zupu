@@ -267,3 +267,18 @@ func (h Handler) ListWorkflowRuns(c *gin.Context) {
 	}
 	response.OK(c, gin.H{"items": items})
 }
+
+// WorkflowsSummary 返回当前租户工作流定义的概览统计（复用 List 后做纯函数聚合）。
+func (h Handler) WorkflowsSummary(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	items, err := h.Repo.List(c.Request.Context(), t.ID)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	response.OK(c, SummarizeWorkflows(items))
+}

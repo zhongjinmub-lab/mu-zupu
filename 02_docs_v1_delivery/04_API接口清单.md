@@ -1073,6 +1073,7 @@ P1「工作流」第一个增量，采用与工具/MCP 一致的安全默认模�
 P1「工作流」第二增量，引入工作流定义持久化，镜像 Agent 的 CRUD/发布/归档/软删除模式。新增 `workflows` 表（唯一约束 `tenant_id + code`，软删除 `deleted_at`，`version` 版本号，`definition` JSONB 存图）。
 
 - `GET /workflows`：当前租户未归档工作流列表。
+- `GET /workflows/summary`：当前租户工作流概览统计（总数、草稿/已发布数、按状态分布）。
 - `GET /workflows/{workflow_id}`：工作流详情（含 definition、status、version）。
 - `POST /workflows`：创建，请求体 `{name, code, description, definition:{nodes,edges}}`，写入前先做图结构校验（不通过返回 40046）。code 规则同 Agent（小写字母数字与 - _，≤64）。
 - `PUT /workflows/{workflow_id}`：更新名称/描述/定义；更新定义会再次图校验；已发布的工作流更新后回到 `draft` 并 `version + 1`。

@@ -11,6 +11,7 @@ import (
 // 校验、创建、更新、发布、归档为写权限操作，走 RequireTenantWriter。
 func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/workflows", h.ListWorkflows)
+	rg.GET("/workflows/summary", h.WorkflowsSummary)
 	rg.GET("/workflows/orchestration-policy", h.OrchestrationPolicy)
 	rg.GET("/workflow-node-types", h.ListNodeTypes)
 	rg.GET("/workflows/:workflow_id", h.GetWorkflow)

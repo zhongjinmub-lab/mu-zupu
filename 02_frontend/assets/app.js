@@ -2160,6 +2160,21 @@ async function loadWorkflows() {
 }
 
 function renderWorkflowList(error = "") {
+  const summaryEl = $("#workflowSummaryBox");
+  if (summaryEl) {
+    const list = state.workflows || [];
+    let draft = 0;
+    let published = 0;
+    list.forEach((wf) => {
+      if (wf.status === "draft") draft += 1;
+      else if (wf.status === "published") published += 1;
+    });
+    summaryEl.innerHTML = `
+      <span>工作流总数：${list.length}</span>
+      <span>草稿：${draft}</span>
+      <span>已发布：${published}</span>
+    `;
+  }
   const el = $("#workflowListBox");
   if (!el) return;
   if (error) {
