@@ -234,3 +234,65 @@ func TestSensitiveFieldSummaryHandlerReturnsUnifiedResponseWithoutSecrets(t *tes
 		}
 	}
 }
+
+func TestBuildRateLimitAuditSummaryIncludesCoverage(t *testing.T) {
+	summary := BuildRateLimitAuditSummary(config.Config{
+		RateLimitBackend:         "memory",
+		RateLimitWindowSeconds:   60,
+		RateLimitTenantPerMinute: 120,
+		RateLimitUserPerMinute:   60,
+		RateLimitAuthIPPerMinute: 20,
+		RedisPass:                "redis-secret",
+	})
+
+	if summary.RateLimit.Backend != "memory" || summary.RateLimit.TenantPerWindow != 120 {
+		t.Fatalf("unexpected rate limit summary: %#v", summary.RateLimit)
+	}
+	if len(summary.Audit.AutomaticActions) < 4 || len(summary.Audit.BusinessActions) == 0 {
+		t.Fatalf("expected audit coverage: %#v", summary.Audit)
+	}
+	if !summary.Audit.ExportEnabled {
+		t.Fatalf("audit export should be enabled: %#v", summary.Audit)
+	}
+	foundPost := false
+	for _, item := range summary.Audit.AutomaticActions {
+		if item.Action == "http.post" && item.ResourceType == "http_request" {
+			foundPost = true
+		}
+	}
+	if !foundPost {
+		t.Fatalf("expected http.post audit coverage: %#v", summary.Audit.AutomaticActions)
+	}
+}
+
+func TestRateLimitAuditSummaryHandlerReturnsUnifiedResponseWithoutRedisSecret(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	RegisterRoutes(r.Group("/api/v1"), NewHandler(config.Config{
+		RateLimitBackend:         "redis",
+		RateLimitWindowSeconds:   30,
+		RateLimitTenantPerMinute: 240,
+		RateLimitUserPerMinute:   90,
+		RateLimitAuthIPPerMinute: 25,
+		RedisAddr:                "redis.internal:6379",
+		RedisPass:                "redis-secret",
+		RedisDB:                  3,
+	}))
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/settings/rate-limit-audit", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, want := range []string{`"code":0`, `"rate_limit"`, `"audit"`, `"http.post"`, `"tenant.member.add"`, `"export_enabled":true`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("response missing %s: %s", want, body)
+		}
+	}
+	for _, forbidden := range []string{"redis-secret", "redis.internal:6379"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("response should not expose %s: %s", forbidden, body)
+		}
+	}
+}

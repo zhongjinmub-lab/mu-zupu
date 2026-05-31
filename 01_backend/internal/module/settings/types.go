@@ -55,3 +55,24 @@ type SensitiveFieldItem struct {
 	APIExposure string `json:"api_exposure"`
 	Configured   bool   `json:"configured"`
 }
+
+type RateLimitAuditSummary struct {
+	RateLimit RateLimitPolicy `json:"rate_limit"`
+	Audit     AuditCoverage   `json:"audit"`
+	Notes     []string        `json:"notes"`
+}
+
+type AuditCoverage struct {
+	Scope             string              `json:"scope"`
+	AutomaticActions  []AuditActionPolicy `json:"automatic_actions"`
+	BusinessActions   []AuditActionPolicy `json:"business_actions"`
+	QueryCapabilities []string            `json:"query_capabilities"`
+	ExportEnabled     bool                `json:"export_enabled"`
+	MetadataFields    []string            `json:"metadata_fields"`
+}
+
+type AuditActionPolicy struct {
+	Action       string `json:"action"`
+	ResourceType string `json:"resource_type"`
+	Description  string `json:"description"`
+}

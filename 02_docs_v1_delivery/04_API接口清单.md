@@ -21,6 +21,7 @@
 | GET | /health | 健康检查，包含数据库连通性 | public |
 | GET | /ready | 就绪检查 | public |
 | GET | /settings/sensitive-fields | 敏感字段保护与响应脱敏摘要 | user |
+| GET | /settings/rate-limit-audit | API 限流与审计闭环摘要 | user |
 | POST | /auth/register | 注册并签发 JWT | public |
 | POST | /auth/login | 登录并签发 JWT | public |
 | GET | /auth/me | 当前用户 | user |
@@ -651,6 +652,30 @@ Generation provider 配置：
 | `operational_notes` | 运维注意事项，说明生产密钥注入、布尔摘要展示和后续 KMS 加密扩展边界 |
 
 管理台设置页已新增“敏感字段保护摘要”，用中文卡片展示环境变量隔离、哈希/内部存储和响应脱敏状态，不展示黑色 JSON 原文区域。租户邀请 Token 的创建结果也改为中文一次性提示，不再使用黑色代码块展示。
+
+## 2026-05-31 增量：API 限流与审计闭环摘要
+
+`GET /settings/rate-limit-audit` 用于返回 API 限流和审计覆盖摘要，供管理台设置页只读展示。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | user，需携带 `Authorization: Bearer <token>` |
+| 租户头 | 不强制 `X-Tenant-ID`，该接口返回全局限流和审计策略摘要 |
+| 敏感信息 | 不返回 Redis 地址、Redis 密码、数据库编号或任何连接密钥 |
+
+响应 `data` 字段：
+
+| 字段 | 说明 |
+|---|---|
+| `rate_limit` | 当前限流后端、窗口、租户/用户/IP 阈值和 Redis 回退说明 |
+| `audit.scope` | 审计链路覆盖范围 |
+| `audit.automatic_actions` | 通用写操作审计动作，覆盖 POST、PUT、PATCH、DELETE |
+| `audit.business_actions` | 业务关键操作审计动作，覆盖成员、邀请等关键租户操作 |
+| `audit.query_capabilities` | 审计日志查询能力，包含 action、resource_type、actor_user_id、时间范围、cursor 分页和 CSV 导出 |
+| `audit.metadata_fields` | 通用 HTTP 审计元数据字段 |
+| `notes` | 限流与审计闭环说明 |
+
+管理台设置页已新增“限流与审计闭环摘要”，用中文卡片展示租户/用户/IP 限流、自动审计动作、业务审计动作、筛选分页和 CSV 导出能力，不展示黑色 JSON 原文区域。
 
 ## 2026-05-31 增量：Webhook 投递记录 CSV 导出
 

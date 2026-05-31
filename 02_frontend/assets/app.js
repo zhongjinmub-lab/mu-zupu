@@ -38,6 +38,7 @@ const state = {
   runtimeSummary: null,
   monitoringSnapshot: null,
   sensitiveFieldSummary: null,
+  rateLimitAuditSummary: null,
   members: [],
   rolePermissions: null,
   auditLogs: [],
@@ -217,6 +218,7 @@ function renderShell() {
   renderRateLimitPolicy();
   renderRuntimeSummary();
   renderSensitiveFieldSummary();
+  renderRateLimitAuditSummary();
 }
 
 function renderMetrics() {
@@ -643,6 +645,66 @@ function renderSensitiveFieldSummary(error = "") {
     `);
   }
   el.innerHTML = cards.join("") || `<article><strong>敏感字段保护</strong><span>暂无摘要</span></article>`;
+}
+
+function renderRateLimitAuditSummary(error = "") {
+  const el = $("#rateLimitAuditSummaryGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.rateLimitAuditSummary;
+  if (!item) {
+    el.innerHTML = `<article><strong>限流与审计闭环</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const rate = item.rate_limit || {};
+  const audit = item.audit || {};
+  const windowSeconds = Number(rate.window_seconds || 60);
+  const windowText = windowSeconds % 60 === 0 ? `${windowSeconds / 60} 分钟` : `${windowSeconds} 秒`;
+  const autoActions = (audit.automatic_actions || []).map((entry) => entry.action).join("、") || "-";
+  const businessActions = (audit.business_actions || []).map((entry) => entry.action).join("、") || "-";
+  const queryCapabilities = (audit.query_capabilities || []).join("、") || "-";
+  el.innerHTML = `
+    <article>
+      <strong>租户限流</strong>
+      <span>同一租户每 ${escapeHtml(windowText)} ${Number(rate.tenant_per_window || 0).toLocaleString()} 次；同一用户 ${Number(rate.user_per_window || 0).toLocaleString()} 次</span>
+    </article>
+    <article>
+      <strong>登录注册限流</strong>
+      <span>同一 IP 每 ${escapeHtml(windowText)} ${Number(rate.auth_ip_per_window || 0).toLocaleString()} 次，超限返回中文 429</span>
+    </article>
+    <article>
+      <strong>审计范围</strong>
+      <span>${escapeHtml(audit.scope || "租户级写操作统一记录")}</span>
+    </article>
+    <article>
+      <strong>自动审计动作</strong>
+      <span>${escapeHtml(autoActions)}</span>
+    </article>
+    <article>
+      <strong>业务审计动作</strong>
+      <span>${escapeHtml(businessActions)}</span>
+    </article>
+    <article>
+      <strong>查询与导出</strong>
+      <span>${escapeHtml(queryCapabilities)}；CSV 导出${audit.export_enabled ? "已启用" : "未启用"}</span>
+    </article>
+    <article>
+      <strong>审计元数据</strong>
+      <span>${escapeHtml((audit.metadata_fields || []).join("、") || "-")}</span>
+    </article>
+    <article>
+      <strong>闭环说明</strong>
+      <span>${escapeHtml((item.notes || []).join("；") || "-")}</span>
+    </article>
+  `;
 }
 
 function renderAnswerSummary(selector, result, error = "") {
@@ -1790,6 +1852,11 @@ async function loadSensitiveFieldSummary() {
   renderSensitiveFieldSummary();
 }
 
+async function loadRateLimitAuditSummary() {
+  state.rateLimitAuditSummary = await api("/settings/rate-limit-audit", { tenant: false });
+  renderRateLimitAuditSummary();
+}
+
 async function loadOrders() {
   if (!state.tenantId) return;
   const data = await api("/orders");
@@ -2178,6 +2245,7 @@ async function refreshAll() {
     loadRuntimeSummary(),
     loadMonitoringSnapshot(),
     loadSensitiveFieldSummary(),
+    loadRateLimitAuditSummary(),
     loadMembers(),
     loadRolePermissions(),
     loadAuditLogs(),
@@ -2242,6 +2310,7 @@ function bindEvents() {
       loadRuntimeSummary(),
       loadMonitoringSnapshot(),
       loadSensitiveFieldSummary(),
+      loadRateLimitAuditSummary(),
       loadMembers(),
       loadRolePermissions(),
       loadAuditLogs(),
@@ -2314,6 +2383,9 @@ function bindEvents() {
   });
   $("#loadSensitiveFieldSummaryBtn").addEventListener("click", () => {
     loadSensitiveFieldSummary().then(() => toast("敏感字段保护摘要已刷新")).catch((err) => renderSensitiveFieldSummary(err.message));
+  });
+  $("#loadRateLimitAuditSummaryBtn").addEventListener("click", () => {
+    loadRateLimitAuditSummary().then(() => toast("限流与审计闭环摘要已刷新")).catch((err) => renderRateLimitAuditSummary(err.message));
   });
 
   $("#kbForm").addEventListener("submit", async (event) => {
