@@ -420,6 +420,30 @@
             <section class="panel">
               <div class="panel-head">
                 <div>
+                  <h3>渠道接入</h3>
+                  <p>为 Agent 创建 Web/H5/API 接入点，凭 channel_key 接入；公众号/企业微信待后续对接</p>
+                </div>
+                <button id="loadChannelsBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <div id="channelTypeBox" class="list"></div>
+              <div class="panel-subhead">
+                <strong>新建渠道</strong>
+              </div>
+              <form id="channelCreateForm" class="filter-form">
+                <select name="agent_id"></select>
+                <select name="type">
+                  <option value="web">网页嵌入</option>
+                  <option value="h5">移动 H5</option>
+                  <option value="api">开放 API</option>
+                </select>
+                <input name="name" placeholder="渠道名称" />
+                <button class="button small" type="submit">创建</button>
+              </form>
+              <div id="channelListBox" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
                   <h3>智能体族谱图谱</h3>
                   <p>按当前租户展示智能体节点和派生关系</p>
                 </div>

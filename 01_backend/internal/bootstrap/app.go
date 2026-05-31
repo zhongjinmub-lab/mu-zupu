@@ -18,6 +18,7 @@ import (
 	"mu-agent-saas/internal/module/analytics"
 	"mu-agent-saas/internal/module/auth"
 	"mu-agent-saas/internal/module/billing"
+	"mu-agent-saas/internal/module/channel"
 	filemodule "mu-agent-saas/internal/module/file"
 	"mu-agent-saas/internal/module/kb"
 	"mu-agent-saas/internal/module/license"
@@ -169,6 +170,7 @@ func NewApp(cfg config.Config) (*App, error) {
 	kb.RegisterRoutesWithHandler(tenantScoped, kb.NewHandlerWithStorageAndGeneration(db, storageClient, embedder, generator, billingRepo))
 	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntimeAndWebhook(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo, webhookService), rateLimiter.TenantAndUserScoped("agent_stream", rateLimitShare(cfg.RateLimitTenantPerMinute, 3), rateLimitShare(cfg.RateLimitUserPerMinute, 3)))
 	workflow.RegisterRoutes(tenantScoped, workflow.NewHandler(workflow.NewRepository(db)))
+	channel.RegisterRoutes(tenantScoped, channel.NewHandler(channel.NewRepository(db)))
 	return &App{Router: r, DB: db, RedisClient: redisClient}, nil
 }
 
