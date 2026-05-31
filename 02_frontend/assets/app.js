@@ -22,6 +22,9 @@ const state = {
   mcpTestResults: {},
   plugins: [],
   pluginMarketPolicy: null,
+  workflowPolicy: null,
+  workflowNodeTypes: [],
+  workflowValidation: null,
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -2055,6 +2058,93 @@ async function togglePlugin(pluginCode, enable) {
   toast(enable ? "插件已启用" : "插件已禁用");
 }
 
+// loadWorkflow 拉取工作流编排策略与节点类型目录并渲染。
+async function loadWorkflow() {
+  if (!state.tenantId) return;
+  const [policy, types] = await Promise.all([
+    api("/workflows/orchestration-policy"),
+    api("/workflow-node-types"),
+  ]);
+  state.workflowPolicy = policy;
+  state.workflowNodeTypes = types.items || [];
+  renderWorkflow();
+}
+
+function renderWorkflow(error = "") {
+  const policyEl = $("#workflowPolicyBox");
+  if (policyEl) {
+    if (error) {
+      policyEl.innerHTML = empty(`工作流编排加载失败：${error}`);
+    } else {
+      const policy = state.workflowPolicy;
+      const types = state.workflowNodeTypes || [];
+      policyEl.innerHTML = `
+        ${policy ? `
+          <div class="summary-grid compact-summary">
+            <span>引擎状态：${policy.enabled ? "已启用" : "默认关闭"}</span>
+            <span>执行模式：${escapeHtml(policy.execution_mode || "-")}</span>
+            <span>权限要求：${escapeHtml(policy.permission_role || "-")}</span>
+            <span>审计动作：${escapeHtml(policy.audit_action || "-")}</span>
+            <span>最大节点：${Number(policy.max_nodes || 0)}</span>
+          </div>
+        ` : ""}
+        <div class="list">
+          ${types.map((nodeType) => `
+            <article class="item">
+              <div class="item-title">
+                <strong>${escapeHtml(nodeType.name || nodeType.type)}</strong>
+                <span class="badge ${nodeType.requires_confirmation ? "danger" : "warn"}">${escapeHtml(nodeType.type || "-")}</span>
+              </div>
+              <div class="item-meta">${escapeHtml(nodeType.category || "-")}${nodeType.terminal ? " / 终止节点" : ""}${nodeType.requires_confirmation ? " / 需人工确认" : ""}</div>
+              <div class="item-meta">${escapeHtml(nodeType.description || "")}</div>
+            </article>
+          `).join("") || empty("暂无节点类型")}
+        </div>
+        ${policy ? `<div class="item-meta">护栏：${escapeHtml((policy.guardrails || []).join("；") || "-")}</div>` : ""}
+      `;
+    }
+  }
+  const validationEl = $("#workflowValidationBox");
+  if (validationEl) {
+    const result = state.workflowValidation;
+    if (!result) {
+      validationEl.innerHTML = empty("尚未校验，请粘贴图定义后点击“校验”");
+    } else {
+      validationEl.innerHTML = `
+        <article class="item">
+          <div class="item-title">
+            <strong>校验结果</strong>
+            <span class="badge ${result.valid ? "ok" : "danger"}">${result.valid ? "通过" : "未通过"}</span>
+          </div>
+          <div class="item-meta">节点 ${Number(result.node_count || 0)} 个 / 边 ${Number(result.edge_count || 0)} 条</div>
+          ${(result.issues || []).length ? `<div class="item-meta danger-text">错误：${escapeHtml(result.issues.join("；"))}</div>` : ""}
+          ${(result.warnings || []).length ? `<div class="item-meta">警告：${escapeHtml(result.warnings.join("；"))}</div>` : ""}
+          ${(result.human_approval_nodes || []).length ? `<div class="item-meta">人工确认节点：${escapeHtml(result.human_approval_nodes.join("、"))}</div>` : ""}
+          <div class="item-meta">执行顺序：${escapeHtml((result.execution_order || []).join(" → ") || "-")}</div>
+        </article>
+      `;
+    }
+  }
+}
+
+// validateWorkflow 读取输入框中的图定义 JSON，调用后端结构校验并渲染诊断。
+async function validateWorkflow() {
+  const el = $("#workflowDefinitionInput");
+  const raw = (el && el.value ? el.value : "").trim();
+  if (!raw) throw new Error("请粘贴工作流图定义 JSON");
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch (err) {
+    throw new Error("JSON 解析失败：" + err.message);
+  }
+  // 兼容直接粘贴 definition 或完整请求体两种形式。
+  const body = payload.definition ? payload : { definition: payload };
+  const result = await api("/workflows/validate", { method: "POST", body });
+  state.workflowValidation = result;
+  renderWorkflow();
+}
+
 async function loadToolCallLogs() {
   if (!state.tenantId) return;
   const data = await api(`/tool-call-logs${toolCallLogQuery()}`);
@@ -2629,6 +2719,7 @@ async function refreshAll() {
     loadToolSafetyPolicy(),
     loadMCPGateway(),
     loadPlugins(),
+    loadWorkflow(),
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
@@ -2697,6 +2788,7 @@ function bindEvents() {
       loadToolSafetyPolicy(),
       loadMCPGateway(),
       loadPlugins(),
+      loadWorkflow(),
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
@@ -3186,6 +3278,8 @@ function bindEvents() {
   $("#loadToolSafetyPolicyBtn").addEventListener("click", () => loadToolSafetyPolicy().then(() => toast("工具安全策略已刷新")).catch((err) => renderToolSafetyPolicy(err.message)));
   $("#loadMCPGatewayBtn").addEventListener("click", () => loadMCPGateway().then(() => toast("MCP 网关策略已刷新")).catch((err) => renderMCPGateway(err.message)));
   $("#loadPluginsBtn").addEventListener("click", () => loadPlugins().then(() => toast("插件市场已刷新")).catch((err) => renderPlugins(err.message)));
+  $("#loadWorkflowBtn").addEventListener("click", () => loadWorkflow().then(() => toast("工作流编排已刷新")).catch((err) => renderWorkflow(err.message)));
+  $("#validateWorkflowBtn").addEventListener("click", () => validateWorkflow().then(() => toast("工作流校验完成")).catch((err) => toast(err.message)));
   $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     agentGenealogyFiltersFromForm();

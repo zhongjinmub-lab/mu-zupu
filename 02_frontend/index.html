@@ -390,6 +390,22 @@
             <section class="panel">
               <div class="panel-head">
                 <div>
+                  <h3>工作流编排</h3>
+                  <p>当前版本提供节点类型目录与图结构校验，执行引擎默认关闭</p>
+                </div>
+                <button id="loadWorkflowBtn" class="button small secondary" type="button">刷新</button>
+              </div>
+              <div id="workflowPolicyBox" class="list"></div>
+              <div class="panel-subhead">
+                <strong>图结构校验</strong>
+                <button id="validateWorkflowBtn" class="button small" type="button">校验</button>
+              </div>
+              <textarea id="workflowDefinitionInput" rows="8" placeholder='{"nodes":[{"id":"n_start","type":"start"},{"id":"n_llm","type":"llm"},{"id":"n_end","type":"end"}],"edges":[{"from":"n_start","to":"n_llm"},{"from":"n_llm","to":"n_end"}]}'></textarea>
+              <div id="workflowValidationBox" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
                   <h3>智能体族谱图谱</h3>
                   <p>按当前租户展示智能体节点和派生关系</p>
                 </div>
