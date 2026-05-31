@@ -105,6 +105,34 @@ MIGRATION_STEPS=1 ./scripts/rollback.sh
 /opt/mu-agent-saas/scripts/backup.sh
 ```
 
+## 备份恢复演练
+
+日常演练优先使用 `restore-drill.sh`，它会把备份恢复到临时数据库 `mu_agent_saas_restore_drill`，校验 `schema_migrations` 后自动删除临时库，不影响生产库。
+
+```bash
+cd /opt/mu-agent-saas
+./scripts/backup.sh
+./scripts/restore-drill.sh
+```
+
+指定备份文件演练：
+
+```bash
+DB_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saas_20260531120000.sql.gz ./scripts/restore-drill.sh
+```
+
+如需保留演练库用于人工检查：
+
+```bash
+KEEP_DRILL_DB=yes ./scripts/restore-drill.sh
+```
+
+真实恢复会删除并重建目标数据库，必须显式设置 `CONFIRM_RESTORE=yes`。执行真实恢复前，脚本会再次调用 `backup.sh` 生成当前现场备份。
+
+```bash
+CONFIRM_RESTORE=yes DB_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saas_20260531120000.sql.gz ./scripts/restore.sh
+```
+
 升级和回滚后都必须确认：
 
 - `systemctl status mu-agent-saas`

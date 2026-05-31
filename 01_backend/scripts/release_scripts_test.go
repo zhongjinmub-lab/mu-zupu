@@ -9,7 +9,7 @@ import (
 
 func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 	root := repoRoot(t)
-	for _, name := range []string{"backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh"} {
+	for _, name := range []string{"backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh"} {
 		path := filepath.Join(root, "deploy", "production", "scripts", name)
 		info, err := os.Stat(path)
 		if err != nil {
@@ -22,7 +22,7 @@ func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 
 	buildScript := readFile(t, filepath.Join(root, "scripts", "build_release.sh"))
 	buildScriptPS := readFile(t, filepath.Join(root, "scripts", "build_release.ps1"))
-	for _, want := range []string{"upgrade.sh", "rollback.sh"} {
+	for _, want := range []string{"upgrade.sh", "rollback.sh", "restore.sh", "restore-drill.sh"} {
 		if !strings.Contains(buildScript, want) {
 			t.Fatalf("build_release.sh should verify %s is packaged", want)
 		}
@@ -35,7 +35,7 @@ func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
 func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	root := repoRoot(t)
 	readme := readFile(t, filepath.Join(root, "deploy", "production", "README.md"))
-	for _, want := range []string{"升级", "回滚", "backup.sh", "smoke.sh", "MIGRATION_STEPS"} {
+	for _, want := range []string{"升级", "回滚", "备份恢复演练", "backup.sh", "smoke.sh", "restore-drill.sh", "MIGRATION_STEPS"} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("production README should mention %s", want)
 		}
@@ -52,6 +52,20 @@ func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
 	for _, want := range []string{"backup.sh", "MIGRATION_STEPS", "mu-agent-migrate down", "smoke.sh"} {
 		if !strings.Contains(rollback, want) {
 			t.Fatalf("rollback.sh should include %s", want)
+		}
+	}
+
+	restore := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "restore.sh"))
+	for _, want := range []string{"CONFIRM_RESTORE=yes", "dropdb", "createdb", "gzip -dc", "smoke.sh"} {
+		if !strings.Contains(restore, want) {
+			t.Fatalf("restore.sh should include %s", want)
+		}
+	}
+
+	drill := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "restore-drill.sh"))
+	for _, want := range []string{"mu_agent_saas_restore_drill", "schema_migrations", "KEEP_DRILL_DB", "dropdb", "restore drill ok"} {
+		if !strings.Contains(drill, want) {
+			t.Fatalf("restore-drill.sh should include %s", want)
 		}
 	}
 }

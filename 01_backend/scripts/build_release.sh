@@ -30,6 +30,8 @@ test -x "$PACKAGE_DIR/scripts/backup.sh"
 test -x "$PACKAGE_DIR/scripts/smoke.sh"
 test -f "$PACKAGE_DIR/scripts/upgrade.sh"
 test -f "$PACKAGE_DIR/scripts/rollback.sh"
+test -f "$PACKAGE_DIR/scripts/restore.sh"
+test -f "$PACKAGE_DIR/scripts/restore-drill.sh"
 chmod +x "$PACKAGE_DIR/scripts/"*.sh
 
 tar -C "$DIST" -czf "$DIST/$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
