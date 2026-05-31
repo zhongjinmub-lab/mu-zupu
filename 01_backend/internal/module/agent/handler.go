@@ -135,13 +135,107 @@ func (h Handler) ListToolCallLogs(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
+	from, err := ParseToolCallLogTime(c.Query("from"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40003, "from must be RFC3339 or YYYY-MM-DD")
+		return
+	}
+	to, err := ParseToolCallLogTime(c.Query("to"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40003, "to must be RFC3339 or YYYY-MM-DD")
+		return
+	}
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	items, err := h.Repo.ListToolCallLogs(c.Request.Context(), t.ID, limit)
+	q := ToolCallLogQuery{
+		TenantID:  t.ID,
+		AgentID:   c.Query("agent_id"),
+		ToolName:  c.Query("tool_name"),
+		Status:    c.Query("status"),
+		From:      from,
+		To:        to,
+		CursorRaw: c.Query("cursor"),
+		Limit:     limit,
+	}
+	q.Normalize()
+	if err := q.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40003, err.Error())
+		return
+	}
+	items, nextCursor, err := h.Repo.ListToolCallLogs(c.Request.Context(), q)
 	if err != nil {
 		writeAgentError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"items": items})
+	response.OK(c, gin.H{"items": items, "next_cursor": nextCursor})
+}
+
+func (h Handler) ExportToolCallLogs(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	from, err := ParseToolCallLogTime(c.Query("from"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40003, "from must be RFC3339 or YYYY-MM-DD")
+		return
+	}
+	to, err := ParseToolCallLogTime(c.Query("to"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40003, "to must be RFC3339 or YYYY-MM-DD")
+		return
+	}
+	q := ToolCallLogQuery{
+		TenantID: t.ID,
+		AgentID:  c.Query("agent_id"),
+		ToolName: c.Query("tool_name"),
+		Status:   c.Query("status"),
+		From:     from,
+		To:       to,
+		Limit:    1000,
+	}
+	q.Normalize()
+	q.Limit = 1000
+	if err := q.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40003, err.Error())
+		return
+	}
+	items, err := h.Repo.ExportToolCallLogs(c.Request.Context(), q)
+	if err != nil {
+		writeAgentError(c, err)
+		return
+	}
+	filename := "tool-call-logs-" + time.Now().Format("20060102-150405") + ".csv"
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+	writer := csv.NewWriter(c.Writer)
+	_ = writer.Write([]string{"id", "tenant_id", "agent_id", "conversation_id", "tool_name", "status", "cost_ms", "input", "output", "created_at"})
+	for _, item := range items {
+		_ = writer.Write([]string{
+			item.ID,
+			item.TenantID,
+			item.AgentID,
+			item.ConversationID,
+			item.ToolName,
+			item.Status,
+			strconv.Itoa(item.CostMS),
+			toolCallLogJSON(item.Input),
+			toolCallLogJSON(item.Output),
+			item.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	writer.Flush()
+}
+
+func toolCallLogJSON(v map[string]any) string {
+	if len(v) == 0 {
+		return "{}"
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
 }
 
 func (h Handler) ConversationOrchestrationPolicy(c *gin.Context) {

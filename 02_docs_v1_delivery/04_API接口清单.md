@@ -202,7 +202,8 @@
 | POST | /plugins/{id}/disable | 禁用插件 |
 | GET | /tools | Agent 工具目录，返回只读工具、危险工具、安全状态、权限要求和审计动作 |
 | POST | /tools/{id}/test | 工具安全测试，当前只执行 dry-run 预检，不执行真实外部动作 |
-| GET | /tool-call-logs | 当前租户工具调用日志，返回工具名称、状态、耗时、入参摘要和结果摘要 |
+| GET | /tool-call-logs | 当前租户工具调用日志，支持 `agent_id`、`tool_name`、`status`、`from`、`to`、`limit`、`cursor` 筛选与 cursor 分页，返回 `items` 与 `next_cursor` |
+| GET | /tool-call-logs/export | 导出当前租户工具调用日志 CSV，支持同一筛选条件，单次最多 1000 条 |
 
 当前 Agent 工具执行首版采用安全默认策略：`GET /agents/tool-safety-policy` 返回 Agent 工具安全摘要，默认 `enabled=false`、`default_action=deny`。`GET /tools` 返回同一安全策略下的工具目录；知识库检索和文件资料查询为计划中的只读工具，测试接口只返回 dry-run 中文摘要；知识库写入、账单授权等危险工具默认阻断，测试接口返回“已阻断”中文说明，不执行真实外部动作。工具测试会写入 `tool_call_logs`，只保存参数 key 摘要和结果摘要，不保存敏感明文。后续启用真实工具执行前必须校验 `tenant writer/admin` 权限、要求人工确认，并写入 `agent.tool.call` 审计动作。管理台“Agent 工具安全策略”用中文卡片展示工具状态、测试结果、工具调用日志、危险确认、审计动作和后续执行要求，不展示黑色 JSON 原文。
 
@@ -972,3 +973,35 @@ CSV 字段：
 | `generated_at` | 本次统计生成时间 |
 
 管理台“数据分析面板”已新增“导出 CSV”按钮，点击后直接下载分析摘要文件，不展示黑色 JSON 原文区域。
+
+
+## 2026-05-31 增量：工具调用日志筛选分页与 CSV 导出
+
+`GET /tool-call-logs` 已支持在当前租户上下文内筛选与 cursor 分页，`GET /tool-call-logs/export` 新增 CSV 导出。
+
+查询参数（两个接口共用）：
+
+| 参数 | 说明 |
+|---|---|
+| `agent_id` | 智能体 ID，可选，必须是合法 UUID |
+| `tool_name` | 工具编码，可选，例如 `kb_search`、`file_lookup` |
+| `status` | 调用状态，可选，支持 `dry_run_ok`、`blocked`、`failed` |
+| `from` | 起始时间，可选，支持 RFC3339/RFC3339Nano 或 `YYYY-MM-DD` |
+| `to` | 结束时间，可选，支持 RFC3339/RFC3339Nano 或 `YYYY-MM-DD` |
+| `limit` | 列表每页数量，默认 50，最大 100；导出固定上限 1000 |
+| `cursor` | 下一页游标，使用上一页响应的 `next_cursor`（仅列表接口） |
+
+`GET /tool-call-logs` 响应 `data`：
+
+```json
+{
+  "items": [],
+  "next_cursor": ""
+}
+```
+
+`GET /tool-call-logs/export` 返回 `text/csv` 文件，字段为：`id`、`tenant_id`、`agent_id`、`conversation_id`、`tool_name`、`status`、`cost_ms`、`input`、`output`、`created_at`。其中 `input`、`output` 沿用工具测试写入时的参数 key 摘要与结果摘要，不含敏感明文。
+
+两个接口都必须携带 `Authorization: Bearer <token>` 和 `X-Tenant-ID: <tenant_id>`；服务端固定按当前租户隔离查询，不接受客户端覆盖 `tenant_id`。当同时传入 `from` 和 `to` 时校验起点不能晚于终点。配套新增 `000021_tool_call_logs_filter_indexes` 迁移，为 `tenant_id + status/agent_id/tool_name + created_at DESC, id DESC` 建立筛选索引。
+
+管理台“Agent 工具安全策略”的“工具调用日志”区已新增筛选栏（agent_id、tool_name、状态、时间范围、数量）和“导出 CSV”按钮，所有结果使用中文摘要展示，不展示黑色 JSON 原文区域。

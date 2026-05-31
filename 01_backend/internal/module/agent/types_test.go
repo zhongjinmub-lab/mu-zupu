@@ -1,6 +1,9 @@
 package agent
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestCreateAgentRequestNormalizeAndValidate(t *testing.T) {
 	req := CreateAgentRequest{Name: " Agent ", Code: " My_Agent-1 "}
@@ -182,5 +185,93 @@ func TestChatRequestNormalizeAndValidate(t *testing.T) {
 	req.Message = ""
 	if err := req.Validate(); err == nil {
 		t.Fatal("expected message validation error")
+	}
+}
+
+func TestToolCallLogQueryNormalizeAndValidate(t *testing.T) {
+	q := ToolCallLogQuery{
+		TenantID: " tenant-1 ",
+		AgentID:  "7b7d45a7-10f7-4aa8-b068-d90c4e35f5dc",
+		ToolName: " http_get ",
+		Status:   " dry_run_ok ",
+		Limit:    500,
+	}
+	q.Normalize()
+	if q.TenantID != "tenant-1" || q.ToolName != "http_get" || q.Status != "dry_run_ok" || q.Limit != 50 {
+		t.Fatalf("normalized query = %#v", q)
+	}
+	if err := q.Validate(); err != nil {
+		t.Fatalf("expected valid query: %v", err)
+	}
+}
+
+func TestToolCallLogQueryRejectsInvalidAgentID(t *testing.T) {
+	q := ToolCallLogQuery{TenantID: "tenant-1", AgentID: "bad-agent-id", Limit: 10}
+	q.Normalize()
+	if err := q.Validate(); err == nil {
+		t.Fatal("expected agent_id validation error")
+	}
+}
+
+func TestToolCallLogQueryRejectsInvalidTimeRange(t *testing.T) {
+	q := ToolCallLogQuery{
+		TenantID: "tenant-1",
+		From:     time.Date(2026, 5, 29, 0, 0, 0, 0, time.UTC),
+		To:       time.Date(2026, 5, 28, 0, 0, 0, 0, time.UTC),
+		Limit:    10,
+	}
+	q.Normalize()
+	if err := q.Validate(); err == nil {
+		t.Fatal("expected time range validation error")
+	}
+}
+
+func TestToolCallLogQueryRequiresTenant(t *testing.T) {
+	q := ToolCallLogQuery{Limit: 10}
+	q.Normalize()
+	if err := q.Validate(); err == nil {
+		t.Fatal("expected tenant_id validation error")
+	}
+}
+
+func TestParseToolCallLogTime(t *testing.T) {
+	cases := []string{
+		"2026-05-28T10:11:12Z",
+		"2026-05-28T10:11:12.123456789Z",
+		"2026-05-28",
+	}
+	for _, tc := range cases {
+		if _, err := ParseToolCallLogTime(tc); err != nil {
+			t.Fatalf("parse %q: %v", tc, err)
+		}
+	}
+	if _, err := ParseToolCallLogTime("2026/05/28"); err == nil {
+		t.Fatal("expected invalid time format error")
+	}
+}
+
+func TestToolCallLogCursorEncodeDecode(t *testing.T) {
+	item := ToolCallLog{
+		ID:        "7b7d45a7-10f7-4aa8-b068-d90c4e35f5dc",
+		CreatedAt: time.Date(2026, 5, 28, 10, 11, 12, 123456789, time.UTC),
+	}
+	raw := EncodeToolCallLogCursor(item)
+	if raw == "" {
+		t.Fatal("expected cursor")
+	}
+	cursor, err := DecodeToolCallLogCursor(raw)
+	if err != nil {
+		t.Fatalf("decode cursor: %v", err)
+	}
+	if cursor.ID != item.ID || !cursor.CreatedAt.Equal(item.CreatedAt) {
+		t.Fatalf("decoded cursor = %#v", cursor)
+	}
+}
+
+func TestToolCallLogCursorDecodeRejectsInvalidCursor(t *testing.T) {
+	for _, raw := range []string{"bad", "bm90LWVub3VnaA", "MjAyNi0wNS0yOFQxMDoxMToxMlo=|bad"} {
+		if _, err := DecodeToolCallLogCursor(raw); err == nil {
+			t.Fatalf("expected invalid cursor error for %q", raw)
+		}
 	}
 }

@@ -1,10 +1,13 @@
 package agent
 
 import (
+	"encoding/base64"
 	"errors"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Agent struct {
@@ -253,6 +256,101 @@ type ToolCallLog struct {
 	Status         string         `json:"status"`
 	CostMS         int            `json:"cost_ms"`
 	CreatedAt      time.Time      `json:"created_at"`
+}
+
+type ToolCallLogQuery struct {
+	TenantID  string
+	AgentID   string
+	ToolName  string
+	Status    string
+	From      time.Time
+	To        time.Time
+	Cursor    ToolCallLogCursor
+	CursorRaw string
+	Limit     int
+}
+
+type ToolCallLogCursor struct {
+	CreatedAt time.Time
+	ID        string
+}
+
+func (q *ToolCallLogQuery) Normalize() {
+	q.TenantID = strings.TrimSpace(q.TenantID)
+	q.AgentID = strings.TrimSpace(q.AgentID)
+	q.ToolName = strings.TrimSpace(q.ToolName)
+	q.Status = strings.TrimSpace(q.Status)
+	q.CursorRaw = strings.TrimSpace(q.CursorRaw)
+	if q.Limit <= 0 || q.Limit > 100 {
+		q.Limit = 50
+	}
+}
+
+func (q *ToolCallLogQuery) Validate() error {
+	if q.TenantID == "" {
+		return errors.New("tenant_id is required")
+	}
+	if q.AgentID != "" {
+		if _, err := uuid.Parse(q.AgentID); err != nil {
+			return errors.New("agent_id must be a valid uuid")
+		}
+	}
+	if !q.From.IsZero() && !q.To.IsZero() && q.From.After(q.To) {
+		return errors.New("from must be before or equal to to")
+	}
+	if q.CursorRaw != "" {
+		cursor, err := DecodeToolCallLogCursor(q.CursorRaw)
+		if err != nil {
+			return err
+		}
+		q.Cursor = cursor
+	}
+	return nil
+}
+
+func ParseToolCallLogTime(v string) (time.Time, error) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return time.Time{}, nil
+	}
+	if t, err := time.Parse(time.RFC3339Nano, v); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse(time.RFC3339, v); err == nil {
+		return t, nil
+	}
+	return time.Parse("2006-01-02", v)
+}
+
+func EncodeToolCallLogCursor(item ToolCallLog) string {
+	if item.ID == "" || item.CreatedAt.IsZero() {
+		return ""
+	}
+	payload := item.CreatedAt.UTC().Format(time.RFC3339Nano) + "|" + item.ID
+	return base64.RawURLEncoding.EncodeToString([]byte(payload))
+}
+
+func DecodeToolCallLogCursor(raw string) (ToolCallLogCursor, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ToolCallLogCursor{}, nil
+	}
+	b, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return ToolCallLogCursor{}, errors.New("cursor is invalid")
+	}
+	parts := strings.SplitN(string(b), "|", 2)
+	if len(parts) != 2 {
+		return ToolCallLogCursor{}, errors.New("cursor is invalid")
+	}
+	createdAt, err := time.Parse(time.RFC3339Nano, parts[0])
+	if err != nil {
+		return ToolCallLogCursor{}, errors.New("cursor is invalid")
+	}
+	if _, err := uuid.Parse(parts[1]); err != nil {
+		return ToolCallLogCursor{}, errors.New("cursor is invalid")
+	}
+	return ToolCallLogCursor{CreatedAt: createdAt, ID: parts[1]}, nil
 }
 
 type ConversationOrchestrationPolicy struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -673,31 +674,86 @@ VALUES ($1, NULLIF($2, '')::uuid, NULLIF($3, '')::uuid, $4, $5::jsonb, $6::jsonb
 	return err
 }
 
-func (r Repository) ListToolCallLogs(ctx context.Context, tenantID string, limit int) ([]ToolCallLog, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 50
+func (r Repository) ListToolCallLogs(ctx context.Context, q ToolCallLogQuery) ([]ToolCallLog, string, error) {
+	return r.listToolCallLogs(ctx, q, true)
+}
+
+func (r Repository) ExportToolCallLogs(ctx context.Context, q ToolCallLogQuery) ([]ToolCallLog, error) {
+	q.CursorRaw = ""
+	q.Cursor = ToolCallLogCursor{}
+	if q.Limit <= 0 || q.Limit > 1000 {
+		q.Limit = 1000
 	}
-	const q = `
+	items, _, err := r.listToolCallLogs(ctx, q, false)
+	return items, err
+}
+
+func (r Repository) listToolCallLogs(ctx context.Context, q ToolCallLogQuery, withCursor bool) ([]ToolCallLog, string, error) {
+	q.Normalize()
+	if err := q.Validate(); err != nil {
+		return nil, "", err
+	}
+	args := []any{q.TenantID}
+	where := `WHERE tenant_id = $1`
+	addFilter := func(sql string, value any) {
+		args = append(args, value)
+		where += ` AND ` + sql + `$` + strconv.Itoa(len(args))
+	}
+	if q.AgentID != "" {
+		args = append(args, q.AgentID)
+		where += ` AND agent_id = $` + strconv.Itoa(len(args)) + `::uuid`
+	}
+	if q.ToolName != "" {
+		addFilter(`tool_name = `, q.ToolName)
+	}
+	if q.Status != "" {
+		addFilter(`status = `, q.Status)
+	}
+	if !q.From.IsZero() {
+		addFilter(`created_at >= `, q.From)
+	}
+	if !q.To.IsZero() {
+		addFilter(`created_at <= `, q.To)
+	}
+	if withCursor && !q.Cursor.CreatedAt.IsZero() {
+		args = append(args, q.Cursor.CreatedAt, q.Cursor.ID)
+		where += ` AND (created_at, id) < ($` + strconv.Itoa(len(args)-1) + `, $` + strconv.Itoa(len(args)) + `::uuid)`
+	}
+	limit := q.Limit
+	if withCursor {
+		limit++
+	}
+	args = append(args, limit)
+	limitPlaceholder := "$" + strconv.Itoa(len(args))
+	sql := `
 SELECT id::text, tenant_id::text, COALESCE(agent_id::text, ''), COALESCE(conversation_id::text, ''),
        tool_name, input, output, status, cost_ms, created_at
 FROM tool_call_logs
-WHERE tenant_id = $1
-ORDER BY created_at DESC
-LIMIT $2`
-	rows, err := r.DB.Query(ctx, q, tenantID, limit)
+` + where + `
+ORDER BY created_at DESC, id DESC
+LIMIT ` + limitPlaceholder
+	rows, err := r.DB.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer rows.Close()
 	out := make([]ToolCallLog, 0)
 	for rows.Next() {
 		item, err := scanToolCallLog(rows)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		out = append(out, item)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, "", err
+	}
+	nextCursor := ""
+	if withCursor && len(out) > q.Limit {
+		nextCursor = EncodeToolCallLogCursor(out[q.Limit-1])
+		out = out[:q.Limit]
+	}
+	return out, nextCursor, nil
 }
 
 func (r Repository) touchConversation(ctx context.Context, tenantID, conversationID string) error {

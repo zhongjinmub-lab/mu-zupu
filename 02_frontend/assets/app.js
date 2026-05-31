@@ -17,6 +17,14 @@ const state = {
   tools: [],
   toolTestResults: {},
   toolCallLogs: [],
+  toolCallLogFilters: {
+    agent_id: "",
+    tool_name: "",
+    status: "",
+    from: "",
+    to: "",
+    limit: "20",
+  },
   agentGenealogy: { nodes: [], edges: [] },
   agentGenealogyFilters: {
     q: "",
@@ -1159,6 +1167,21 @@ function renderToolSafetyPolicy(error = "") {
       <strong>工具调用日志</strong>
       <button class="button small secondary" data-tool-log-refresh type="button">刷新日志</button>
     </div>
+    <div class="filter-form">
+      <input id="toolLogFilterAgent" name="agent_id" placeholder="agent_id" value="${escapeHtml(state.toolCallLogFilters.agent_id || "")}" />
+      <input id="toolLogFilterTool" name="tool_name" placeholder="tool_name" value="${escapeHtml(state.toolCallLogFilters.tool_name || "")}" />
+      <select id="toolLogFilterStatus" name="status">
+        <option value="">全部状态</option>
+        ${["dry_run_ok", "blocked", "failed"].map((status) => `<option value="${status}" ${state.toolCallLogFilters.status === status ? "selected" : ""}>${escapeHtml(toolStatusLabel(status))}</option>`).join("")}
+      </select>
+      <input id="toolLogFilterFrom" name="from" type="datetime-local" value="${escapeHtml(state.toolCallLogFilters.from || "")}" />
+      <input id="toolLogFilterTo" name="to" type="datetime-local" value="${escapeHtml(state.toolCallLogFilters.to || "")}" />
+      <select id="toolLogFilterLimit" name="limit">
+        ${["20", "50", "100"].map((n) => `<option value="${n}" ${String(state.toolCallLogFilters.limit) === n ? "selected" : ""}>${n}</option>`).join("")}
+      </select>
+      <button class="button small" data-tool-log-filter type="button">筛选</button>
+      <button class="button small secondary" data-tool-log-export type="button">导出 CSV</button>
+    </div>
     <div class="list">
       ${(state.toolCallLogs || []).map((log) => `
         <article class="item">
@@ -1840,7 +1863,7 @@ async function loadToolSafetyPolicy() {
   const [policy, tools, logs] = await Promise.all([
     api("/agents/tool-safety-policy"),
     api("/tools"),
-    api("/tool-call-logs?limit=20"),
+    api(`/tool-call-logs${toolCallLogQuery()}`),
   ]);
   state.toolSafetyPolicy = policy;
   state.tools = tools.items || [];
@@ -1862,9 +1885,61 @@ async function testTool(toolCode) {
 
 async function loadToolCallLogs() {
   if (!state.tenantId) return;
-  const data = await api("/tool-call-logs?limit=20");
+  const data = await api(`/tool-call-logs${toolCallLogQuery()}`);
   state.toolCallLogs = data.items || [];
   renderToolSafetyPolicy();
+}
+
+function toolCallLogFiltersFromForm() {
+  const value = (id, fallback) => {
+    const el = $(id);
+    return el ? el.value : fallback;
+  };
+  state.toolCallLogFilters = {
+    agent_id: (value("#toolLogFilterAgent", state.toolCallLogFilters.agent_id) || "").trim(),
+    tool_name: (value("#toolLogFilterTool", state.toolCallLogFilters.tool_name) || "").trim(),
+    status: value("#toolLogFilterStatus", state.toolCallLogFilters.status) || "",
+    from: value("#toolLogFilterFrom", state.toolCallLogFilters.from) || "",
+    to: value("#toolLogFilterTo", state.toolCallLogFilters.to) || "",
+    limit: value("#toolLogFilterLimit", state.toolCallLogFilters.limit) || "20",
+  };
+  return state.toolCallLogFilters;
+}
+
+function toolCallLogQuery() {
+  const filters = state.toolCallLogFilters || {};
+  const params = new URLSearchParams();
+  if (filters.agent_id) params.set("agent_id", filters.agent_id);
+  if (filters.tool_name) params.set("tool_name", filters.tool_name);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.from) params.set("from", new Date(filters.from).toISOString());
+  if (filters.to) params.set("to", new Date(filters.to).toISOString());
+  params.set("limit", filters.limit || "20");
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+async function exportToolCallLogs() {
+  if (!state.tenantId) return;
+  toolCallLogFiltersFromForm();
+  const qs = toolCallLogQuery().replace(/^\?/, "");
+  const url = `${state.apiBase}/tool-call-logs/export${qs ? `?${qs}` : ""}`;
+  const headers = {};
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  if (state.tenantId) headers["X-Tenant-ID"] = state.tenantId;
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`导出失败：HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  const objectURL = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectURL;
+  link.download = `tool-call-logs-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "")}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectURL);
 }
 
 function agentGenealogyFiltersFromForm() {
@@ -3034,6 +3109,8 @@ function bindEvents() {
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
     const toolTestId = target.dataset?.toolTest;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
+    const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
+    const toolLogExport = target.dataset?.toolLogExport !== undefined;
     const viewLink = target.closest("[data-view-link]")?.dataset.viewLink;
 
     try {
@@ -3051,6 +3128,15 @@ function bindEvents() {
       if (toolLogRefresh) {
         await loadToolCallLogs();
         toast("工具调用日志已刷新");
+      }
+      if (toolLogFilter) {
+        toolCallLogFiltersFromForm();
+        await loadToolCallLogs();
+        toast("工具调用日志已筛选");
+      }
+      if (toolLogExport) {
+        await exportToolCallLogs();
+        toast("工具调用日志已导出");
       }
       if (agentKbUnbindId) {
         const agentID = selectedBindingAgentID();
