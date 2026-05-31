@@ -10,6 +10,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/billing/plans", h.ListPlans)
 	rg.GET("/billing/subscription", h.CurrentSubscription)
 	rg.GET("/billing/usage/summary", h.UsageSummary)
+	rg.GET("/billing/quota/status", h.QuotaStatus)
 	rg.GET("/orders", h.ListOrders)
 	rg.GET("/payment-orders", h.ListPaymentOrders)
 	rg.POST("/payments/:payment_id/query", h.QueryPayment)

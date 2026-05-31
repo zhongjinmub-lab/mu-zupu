@@ -213,11 +213,14 @@ type QuotaCheck struct {
 	TenantID  string  `json:"tenant_id"`
 	PlanCode  string  `json:"plan_code"`
 	Metric    string  `json:"metric"`
+	Name      string  `json:"name,omitempty"`
 	Limit     float64 `json:"limit"`
 	Used      float64 `json:"used"`
 	Requested float64 `json:"requested"`
 	Remaining float64 `json:"remaining"`
 	Allowed   bool    `json:"allowed"`
+	Limited   bool    `json:"limited"`
+	Unit      string  `json:"unit,omitempty"`
 }
 
 func newNo(prefix string) string {

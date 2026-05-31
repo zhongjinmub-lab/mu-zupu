@@ -29,6 +29,7 @@ const state = {
   paymentEvents: [],
   usage: [],
   subscription: null,
+  quotaStatus: [],
   health: null,
   analytics: null,
   rateLimitPolicy: null,
@@ -1111,6 +1112,48 @@ function renderUsage(items) {
   renderMetrics();
 }
 
+function formatQuotaNumber(value, unit) {
+  const num = Number(value || 0);
+  if (unit === "字节") {
+    if (num >= 1024 * 1024) return `${(num / 1024 / 1024).toFixed(1)} MB`;
+    if (num >= 1024) return `${(num / 1024).toFixed(1)} KB`;
+    return `${num.toLocaleString()} B`;
+  }
+  return `${num.toLocaleString()} ${unit || ""}`.trim();
+}
+
+function renderQuotaStatus(error = "") {
+  const el = $("#quotaStatusList");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`额度状态加载失败：${error}`);
+    return;
+  }
+  el.innerHTML = (state.quotaStatus || []).map((item) => {
+    const limited = item.limited;
+    const used = formatQuotaNumber(item.used, item.unit);
+    const limit = limited ? formatQuotaNumber(item.limit, item.unit) : "不限制";
+    const remaining = limited ? formatQuotaNumber(item.remaining, item.unit) : "不限制";
+    const percent = limited && item.limit > 0 ? Math.min(100, Math.round((Number(item.used || 0) / Number(item.limit || 1)) * 100)) : 0;
+    return `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(item.name || item.metric)}</strong>
+          <span class="badge ${item.allowed ? "" : "danger"}">${item.allowed ? "可继续使用" : "额度不足"}</span>
+        </div>
+        <div class="summary-grid compact-summary">
+          <span>套餐：${escapeHtml(item.plan_code || "-")}</span>
+          <span>指标：${escapeHtml(item.metric || "-")}</span>
+          <span>已用：${escapeHtml(used)}</span>
+          <span>上限：${escapeHtml(limit)}</span>
+          <span>剩余：${escapeHtml(remaining)}</span>
+          <span>使用率：${limited ? `${percent}%` : "不限制"}</span>
+        </div>
+      </article>
+    `;
+  }).join("") || empty("暂无额度状态");
+}
+
 function renderOrders() {
   $("#orderList").innerHTML = state.orders.map((order) => `
     <article class="item">
@@ -1591,6 +1634,13 @@ async function loadUsage() {
   renderUsage(data.items || []);
 }
 
+async function loadQuotaStatus() {
+  if (!state.tenantId) return;
+  const data = await api("/billing/quota/status");
+  state.quotaStatus = data.items || [];
+  renderQuotaStatus();
+}
+
 async function loadSubscription() {
   state.subscription = await api("/billing/subscription");
   renderSubscriptionSummary(state.subscription);
@@ -1988,6 +2038,7 @@ async function refreshAll() {
     loadConversations(),
     loadLicenses(),
     loadUsage(),
+    loadQuotaStatus(),
     loadOrders(),
     loadPayments(),
     loadPaymentEvents(),
@@ -2048,6 +2099,7 @@ function bindEvents() {
       loadConversations(),
       loadLicenses(),
       loadUsage(),
+      loadQuotaStatus(),
       loadOrders(),
       loadPayments(),
       loadPaymentEvents(),
@@ -2530,6 +2582,7 @@ function bindEvents() {
   $("#loadConversationsBtn").addEventListener("click", () => loadConversations().catch((err) => toast(err.message)));
   $("#loadLicensesBtn").addEventListener("click", () => loadLicenses().catch((err) => toast(err.message)));
   $("#loadUsageBtn").addEventListener("click", () => loadUsage().catch((err) => toast(err.message)));
+  $("#loadQuotaStatusBtn").addEventListener("click", () => loadQuotaStatus().then(() => toast("额度状态已刷新")).catch((err) => renderQuotaStatus(err.message)));
   $("#loadOrdersBtn").addEventListener("click", () => loadOrders().catch((err) => toast(err.message)));
   $("#loadPaymentsBtn").addEventListener("click", () => loadPayments().catch((err) => toast(err.message)));
   $("#loadPaymentEventsBtn").addEventListener("click", () => loadPaymentEvents().catch((err) => toast(err.message)));

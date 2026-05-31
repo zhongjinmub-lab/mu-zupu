@@ -85,6 +85,20 @@ func (h Handler) UsageSummary(c *gin.Context) {
 	response.OK(c, gin.H{"items": items, "from": nullableTime(from), "to": nullableTime(to)})
 }
 
+func (h Handler) QuotaStatus(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	items, err := h.Repo.QuotaStatus(c.Request.Context(), t.ID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 50066, err.Error())
+		return
+	}
+	response.OK(c, gin.H{"items": items})
+}
+
 func (h Handler) CreateOrder(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {

@@ -533,6 +533,7 @@ WHERE s.id = $1`
 		Requested: requested,
 		Remaining: normalizeRemaining(limit, used),
 		Allowed:   true,
+		Limited:   limited && limit > 0,
 	}
 	if !limited || limit <= 0 {
 		return check, nil
@@ -543,6 +544,30 @@ WHERE s.id = $1`
 		return check, check
 	}
 	return check, nil
+}
+
+func (r Repository) QuotaStatus(ctx context.Context, tenantID string) ([]QuotaCheck, error) {
+	metrics := []struct {
+		metric string
+		name   string
+		unit   string
+	}{
+		{MetricRAGRequests, "RAG 问答请求", "次"},
+		{MetricAgentMessages, "Agent 会话消息", "条"},
+		{MetricFileUploadBytes, "文件上传容量", "字节"},
+		{MetricEmbeddingChunks, "知识切片向量化", "片"},
+	}
+	items := make([]QuotaCheck, 0, len(metrics))
+	for _, metric := range metrics {
+		check, err := r.CheckQuota(ctx, tenantID, metric.metric, 0)
+		if err != nil {
+			return nil, err
+		}
+		check.Name = metric.name
+		check.Unit = metric.unit
+		items = append(items, check)
+	}
+	return items, nil
 }
 
 func (r Repository) EnsureQuota(ctx context.Context, tenantID, metric string, requested float64) error {

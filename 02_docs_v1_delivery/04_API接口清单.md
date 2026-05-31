@@ -44,6 +44,7 @@
 | GET | /billing/plans | 可用套餐列表 | tenant |
 | GET | /billing/subscription | 当前租户订阅 | tenant |
 | GET | /billing/usage/summary | 当前租户用量汇总 | tenant |
+| GET | /billing/quota/status | 当前租户套餐额度状态 | tenant |
 | POST | /orders | 创建当前租户业务订单 | tenant |
 | GET | /orders | 当前租户订单列表 | tenant |
 | POST | /payment-orders | 创建 mock 支付单 | tenant |
@@ -221,6 +222,7 @@
 - `GET /billing/plans`：返回 active 套餐，默认包含 `free` 套餐；
 - `GET /billing/subscription`：返回当前租户 active 订阅；若无订阅，自动创建 `free` 订阅；
 - `GET /billing/usage/summary?from=2026-05-01&to=2026-06-01`：按 metric 汇总当前租户用量。
+- `GET /billing/quota/status`：返回当前租户 active 订阅下各关键指标的额度状态，包含套餐编码、指标名称、上限、已用、剩余、是否限制和是否允许继续使用。
 
 已自动记录的 metric：
 
@@ -234,6 +236,7 @@
 用量记录按 `tenant_id` 隔离，并保留 `subject_type`、`subject_id`、`request_id` 和 metadata，便于后续接入套餐额度拦截、计费和审计。
 
 套餐 quota 已接入硬限制 MVP：文件上传、`/kbs/{kb_id}/embedding/run`、`/kbs/{kb_id}/ask`、`/agents/{id}/test-chat` 和 `/agents/{id}/chat` 会在执行前检查当前 active 订阅的 quota；超过配额时返回 `402`，响应 message 以 `quota exceeded` 开头。
+管理台“套餐额度状态”会调用 `/billing/quota/status`，用中文卡片展示 RAG 问答、Agent 消息、文件上传容量和知识切片向量化的已用、上限、剩余和使用率，不展示黑色 JSON 原文。
 
 订单/支付 MVP 已接入 mock 通道：
 

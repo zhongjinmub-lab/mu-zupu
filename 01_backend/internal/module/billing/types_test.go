@@ -41,6 +41,13 @@ func TestQuotaCheckError(t *testing.T) {
 	}
 }
 
+func TestQuotaCheckLimitedFlag(t *testing.T) {
+	check := QuotaCheck{Metric: MetricRAGRequests, Limit: 100, Used: 40, Remaining: 60, Allowed: true, Limited: true}
+	if !check.Limited || !check.Allowed || check.Remaining != 60 {
+		t.Fatalf("quota check = %#v", check)
+	}
+}
+
 func TestCreateOrderRequestNormalizeAndValidate(t *testing.T) {
 	req := CreateOrderRequest{PlanCode: " free ", Currency: "", Metadata: nil}
 	req.Normalize()
