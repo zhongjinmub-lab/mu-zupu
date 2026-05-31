@@ -22,6 +22,7 @@ const state = {
   agentBindings: [],
   conversations: [],
   selectedConversationId: "",
+  conversationOrchestrationPolicy: null,
   messages: [],
   licenses: [],
   licenseVerifyResults: {},
@@ -1093,6 +1094,33 @@ function renderConversations() {
   renderMetrics();
 }
 
+function renderConversationOrchestrationPolicy(error = "") {
+  const el = $("#conversationOrchestrationBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`会话编排策略加载失败：${error}`);
+    return;
+  }
+  const policy = state.conversationOrchestrationPolicy;
+  if (!policy) {
+    el.innerHTML = empty("暂无会话编排策略");
+    return;
+  }
+  el.innerHTML = `
+    <div class="summary-grid compact-summary">
+      <span>默认历史：${Number(policy.history_limit_default || 0).toLocaleString()} 条</span>
+      <span>最大历史：${Number(policy.history_limit_max || 0).toLocaleString()} 条</span>
+      <span>RAG 检索：${policy.rag_enabled ? "已接入" : "未启用"}</span>
+      <span>SSE 流式：${policy.sse_enabled ? "已接入" : "未启用"}</span>
+      <span>工具策略：${policy.tool_policy === "deny" ? "默认拒绝" : escapeHtml(policy.tool_policy || "-")}</span>
+      <span>额度指标：${escapeHtml(policy.quota_metric || "-")}</span>
+    </div>
+    <div class="item-meta">编排流程：${escapeHtml((policy.flow || []).join(" → ") || "-")}</div>
+    <div class="item-meta">SSE 事件：${escapeHtml((policy.events || []).join("、") || "-")}</div>
+    <div class="item-meta">安全说明：${escapeHtml((policy.safety_notes || []).join("；") || "-")}</div>
+  `;
+}
+
 function renderMessages() {
   const el = $("#messageList");
   if (!el) return;
@@ -1653,6 +1681,12 @@ async function loadConversations() {
   }
 }
 
+async function loadConversationOrchestrationPolicy() {
+  if (!state.tenantId) return;
+  state.conversationOrchestrationPolicy = await api("/agents/conversation-orchestration-policy");
+  renderConversationOrchestrationPolicy();
+}
+
 async function loadMessages(conversationID = state.selectedConversationId) {
   const agentID = selectedConversationAgentID();
   if (!state.tenantId || !agentID || !conversationID) return;
@@ -2083,6 +2117,7 @@ async function refreshAll() {
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
+    loadConversationOrchestrationPolicy(),
     loadLicenses(),
     loadUsage(),
     loadQuotaStatus(),
@@ -2145,6 +2180,7 @@ function bindEvents() {
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
+      loadConversationOrchestrationPolicy(),
       loadLicenses(),
       loadUsage(),
       loadQuotaStatus(),
@@ -2629,6 +2665,7 @@ function bindEvents() {
   $("#loadAgentGenealogyBtn").addEventListener("click", () => loadAgentGenealogy().then(() => toast("智能体族谱已刷新")).catch((err) => toast(err.message)));
   $("#loadAgentBindingsBtn").addEventListener("click", () => loadAgentBindings().catch((err) => toast(err.message)));
   $("#loadConversationsBtn").addEventListener("click", () => loadConversations().catch((err) => toast(err.message)));
+  $("#loadConversationOrchestrationBtn").addEventListener("click", () => loadConversationOrchestrationPolicy().then(() => toast("会话编排策略已刷新")).catch((err) => renderConversationOrchestrationPolicy(err.message)));
   $("#loadLicensesBtn").addEventListener("click", () => loadLicenses().catch((err) => toast(err.message)));
   $("#loadUsageBtn").addEventListener("click", () => loadUsage().catch((err) => toast(err.message)));
   $("#loadQuotaStatusBtn").addEventListener("click", () => loadQuotaStatus().then(() => toast("额度状态已刷新")).catch((err) => renderQuotaStatus(err.message)));

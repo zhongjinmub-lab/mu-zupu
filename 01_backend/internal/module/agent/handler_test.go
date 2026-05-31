@@ -72,3 +72,16 @@ func TestDefaultToolSafetyPolicyDefaultsToDeny(t *testing.T) {
 		t.Fatalf("expected audit and permission metadata: %#v", policy)
 	}
 }
+
+func TestDefaultConversationOrchestrationPolicySummarizesFlow(t *testing.T) {
+	policy := DefaultConversationOrchestrationPolicy()
+	if !policy.RAGEnabled || !policy.SSEEnabled || policy.ToolPolicy != "deny" {
+		t.Fatalf("unexpected orchestration policy: %#v", policy)
+	}
+	if policy.HistoryLimitDefault != 20 || policy.HistoryLimitMax != 50 {
+		t.Fatalf("unexpected history limits: %#v", policy)
+	}
+	if len(policy.Flow) == 0 || len(policy.Events) != 5 {
+		t.Fatalf("expected flow and SSE events: %#v", policy)
+	}
+}

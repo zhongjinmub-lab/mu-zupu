@@ -436,8 +436,12 @@
             <section class="panel">
               <div class="panel-head">
                 <h3>多轮会话</h3>
-                <button id="loadConversationsBtn" class="button small secondary" type="button">刷新</button>
+                <div class="item-actions">
+                  <button id="loadConversationOrchestrationBtn" class="button small secondary" type="button">刷新编排</button>
+                  <button id="loadConversationsBtn" class="button small secondary" type="button">刷新</button>
+                </div>
               </div>
+              <div id="conversationOrchestrationBox" class="status-summary">等待加载编排策略</div>
               <form id="agentConversationForm" class="inline-form">
                 <select name="agent_id" required></select>
                 <select name="knowledge_base_id"></select>

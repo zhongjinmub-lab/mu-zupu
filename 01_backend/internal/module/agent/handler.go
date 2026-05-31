@@ -91,6 +91,14 @@ func (h Handler) ToolSafetyPolicy(c *gin.Context) {
 	response.OK(c, DefaultToolSafetyPolicy())
 }
 
+func (h Handler) ConversationOrchestrationPolicy(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, DefaultConversationOrchestrationPolicy())
+}
+
 func (h Handler) GenealogyGraph(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {

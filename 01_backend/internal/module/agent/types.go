@@ -210,6 +210,18 @@ type ToolPolicyItem struct {
 	RequiresConfirmation bool   `json:"requires_confirmation"`
 }
 
+type ConversationOrchestrationPolicy struct {
+	HistoryLimitDefault int      `json:"history_limit_default"`
+	HistoryLimitMax     int      `json:"history_limit_max"`
+	RAGEnabled          bool     `json:"rag_enabled"`
+	SSEEnabled          bool     `json:"sse_enabled"`
+	ToolPolicy          string   `json:"tool_policy"`
+	QuotaMetric         string   `json:"quota_metric"`
+	Flow                []string `json:"flow"`
+	Events              []string `json:"events"`
+	SafetyNotes         []string `json:"safety_notes"`
+}
+
 func (r *CreateAgentRequest) Normalize() {
 	r.Name = strings.TrimSpace(r.Name)
 	r.Code = strings.ToLower(strings.TrimSpace(r.Code))
@@ -423,6 +435,32 @@ func DefaultToolSafetyPolicy() ToolSafetyPolicy {
 			"真实工具执行模块上线后复用 tenant writer/admin 权限中间件。",
 			"工具入参和响应只保存摘要，敏感字段需要脱敏。",
 			"失败、拒绝和人工确认都需要进入审计日志。",
+		},
+	}
+}
+
+func DefaultConversationOrchestrationPolicy() ConversationOrchestrationPolicy {
+	return ConversationOrchestrationPolicy{
+		HistoryLimitDefault: 20,
+		HistoryLimitMax:     50,
+		RAGEnabled:          true,
+		SSEEnabled:          true,
+		ToolPolicy:          "deny",
+		QuotaMetric:         "agent_messages",
+		Flow: []string{
+			"校验租户、用户角色、Agent 和会话归属",
+			"选择显式知识库或 Agent 第一个 active 绑定知识库",
+			"读取最近历史消息并过滤 tool 角色消息",
+			"执行混合检索并生成引用片段",
+			"调用生成模型产出回答",
+			"写入 user 和 assistant 消息",
+			"记录 Agent 消息用量并触发会话完成 Webhook",
+		},
+		Events: []string{"start", "reference", "delta", "done", "error"},
+		SafetyNotes: []string{
+			"工具调用首版默认拒绝，不进入模型自主执行链路。",
+			"超出套餐额度时返回 402，并保留中文错误摘要。",
+			"SSE 兼容非流式模型，会按段输出最终回答。",
 		},
 	}
 }

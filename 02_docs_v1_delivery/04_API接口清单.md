@@ -38,6 +38,7 @@
 | GET | /agents/{agent_id}/conversations | Agent 会话列表 | tenant |
 | GET | /agents/{agent_id}/conversations/{conversation_id}/messages | 会话消息列表 | tenant |
 | GET | /agents/tool-safety-policy | Agent 工具安全策略摘要 | tenant |
+| GET | /agents/conversation-orchestration-policy | Agent 多轮会话编排策略摘要 | tenant |
 | DELETE | /agents/{agent_id} | 归档 Agent | tenant |
 | POST | /agents/{agent_id}/knowledge-bases | 绑定当前租户 KB | tenant |
 | GET | /agents/{agent_id}/knowledge-bases | Agent 已绑定 KB 列表 | tenant |
@@ -176,6 +177,7 @@
 ```
 
 `POST /agents/{id}/chat` 会校验当前租户对 Agent、会话和绑定 KB 的访问权限，读取最近历史消息参与生成，写入 user/assistant 两条消息，并返回 `conversation_id`、消息 ID、回答、引用片段与 `history_used`。会话和消息查询接口均按 `tenant_id + agent_id + conversation_id` 隔离。
+`GET /agents/conversation-orchestration-policy` 返回当前多轮会话编排摘要：默认历史 20 条、最大历史 50 条、RAG 检索、SSE 流式事件、套餐额度指标和工具默认拒绝策略。管理台多轮会话区会用中文摘要展示编排流程，不展示黑色 JSON 原文。
 
 ### 3.4 知识库
 
