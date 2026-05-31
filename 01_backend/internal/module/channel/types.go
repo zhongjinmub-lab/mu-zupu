@@ -196,3 +196,14 @@ func SummarizeChannels(channels []Channel) ChannelSummary {
 	}
 	return summary
 }
+
+// DuplicateChannelRequest 基于已有渠道构造副本的创建请求：名称追加"副本"，
+// agent 绑定、类型与配置沿用源渠道；channel_key 由数据库为新渠道重新生成。纯函数。
+func DuplicateChannelRequest(src Channel) CreateChannelRequest {
+	return CreateChannelRequest{
+		AgentID: src.AgentID,
+		Type:    src.Type,
+		Name:    src.Name + " 副本",
+		Config:  src.Config,
+	}
+}

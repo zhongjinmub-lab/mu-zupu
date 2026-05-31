@@ -2381,6 +2381,7 @@ function renderChannels(error = "") {
         <div class="item-actions">
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-embed="${escapeHtml(ch.id || "")}" type="button">接入代码</button>` : ""}
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-rename="${escapeHtml(ch.id || "")}" type="button">重命名</button>` : ""}
+          ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-duplicate="${escapeHtml(ch.id || "")}" type="button">复制</button>` : ""}
           ${ch.status === "disabled" ? `<button class="button small" data-channel-enable="${escapeHtml(ch.id || "")}" type="button">启用</button>` : ""}
           ${ch.status === "enabled" ? `<button class="button small secondary" data-channel-disable="${escapeHtml(ch.id || "")}" type="button">禁用</button>` : ""}
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-archive="${escapeHtml(ch.id || "")}" type="button">删除</button>` : ""}
@@ -2461,6 +2462,14 @@ async function renameChannel(channelID) {
   await api(`/channels/${channelID}`, { method: "PUT", body: { name } });
   await loadChannels();
   toast("渠道已重命名");
+}
+
+// duplicateChannel 复制指定渠道为新渠道并刷新列表。
+async function duplicateChannel(channelID) {
+  if (!channelID) return;
+  await api(`/channels/${channelID}/duplicate`, { method: "POST" });
+  await loadChannels();
+  toast("渠道已复制");
 }
 
 async function loadToolCallLogs() {
@@ -3724,6 +3733,7 @@ function bindEvents() {
     const channelArchiveId = target.dataset?.channelArchive;
     const channelEmbedId = target.dataset?.channelEmbed;
     const channelRenameId = target.dataset?.channelRename;
+    const channelDuplicateId = target.dataset?.channelDuplicate;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3776,6 +3786,9 @@ function bindEvents() {
       }
       if (channelRenameId) {
         await renameChannel(channelRenameId);
+      }
+      if (channelDuplicateId) {
+        await duplicateChannel(channelDuplicateId);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

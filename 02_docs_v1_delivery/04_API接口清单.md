@@ -1106,6 +1106,7 @@ P1「渠道入口」第一增量，引入 Agent 渠道接入点持久化。新�
 - `GET /channel-connect/{channel_key}`（公开，仅 IP 限流，不经登录与租户中间件）：外部接入方凭 `channel_key` 拉取已启用渠道的接入配置，返回 `channel_key`、`type`、`name`、`agent_id`、`status`、`connected`。仅返回接入所需最小信息；渠道不存在或未启用返回 404。该端点是 Web 嵌入组件 / H5 页面初始化的第一步。
 - `POST /channels`：创建渠道，请求体 `{agent_id, type, name, config}`，仅允许 active 类型；绑定的 agent 不存在返回 404。
 - `POST /channels/{channel_id}/enable`、`/disable`：启用/禁用渠道。
+- `POST /channels/{channel_id}/duplicate`：将渠道复制为新渠道（名称追加"副本"，agent/类型/配置沿用，channel_key 由库重新生成）。
 - `PUT /channels/{channel_id}`：更新渠道名称与配置（名称与配置至少其一）。
 - `DELETE /channels/{channel_id}`：归档（软删除）渠道。
 

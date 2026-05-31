@@ -143,3 +143,21 @@ func TestSummarizeChannelsEmpty(t *testing.T) {
 		t.Fatalf("empty summary should be zero-valued: %#v", summary)
 	}
 }
+
+func TestDuplicateChannelRequest(t *testing.T) {
+	src := Channel{AgentID: "a1", Type: "web", Name: "官网客服", Config: map[string]any{"theme": "dark"}}
+	req := DuplicateChannelRequest(src)
+	if req.Name != "官网客服 副本" {
+		t.Fatalf("name = %q", req.Name)
+	}
+	if req.AgentID != "a1" || req.Type != "web" {
+		t.Fatalf("agent/type not copied: %#v", req)
+	}
+	if req.Config["theme"] != "dark" {
+		t.Fatalf("config not copied: %#v", req.Config)
+	}
+	req.Normalize()
+	if err := req.Validate(); err != nil {
+		t.Fatalf("duplicate request should be valid: %v", err)
+	}
+}

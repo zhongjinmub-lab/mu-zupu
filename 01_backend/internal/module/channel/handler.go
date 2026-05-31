@@ -229,3 +229,30 @@ func (h Handler) ChannelsSummary(c *gin.Context) {
 	}
 	response.OK(c, SummarizeChannels(items))
 }
+
+// DuplicateChannel 将已有渠道复制为一个新渠道（数据库生成新的 channel_key）。
+func (h Handler) DuplicateChannel(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	u, _ := auth.CurrentUser(c)
+	src, err := h.Repo.Get(c.Request.Context(), t.ID, c.Param("channel_id"))
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	req := DuplicateChannelRequest(src)
+	req.Normalize()
+	if err := req.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	item, err := h.Repo.Create(c.Request.Context(), t.ID, u.ID, req)
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	response.OK(c, item)
+}

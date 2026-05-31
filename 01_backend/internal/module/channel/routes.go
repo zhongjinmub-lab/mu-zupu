@@ -18,6 +18,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write := rg.Group("")
 	write.Use(tenant.RequireTenantWriter())
 	write.POST("/channels", h.CreateChannel)
+	write.POST("/channels/:channel_id/duplicate", h.DuplicateChannel)
 	write.PUT("/channels/:channel_id", h.UpdateChannel)
 	write.POST("/channels/:channel_id/enable", h.EnableChannel)
 	write.POST("/channels/:channel_id/disable", h.DisableChannel)
