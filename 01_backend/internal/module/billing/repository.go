@@ -271,6 +271,32 @@ RETURNING id::text, tenant_id::text, business_order_id::text, pay_no, channel, a
 	return item, err
 }
 
+// GetTenantIDByPayNo 按支付单号反查租户,用于第三方公开回调(无租户上下文)时定位租户。
+func (r Repository) GetTenantIDByPayNo(ctx context.Context, payNo string) (string, error) {
+	const q = `SELECT tenant_id::text FROM payment_orders WHERE pay_no = $1 AND deleted_at IS NULL`
+	var tenantID string
+	err := r.DB.QueryRow(ctx, q, payNo).Scan(&tenantID)
+	if err == pgx.ErrNoRows {
+		return "", ErrPaymentNotFound
+	}
+	return tenantID, err
+}
+
+// AttachPrepay 将预支付摘要合并写入支付单的 callback_payload.prepay,仅保存非敏感信息。
+func (r Repository) AttachPrepay(ctx context.Context, tenantID, paymentID string, prepay map[string]any) error {
+	payload, err := jsonObject(map[string]any{"prepay": prepay})
+	if err != nil {
+		return err
+	}
+	const q = `
+UPDATE payment_orders
+SET callback_payload = callback_payload || $3::jsonb,
+    updated_at = now()
+WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`
+	_, err = r.DB.Exec(ctx, q, paymentID, tenantID, payload)
+	return err
+}
+
 func (r Repository) ListPaymentOrders(ctx context.Context, tenantID, businessOrderID string, limit int) ([]PaymentOrder, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 50

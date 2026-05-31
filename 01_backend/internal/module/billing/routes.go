@@ -25,3 +25,9 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	admin.POST("/payments/:payment_id/close", h.ClosePayment)
 	admin.POST("/payment-callbacks/:channel", h.PaymentCallback)
 }
+
+// RegisterPublicRoutes 注册无需鉴权的第三方支付异步通知端点。
+// 该端点由渠道 Provider 做原生验签,并通过 pay_no 反查租户,因此不在租户作用域内。
+func RegisterPublicRoutes(rg *gin.RouterGroup, h Handler) {
+	rg.POST("/payment-notify/:channel", h.PaymentNotify)
+}

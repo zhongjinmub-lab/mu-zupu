@@ -31,6 +31,13 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	t.Setenv("DOCUMENT_WORKER_INTERVAL_SECONDS", "3")
 	t.Setenv("DOCUMENT_WORKER_BATCH_SIZE", "9")
 	t.Setenv("PAYMENT_CALLBACK_SECRET", "payment-callback-test-secret")
+	t.Setenv("PAYMENT_CHANNELS", "mock,alipay")
+	t.Setenv("PAYMENT_NOTIFY_BASE_URL", "https://api.example.com")
+	t.Setenv("PAYMENT_RETURN_URL", "https://app.example.com/return")
+	t.Setenv("ALIPAY_APP_ID", "2021000000000000")
+	t.Setenv("ALIPAY_PRIVATE_KEY", "alipay-private-key")
+	t.Setenv("ALIPAY_PUBLIC_KEY", "alipay-public-key")
+	t.Setenv("ALIPAY_GATEWAY", "https://openapi.alipaydev.com/gateway.do")
 	t.Setenv("LICENSE_PUBLIC_KEYS", `{"default":"pubkey"}`)
 
 	cfg := Load()
@@ -75,6 +82,18 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	}
 	if cfg.PaymentCallbackSecret != "payment-callback-test-secret" {
 		t.Fatalf("PaymentCallbackSecret = %q", cfg.PaymentCallbackSecret)
+	}
+	if cfg.PaymentChannels != "mock,alipay" || cfg.PaymentNotifyBaseURL != "https://api.example.com" {
+		t.Fatalf("payment channel config = %#v", cfg)
+	}
+	if cfg.PaymentReturnURL != "https://app.example.com/return" {
+		t.Fatalf("PaymentReturnURL = %q", cfg.PaymentReturnURL)
+	}
+	if cfg.AlipayAppID != "2021000000000000" || cfg.AlipayPrivateKey != "alipay-private-key" || cfg.AlipayPublicKey != "alipay-public-key" {
+		t.Fatalf("alipay credential config = %#v", cfg)
+	}
+	if cfg.AlipayGateway != "https://openapi.alipaydev.com/gateway.do" || cfg.AlipaySignType != "RSA2" {
+		t.Fatalf("alipay gateway config = %#v", cfg)
 	}
 	if cfg.LicensePublicKeys != `{"default":"pubkey"}` {
 		t.Fatalf("LicensePublicKeys = %q", cfg.LicensePublicKeys)

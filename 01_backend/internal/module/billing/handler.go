@@ -17,6 +17,7 @@ import (
 
 	"mu-agent-saas/internal/module/tenant"
 	"mu-agent-saas/internal/module/webhook"
+	"mu-agent-saas/internal/payment"
 	"mu-agent-saas/pkg/response"
 )
 
@@ -24,6 +25,9 @@ type Handler struct {
 	Repo                  Repository
 	Hooks                 webhook.Service
 	PaymentCallbackSecret string
+	Payments              *payment.Registry
+	NotifyBaseURL         string
+	ReturnURL             string
 }
 
 func NewHandler(repo Repository) Handler {
@@ -36,6 +40,18 @@ func NewHandlerWithWebhook(repo Repository, hooks webhook.Service) Handler {
 
 func NewHandlerWithWebhookAndPaymentSecret(repo Repository, hooks webhook.Service, paymentCallbackSecret string) Handler {
 	return Handler{Repo: repo, Hooks: hooks, PaymentCallbackSecret: paymentCallbackSecret}
+}
+
+// NewHandlerWithDeps 注入支付渠道注册表与回调基础地址,支持真实第三方渠道接入。
+func NewHandlerWithDeps(repo Repository, hooks webhook.Service, paymentCallbackSecret string, payments *payment.Registry, notifyBaseURL, returnURL string) Handler {
+	return Handler{
+		Repo:                  repo,
+		Hooks:                 hooks,
+		PaymentCallbackSecret: paymentCallbackSecret,
+		Payments:              payments,
+		NotifyBaseURL:         strings.TrimRight(strings.TrimSpace(notifyBaseURL), "/"),
+		ReturnURL:             strings.TrimSpace(returnURL),
+	}
 }
 
 func (h Handler) ListPlans(c *gin.Context) {
@@ -180,10 +196,29 @@ func (h Handler) CreatePaymentOrder(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40002, err.Error())
 		return
 	}
+	if h.Payments != nil && !h.Payments.IsEnabled(req.Channel) {
+		response.Error(c, http.StatusBadRequest, 40002, "不支持的支付渠道: "+req.Channel)
+		return
+	}
 	item, err := h.Repo.CreatePaymentOrder(c.Request.Context(), t.ID, req)
 	if err != nil {
 		writeBillingHTTPError(c, err)
 		return
+	}
+	resp := CreatePaymentResponse{PaymentOrder: item}
+	if provider, ok := h.Payments.Get(req.Channel); ok {
+		prepay, perr := provider.CreatePrepay(c.Request.Context(), payment.PrepayInput{
+			PayNo:       item.PayNo,
+			AmountCents: item.AmountCents,
+			Currency:    item.Currency,
+			Subject:     "订单支付 " + item.PayNo,
+			NotifyURL:   h.notifyURL(req.Channel),
+			ReturnURL:   h.ReturnURL,
+		})
+		if perr == nil {
+			resp.Prepay = &prepay
+			_ = h.Repo.AttachPrepay(c.Request.Context(), t.ID, item.ID, prepaySummary(prepay))
+		}
 	}
 	if item.Status == "paid" {
 		h.Hooks.Emit(c.Request.Context(), t.ID, webhook.EventOrderPaid, map[string]any{
@@ -197,7 +232,90 @@ func (h Handler) CreatePaymentOrder(c *gin.Context) {
 			"paid_at":           item.PaidAt,
 		})
 	}
-	response.OK(c, item)
+	response.OK(c, resp)
+}
+
+func (h Handler) notifyURL(channel string) string {
+	if h.NotifyBaseURL == "" {
+		return ""
+	}
+	return h.NotifyBaseURL + "/api/v1/payment-notify/" + channel
+}
+
+// prepaySummary 仅提取非敏感字段用于持久化(签名仅为请求签名,非可复用凭据)。
+func prepaySummary(p payment.Prepay) map[string]any {
+	summary := map[string]any{
+		"channel": p.Channel,
+		"method":  p.Method,
+	}
+	if p.PayURL != "" {
+		summary["pay_url"] = p.PayURL
+	}
+	if p.QRContent != "" {
+		summary["qr_content"] = p.QRContent
+	}
+	if p.Message != "" {
+		summary["message"] = p.Message
+	}
+	return summary
+}
+
+// PaymentNotify 处理第三方支付渠道的公开异步通知(无 JWT/租户上下文)。
+// 渠道 Provider 负责原生验签;通过 pay_no 反查租户后复用既有回调入账逻辑。
+func (h Handler) PaymentNotify(c *gin.Context) {
+	channel := strings.ToLower(strings.TrimSpace(c.Param("channel")))
+	provider, ok := h.Payments.Get(channel)
+	if !ok {
+		response.Error(c, http.StatusNotFound, 40463, "支付渠道未启用")
+		return
+	}
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
+	if err != nil {
+		writeNotifyResponse(c, provider, false)
+		return
+	}
+	res, err := provider.VerifyNotify(c.Request.Context(), payment.Notify{
+		Header:      c.Request.Header,
+		Body:        body,
+		ContentType: c.ContentType(),
+	})
+	if err != nil {
+		writeNotifyResponse(c, provider, false)
+		return
+	}
+	tenantID, err := h.Repo.GetTenantIDByPayNo(c.Request.Context(), res.PayNo)
+	if err != nil {
+		writeNotifyResponse(c, provider, false)
+		return
+	}
+	item, err := h.Repo.ApplyPaymentCallback(c.Request.Context(), tenantID, channel, PaymentCallbackRequest{
+		PayNo:         res.PayNo,
+		TransactionID: res.TransactionID,
+		Status:        res.Status,
+		Metadata:      res.Raw,
+	}, c.GetString("request_id"))
+	if err != nil {
+		writeNotifyResponse(c, provider, false)
+		return
+	}
+	if item.Status == "paid" {
+		h.Hooks.Emit(c.Request.Context(), tenantID, webhook.EventOrderPaid, map[string]any{
+			"payment_order_id":  item.ID,
+			"business_order_id": item.BusinessOrderID,
+			"pay_no":            item.PayNo,
+			"channel":           item.Channel,
+			"amount_cents":      item.AmountCents,
+			"currency":          item.Currency,
+			"transaction_id":    item.TransactionID,
+			"paid_at":           item.PaidAt,
+		})
+	}
+	writeNotifyResponse(c, provider, true)
+}
+
+func writeNotifyResponse(c *gin.Context, provider payment.Provider, ok bool) {
+	status, contentType, body := provider.NotifyResponse(ok)
+	c.Data(status, contentType, []byte(body))
 }
 
 func (h Handler) ListPaymentOrders(c *gin.Context) {

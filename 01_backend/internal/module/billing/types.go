@@ -8,6 +8,8 @@ import (
 	"math"
 	"strings"
 	"time"
+
+	"mu-agent-saas/internal/payment"
 )
 
 const (
@@ -122,6 +124,13 @@ type CreatePaymentOrderRequest struct {
 	Channel         string `json:"channel"`
 }
 
+// CreatePaymentResponse 是创建支付单的响应:内嵌支付单字段(保持 pay_no 等顶层兼容),
+// 并附加可选的预支付信息,供前端引导用户跳转第三方渠道完成支付。
+type CreatePaymentResponse struct {
+	PaymentOrder
+	Prepay *payment.Prepay `json:"prepay,omitempty"`
+}
+
 type PaymentCallbackRequest struct {
 	PayNo         string         `json:"pay_no" binding:"required"`
 	TransactionID string         `json:"transaction_id"`
@@ -173,8 +182,8 @@ func (r CreatePaymentOrderRequest) Validate() error {
 	if r.BusinessOrderID == "" {
 		return errors.New("business_order_id is required")
 	}
-	if r.Channel != "mock" {
-		return errors.New("only mock payment channel is supported in MVP")
+	if r.Channel == "" {
+		return errors.New("channel is required")
 	}
 	return nil
 }
