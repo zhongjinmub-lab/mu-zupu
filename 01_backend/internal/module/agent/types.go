@@ -188,6 +188,28 @@ type ChatResponse struct {
 	GenerationSource   string              `json:"generation_source"`
 }
 
+type ToolSafetyPolicy struct {
+	Enabled              bool             `json:"enabled"`
+	DefaultAction        string           `json:"default_action"`
+	PermissionRole       string           `json:"permission_role"`
+	AuditAction          string           `json:"audit_action"`
+	DangerConfirmation   bool             `json:"danger_confirmation"`
+	AvailableTools       []ToolPolicyItem `json:"available_tools"`
+	DangerousTools       []ToolPolicyItem `json:"dangerous_tools"`
+	Guardrails           []string         `json:"guardrails"`
+	AgentPolicyHint      string           `json:"agent_policy_hint"`
+	FutureExecutionNotes []string         `json:"future_execution_notes"`
+}
+
+type ToolPolicyItem struct {
+	Code                 string `json:"code"`
+	Name                 string `json:"name"`
+	Category             string `json:"category"`
+	Status               string `json:"status"`
+	Description          string `json:"description"`
+	RequiresConfirmation bool   `json:"requires_confirmation"`
+}
+
 func (r *CreateAgentRequest) Normalize() {
 	r.Name = strings.TrimSpace(r.Name)
 	r.Code = strings.ToLower(strings.TrimSpace(r.Code))
@@ -345,4 +367,62 @@ func (r ChatRequest) Validate() error {
 		return errors.New("message is required")
 	}
 	return nil
+}
+
+func DefaultToolSafetyPolicy() ToolSafetyPolicy {
+	return ToolSafetyPolicy{
+		Enabled:            false,
+		DefaultAction:      "deny",
+		PermissionRole:     "tenant_writer",
+		AuditAction:        "agent.tool.call",
+		DangerConfirmation: true,
+		AvailableTools: []ToolPolicyItem{
+			{
+				Code:                 "kb_search",
+				Name:                 "知识库检索",
+				Category:             "read",
+				Status:               "planned",
+				Description:          "只读检索当前租户已绑定知识库内容。",
+				RequiresConfirmation: false,
+			},
+			{
+				Code:                 "file_lookup",
+				Name:                 "文件资料查询",
+				Category:             "read",
+				Status:               "planned",
+				Description:          "只读查询当前租户文件和文档元数据。",
+				RequiresConfirmation: false,
+			},
+		},
+		DangerousTools: []ToolPolicyItem{
+			{
+				Code:                 "kb_mutation",
+				Name:                 "知识库写入",
+				Category:             "write",
+				Status:               "blocked",
+				Description:          "会创建、更新或归档知识库资料，首版默认禁止。",
+				RequiresConfirmation: true,
+			},
+			{
+				Code:                 "billing_operation",
+				Name:                 "账单授权操作",
+				Category:             "admin",
+				Status:               "blocked",
+				Description:          "涉及订单、支付、License 或 Webhook，必须由管理员显式操作。",
+				RequiresConfirmation: true,
+			},
+		},
+		Guardrails: []string{
+			"工具调用默认关闭，Agent 只能执行 RAG 检索和对话生成。",
+			"后续启用工具时必须校验当前租户、当前用户角色和 Agent 绑定范围。",
+			"危险工具必须先返回待确认状态，不能由模型直接执行。",
+			"所有工具调用必须写入审计日志，记录 request_id、agent_id、tool_code、入参摘要和结果状态。",
+		},
+		AgentPolicyHint: "tool_policy 为空时按 deny 处理；显式启用前不允许模型自主调用外部工具。",
+		FutureExecutionNotes: []string{
+			"真实工具执行模块上线后复用 tenant writer/admin 权限中间件。",
+			"工具入参和响应只保存摘要，敏感字段需要脱敏。",
+			"失败、拒绝和人工确认都需要进入审计日志。",
+		},
+	}
 }

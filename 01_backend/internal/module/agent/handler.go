@@ -83,6 +83,14 @@ func (h Handler) ListAgents(c *gin.Context) {
 	response.OK(c, gin.H{"items": items})
 }
 
+func (h Handler) ToolSafetyPolicy(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, DefaultToolSafetyPolicy())
+}
+
 func (h Handler) GenealogyGraph(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {

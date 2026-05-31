@@ -59,3 +59,16 @@ func TestSplitAnswerDeltasReturnsEmptyDeltaForBlankAnswer(t *testing.T) {
 		t.Fatalf("parts = %#v", parts)
 	}
 }
+
+func TestDefaultToolSafetyPolicyDefaultsToDeny(t *testing.T) {
+	policy := DefaultToolSafetyPolicy()
+	if policy.Enabled || policy.DefaultAction != "deny" || !policy.DangerConfirmation {
+		t.Fatalf("unexpected tool policy: %#v", policy)
+	}
+	if len(policy.DangerousTools) == 0 || !policy.DangerousTools[0].RequiresConfirmation {
+		t.Fatalf("expected dangerous tools to require confirmation: %#v", policy.DangerousTools)
+	}
+	if policy.AuditAction != "agent.tool.call" || policy.PermissionRole == "" {
+		t.Fatalf("expected audit and permission metadata: %#v", policy)
+	}
+}

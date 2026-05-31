@@ -13,6 +13,7 @@ const state = {
   documentJobs: [],
   pendingChunks: [],
   agents: [],
+  toolSafetyPolicy: null,
   agentGenealogy: { nodes: [], edges: [] },
   agentGenealogyFilters: {
     q: "",
@@ -928,6 +929,45 @@ function renderAgents() {
   renderMetrics();
 }
 
+function renderToolSafetyPolicy(error = "") {
+  const el = $("#toolSafetyPolicyBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`工具安全策略加载失败：${error}`);
+    return;
+  }
+  const policy = state.toolSafetyPolicy;
+  if (!policy) {
+    el.innerHTML = empty("暂无工具安全策略");
+    return;
+  }
+  const tools = [...(policy.available_tools || []), ...(policy.dangerous_tools || [])];
+  el.innerHTML = `
+    <div class="summary-grid compact-summary">
+      <span>工具状态：${policy.enabled ? "已启用" : "默认关闭"}</span>
+      <span>默认动作：${policy.default_action === "deny" ? "拒绝调用" : escapeHtml(policy.default_action || "-")}</span>
+      <span>权限要求：${escapeHtml(policy.permission_role || "-")}</span>
+      <span>审计动作：${escapeHtml(policy.audit_action || "-")}</span>
+      <span>危险确认：${policy.danger_confirmation ? "必须人工确认" : "未要求确认"}</span>
+      <span>策略提示：${escapeHtml(policy.agent_policy_hint || "-")}</span>
+    </div>
+    <div class="list">
+      ${tools.map((tool) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(tool.name || tool.code)}</strong>
+            <span class="badge ${tool.status === "blocked" ? "danger" : "warn"}">${escapeHtml(tool.status || "planned")}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(tool.code || "-")} / ${escapeHtml(tool.category || "-")} / ${tool.requires_confirmation ? "需要确认" : "无需确认"}</div>
+          <div class="item-meta">${escapeHtml(tool.description || "")}</div>
+        </article>
+      `).join("") || empty("暂无工具配置")}
+    </div>
+    <div class="item-meta">护栏：${escapeHtml((policy.guardrails || []).join("；") || "-")}</div>
+    <div class="item-meta">后续执行要求：${escapeHtml((policy.future_execution_notes || []).join("；") || "-")}</div>
+  `;
+}
+
 function relationLabel(type) {
   return {
     fork: "派生",
@@ -1542,6 +1582,12 @@ async function loadAgents() {
   renderAgents();
 }
 
+async function loadToolSafetyPolicy() {
+  if (!state.tenantId) return;
+  state.toolSafetyPolicy = await api("/agents/tool-safety-policy");
+  renderToolSafetyPolicy();
+}
+
 function agentGenealogyFiltersFromForm() {
   const form = $("#agentGenealogyFilterForm");
   if (!form) return state.agentGenealogyFilters;
@@ -2033,6 +2079,7 @@ async function refreshAll() {
     loadFiles(),
     loadDocuments(),
     loadAgents(),
+    loadToolSafetyPolicy(),
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
@@ -2094,6 +2141,7 @@ function bindEvents() {
       loadFiles(),
       loadDocuments(),
       loadAgents(),
+      loadToolSafetyPolicy(),
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
@@ -2566,6 +2614,7 @@ function bindEvents() {
   $("#loadDocumentJobsBtn").addEventListener("click", () => loadDocumentJobs().catch((err) => toast(err.message)));
   $("#loadPendingChunksBtn").addEventListener("click", () => loadPendingChunks().catch((err) => toast(err.message)));
   $("#loadAgentsBtn").addEventListener("click", () => loadAgents().catch((err) => toast(err.message)));
+  $("#loadToolSafetyPolicyBtn").addEventListener("click", () => loadToolSafetyPolicy().then(() => toast("工具安全策略已刷新")).catch((err) => renderToolSafetyPolicy(err.message)));
   $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     agentGenealogyFiltersFromForm();

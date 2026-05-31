@@ -37,6 +37,7 @@
 | POST | /agents/{agent_id}/chat | Agent 多轮会话，支持 conversation_id 续聊 | tenant |
 | GET | /agents/{agent_id}/conversations | Agent 会话列表 | tenant |
 | GET | /agents/{agent_id}/conversations/{conversation_id}/messages | 会话消息列表 | tenant |
+| GET | /agents/tool-safety-policy | Agent 工具安全策略摘要 | tenant |
 | DELETE | /agents/{agent_id} | 归档 Agent | tenant |
 | POST | /agents/{agent_id}/knowledge-bases | 绑定当前租户 KB | tenant |
 | GET | /agents/{agent_id}/knowledge-bases | Agent 已绑定 KB 列表 | tenant |
@@ -198,6 +199,8 @@
 | GET | /tools | 工具列表 |
 | POST | /tools/{id}/test | 测试工具 |
 | GET | /tool-call-logs | 工具调用日志 |
+
+当前 Agent 工具执行首版采用安全默认策略：`GET /agents/tool-safety-policy` 返回工具安全摘要，默认 `enabled=false`、`default_action=deny`。知识库检索和文件资料查询仅作为计划中的只读工具展示；知识库写入、账单授权等危险工具默认阻断，后续启用前必须校验 `tenant writer/admin` 权限、要求人工确认，并写入 `agent.tool.call` 审计动作。管理台“Agent 工具安全策略”用中文卡片展示工具状态、危险确认、审计动作和后续执行要求，不展示黑色 JSON 原文。
 
 ### 3.6 订单与授权
 
