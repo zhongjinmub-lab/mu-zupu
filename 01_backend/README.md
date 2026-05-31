@@ -157,6 +157,7 @@ VERSION=v0.1.0 make release
 - `GENERATION_TIMEOUT_SECONDS` 外部 generation 请求超时，默认 60；
 - `DOCUMENT_WORKER_INTERVAL_SECONDS` 后台文档 worker 轮询间隔，默认 10；
 - `DOCUMENT_WORKER_BATCH_SIZE` 后台文档 worker 每批认领任务数，默认 5；
+- `PAYMENT_CALLBACK_SECRET` 支付回调 HMAC-SHA256 验签密钥，留空时保留 mock 开发体验；配置后回调请求必须携带 `X-Payment-Signature`；
 - `LICENSE_PUBLIC_KEYS` License 验签公钥映射，支持 JSON：`{"default":"base64-ed25519-public-key"}`，或逗号分隔：`default=base64,key2=base64`；
 - 密钥、Token、数据库密码必须通过环境变量注入；
 - 外部请求建议传递 `X-Request-ID`，未传递时系统自动生成；
@@ -251,6 +252,7 @@ scripts/build_release.sh
 - 已支付订单不允许取消或关闭。
 - 已支付支付单不允许关闭。
 - 支付回调写入 `payment_callback_events` 审计表；找不到支付单的失败回调也会记录事件。
+- 配置 `PAYMENT_CALLBACK_SECRET` 后，`POST /api/v1/payment-callbacks/:channel` 必须对原始 JSON 请求体使用 HMAC-SHA256 签名，并在 `X-Payment-Signature` 中传入 `sha256=<hex>`；签名失败返回中文错误。
 - 所有新增查询和更新仍按当前 `tenant_id` 隔离。
 
 注意：

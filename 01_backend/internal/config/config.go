@@ -43,6 +43,7 @@ type Config struct {
 	WebhookWorkerBatchSize        int
 	WebhookMaxRetries             int
 	WebhookRetryBaseSeconds       int
+	PaymentCallbackSecret         string
 	LicensePublicKeys             string
 }
 
@@ -85,6 +86,7 @@ func Load() Config {
 		WebhookWorkerBatchSize:        envInt("WEBHOOK_WORKER_BATCH_SIZE", 20),
 		WebhookMaxRetries:             envInt("WEBHOOK_MAX_RETRIES", 3),
 		WebhookRetryBaseSeconds:       envInt("WEBHOOK_RETRY_BASE_SECONDS", 60),
+		PaymentCallbackSecret:         env("PAYMENT_CALLBACK_SECRET", ""),
 		LicensePublicKeys:             env("LICENSE_PUBLIC_KEYS", ""),
 	}
 }

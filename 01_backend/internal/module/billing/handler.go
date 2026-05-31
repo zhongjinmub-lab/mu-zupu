@@ -1,10 +1,16 @@
 package billing
 
 import (
+	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +21,9 @@ import (
 )
 
 type Handler struct {
-	Repo  Repository
-	Hooks webhook.Service
+	Repo                  Repository
+	Hooks                 webhook.Service
+	PaymentCallbackSecret string
 }
 
 func NewHandler(repo Repository) Handler {
@@ -25,6 +32,10 @@ func NewHandler(repo Repository) Handler {
 
 func NewHandlerWithWebhook(repo Repository, hooks webhook.Service) Handler {
 	return Handler{Repo: repo, Hooks: hooks}
+}
+
+func NewHandlerWithWebhookAndPaymentSecret(repo Repository, hooks webhook.Service, paymentCallbackSecret string) Handler {
+	return Handler{Repo: repo, Hooks: hooks, PaymentCallbackSecret: paymentCallbackSecret}
 }
 
 func (h Handler) ListPlans(c *gin.Context) {
@@ -228,6 +239,18 @@ func (h Handler) PaymentCallback(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
+	if h.PaymentCallbackSecret != "" {
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			response.Error(c, http.StatusBadRequest, 40003, "读取支付回调请求体失败")
+			return
+		}
+		c.Request.Body = io.NopCloser(bytes.NewReader(body))
+		if !verifyPaymentCallbackSignature(h.PaymentCallbackSecret, body, c.GetHeader("X-Payment-Signature")) {
+			response.Error(c, http.StatusUnauthorized, 40160, "支付回调签名校验失败")
+			return
+		}
+	}
 	var req PaymentCallbackRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, 40001, err.Error())
@@ -239,6 +262,24 @@ func (h Handler) PaymentCallback(c *gin.Context) {
 		return
 	}
 	response.OK(c, item)
+}
+
+func paymentCallbackSignature(secret string, body []byte) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+}
+
+func verifyPaymentCallbackSignature(secret string, body []byte, signature string) bool {
+	if strings.TrimSpace(secret) == "" {
+		return true
+	}
+	signature = strings.TrimSpace(signature)
+	if signature == "" {
+		return false
+	}
+	expected := paymentCallbackSignature(secret, body)
+	return hmac.Equal([]byte(expected), []byte(signature))
 }
 
 func (h Handler) ListPaymentCallbackEvents(c *gin.Context) {

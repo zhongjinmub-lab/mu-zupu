@@ -71,6 +71,30 @@ func TestPaymentCallbackRequestNormalizeAndValidate(t *testing.T) {
 	}
 }
 
+func TestVerifyPaymentCallbackSignatureAllowsEmptySecret(t *testing.T) {
+	if !verifyPaymentCallbackSignature("", []byte(`{"pay_no":"pay"}`), "") {
+		t.Fatal("empty secret should allow callback without signature")
+	}
+}
+
+func TestVerifyPaymentCallbackSignatureAcceptsValidSignature(t *testing.T) {
+	body := []byte(`{"pay_no":"pay","status":"paid"}`)
+	signature := paymentCallbackSignature("secret", body)
+	if !verifyPaymentCallbackSignature("secret", body, signature) {
+		t.Fatal("expected valid payment callback signature")
+	}
+}
+
+func TestVerifyPaymentCallbackSignatureRejectsInvalidSignature(t *testing.T) {
+	body := []byte(`{"pay_no":"pay","status":"paid"}`)
+	if verifyPaymentCallbackSignature("secret", body, "sha256=bad") {
+		t.Fatal("expected invalid payment callback signature to be rejected")
+	}
+	if verifyPaymentCallbackSignature("secret", body, "") {
+		t.Fatal("expected missing payment callback signature to be rejected")
+	}
+}
+
 func TestNormalizeReasonTrimsAndLimitsLength(t *testing.T) {
 	long := " " + string(make([]byte, 600)) + " "
 	got := normalizeReason(long)

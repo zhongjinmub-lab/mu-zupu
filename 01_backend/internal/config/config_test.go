@@ -30,6 +30,7 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	t.Setenv("RATE_LIMIT_AUTH_IP_PER_MINUTE", "25")
 	t.Setenv("DOCUMENT_WORKER_INTERVAL_SECONDS", "3")
 	t.Setenv("DOCUMENT_WORKER_BATCH_SIZE", "9")
+	t.Setenv("PAYMENT_CALLBACK_SECRET", "payment-callback-test-secret")
 	t.Setenv("LICENSE_PUBLIC_KEYS", `{"default":"pubkey"}`)
 
 	cfg := Load()
@@ -71,6 +72,9 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	}
 	if cfg.DocumentWorkerIntervalSeconds != 3 || cfg.DocumentWorkerBatchSize != 9 {
 		t.Fatalf("document worker config = %#v", cfg)
+	}
+	if cfg.PaymentCallbackSecret != "payment-callback-test-secret" {
+		t.Fatalf("PaymentCallbackSecret = %q", cfg.PaymentCallbackSecret)
 	}
 	if cfg.LicensePublicKeys != `{"default":"pubkey"}` {
 		t.Fatalf("LicensePublicKeys = %q", cfg.LicensePublicKeys)

@@ -157,7 +157,7 @@ func NewApp(cfg config.Config) (*App, error) {
 		RetryBaseSeconds: cfg.WebhookRetryBaseSeconds,
 	})
 	analytics.RegisterRoutes(tenantScoped, analytics.NewHandler(analytics.NewRepository(db)))
-	billing.RegisterRoutes(tenantScoped, billing.NewHandlerWithWebhook(billingRepo, webhookService))
+	billing.RegisterRoutes(tenantScoped, billing.NewHandlerWithWebhookAndPaymentSecret(billingRepo, webhookService, cfg.PaymentCallbackSecret))
 	licenseVerifier, err := license.NewVerifierFromConfig(cfg.LicensePublicKeys)
 	if err != nil {
 		return nil, err

@@ -237,6 +237,7 @@
 - `POST /payment-orders`：为 pending 业务订单创建 mock 支付单；
 - `POST /payments/{payment_id}/query`：查询当前租户支付单；
 - `POST /payment-callbacks/mock`：按 `pay_no` 幂等更新支付单，支付成功后将业务订单置为 `paid` 并创建订阅。
+- 支付回调支持服务端验签：未配置 `PAYMENT_CALLBACK_SECRET` 时保留 mock 开发体验；配置后必须对原始 JSON 请求体使用 HMAC-SHA256 计算签名，并在 `X-Payment-Signature` 传入 `sha256=<hex>`，签名失败返回中文错误且不更新支付单。
 
 ## 3.8 License 授权
 
