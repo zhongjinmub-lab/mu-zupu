@@ -6,7 +6,7 @@ import (
 	"mu-agent-saas/internal/module/tenant"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
+func RegisterRoutes(rg *gin.RouterGroup, h Handler, limiters ...gin.HandlerFunc) {
 	rg.GET("/agent-genealogy/graph", h.GenealogyGraph)
 	rg.GET("/agent-genealogy/export", h.ExportGenealogyGraph)
 	rg.GET("/agents", h.ListAgents)
@@ -25,7 +25,9 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write.POST("/agents/:agent_id/rollback", h.RollbackAgent)
 	write.POST("/agents/:agent_id/test-chat", h.TestChat)
 	write.POST("/agents/:agent_id/chat", h.Chat)
-	write.POST("/agents/:agent_id/chat/stream", h.ChatStream)
+	stream := write.Group("")
+	stream.Use(limiters...)
+	stream.POST("/agents/:agent_id/chat/stream", h.ChatStream)
 	write.DELETE("/agents/:agent_id", h.ArchiveAgent)
 	write.POST("/agents/:agent_id/knowledge-bases", h.BindKnowledgeBase)
 	write.DELETE("/agents/:agent_id/knowledge-bases/:kb_id", h.UnbindKnowledgeBase)

@@ -529,11 +529,41 @@ Generation provider 配置：
   "user_per_window": 60,
   "auth_ip_per_window": 20,
   "redis_enabled": false,
-  "redis_fallback_label": "当前使用内存限流，适合单实例或本地环境"
+  "redis_fallback_label": "当前使用内存限流，适合单实例或本地环境",
+  "scoped_policies": [
+    {
+      "scope": "auth_ip",
+      "name": "登录注册",
+      "route_pattern": "POST /auth/login, POST /auth/register",
+      "key_strategy": "ip",
+      "ip_per_window": 20
+    },
+    {
+      "scope": "webhook_test",
+      "name": "Webhook 测试发送",
+      "route_pattern": "POST /webhooks/{webhook_id}/test",
+      "key_strategy": "tenant_id + user_id + scope",
+      "tenant_per_window": 60,
+      "user_per_window": 30
+    },
+    {
+      "scope": "agent_stream",
+      "name": "Agent SSE 流式对话",
+      "route_pattern": "POST /agents/{agent_id}/chat/stream",
+      "key_strategy": "tenant_id + user_id + scope",
+      "tenant_per_window": 40,
+      "user_per_window": 20
+    }
+  ]
 }
 ```
 
-管理台设置页已从静态说明改为读取该接口动态展示，展示内容为中文摘要，不展示黑色 JSON 原文区域。
+`scoped_policies` 表示按接口分组的差异化限流策略。当前已实际挂载独立 scope 的接口包括：
+
+- `POST /webhooks/{webhook_id}/test`：Webhook 测试发送，按 `webhook_test` scope 计数。
+- `POST /agents/{agent_id}/chat/stream`：Agent SSE 流式对话，按 `agent_stream` scope 计数。
+
+管理台设置页已从静态说明改为读取该接口动态展示，展示内容为中文摘要，包含默认策略和分组策略，不展示黑色 JSON 原文区域。
 
 ## 2026-05-31 增量：Webhook 投递状态摘要
 

@@ -59,6 +59,7 @@ func BuildRateLimitPolicy(cfg config.Config) RateLimitPolicy {
 		AuthIPPerWindow:    cfg.RateLimitAuthIPPerMinute,
 		RedisEnabled:       redisEnabled,
 		RedisFallbackLabel: redisFallbackLabel(redisEnabled),
+		ScopedPolicies:     buildScopedRateLimitPolicies(cfg),
 	}
 }
 
@@ -400,4 +401,58 @@ func redisFallbackLabel(enabled bool) string {
 		return "Redis 计数异常时自动回退内存限流"
 	}
 	return "当前使用内存限流，适合单实例或本地环境"
+}
+
+func buildScopedRateLimitPolicies(cfg config.Config) []ScopedRateLimitPolicy {
+	return []ScopedRateLimitPolicy{
+		{
+			Scope:        "auth_ip",
+			Name:         "登录注册",
+			RoutePattern: "POST /auth/login, POST /auth/register",
+			KeyStrategy:  "ip",
+			IPPerWindow:  cfg.RateLimitAuthIPPerMinute,
+			Description:  "按客户端 IP 限制登录和注册频率，防止撞库和批量注册。",
+		},
+		{
+			Scope:           "tenant_default",
+			Name:            "租户级默认 API",
+			RoutePattern:    "/api/v1/*",
+			KeyStrategy:     "tenant_id + user_id",
+			TenantPerWindow: cfg.RateLimitTenantPerMinute,
+			UserPerWindow:   cfg.RateLimitUserPerMinute,
+			Description:     "租户上下文校验后按租户和用户双维度计数，覆盖大多数业务 API。",
+		},
+		{
+			Scope:           "webhook_test",
+			Name:            "Webhook 测试发送",
+			RoutePattern:    "POST /webhooks/{webhook_id}/test",
+			KeyStrategy:     "tenant_id + user_id + scope",
+			TenantPerWindow: rateLimitShare(cfg.RateLimitTenantPerMinute, 2),
+			UserPerWindow:   rateLimitShare(cfg.RateLimitUserPerMinute, 2),
+			Description:     "测试发送会访问外部地址，使用独立 scope 减少误操作和外部系统压力。",
+		},
+		{
+			Scope:           "agent_stream",
+			Name:            "Agent SSE 流式对话",
+			RoutePattern:    "POST /agents/{agent_id}/chat/stream",
+			KeyStrategy:     "tenant_id + user_id + scope",
+			TenantPerWindow: rateLimitShare(cfg.RateLimitTenantPerMinute, 3),
+			UserPerWindow:   rateLimitShare(cfg.RateLimitUserPerMinute, 3),
+			Description:     "流式对话会占用模型与长连接资源，使用独立 scope 控制高成本调用。",
+		},
+	}
+}
+
+func rateLimitShare(base, divisor int) int {
+	if base <= 0 {
+		return 0
+	}
+	if divisor <= 1 {
+		return base
+	}
+	value := base / divisor
+	if value < 1 {
+		return 1
+	}
+	return value
 }

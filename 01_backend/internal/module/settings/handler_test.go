@@ -30,6 +30,22 @@ func TestBuildRateLimitPolicyDoesNotExposeRedisConnection(t *testing.T) {
 	if policy.WindowSeconds != 30 || policy.TenantPerWindow != 240 || policy.UserPerWindow != 90 || policy.AuthIPPerWindow != 25 {
 		t.Fatalf("unexpected policy limits: %#v", policy)
 	}
+	if len(policy.ScopedPolicies) < 4 {
+		t.Fatalf("expected scoped rate limit policies: %#v", policy.ScopedPolicies)
+	}
+	foundWebhook := false
+	foundStream := false
+	for _, item := range policy.ScopedPolicies {
+		if item.Scope == "webhook_test" && item.TenantPerWindow == 120 && item.UserPerWindow == 45 {
+			foundWebhook = true
+		}
+		if item.Scope == "agent_stream" && item.TenantPerWindow == 80 && item.UserPerWindow == 30 {
+			foundStream = true
+		}
+	}
+	if !foundWebhook || !foundStream {
+		t.Fatalf("expected webhook and stream scoped policies: %#v", policy.ScopedPolicies)
+	}
 }
 
 func TestRateLimitPolicyHandlerReturnsUnifiedResponse(t *testing.T) {
@@ -49,7 +65,7 @@ func TestRateLimitPolicyHandlerReturnsUnifiedResponse(t *testing.T) {
 		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
 	}
 	body := w.Body.String()
-	for _, want := range []string{`"code":0`, `"backend":"memory"`, `"tenant_per_window":120`, `"redis_enabled":false`} {
+	for _, want := range []string{`"code":0`, `"backend":"memory"`, `"tenant_per_window":120`, `"redis_enabled":false`, `"scoped_policies"`, `"webhook_test"`, `"agent_stream"`} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("response missing %s: %s", want, body)
 		}

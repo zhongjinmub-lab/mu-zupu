@@ -6,7 +6,7 @@ import (
 	"mu-agent-saas/internal/module/tenant"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
+func RegisterRoutes(rg *gin.RouterGroup, h Handler, testLimiters ...gin.HandlerFunc) {
 	rg.GET("/webhooks", h.ListEndpoints)
 	rg.GET("/webhook-deliveries", h.ListDeliveries)
 	rg.GET("/webhook-deliveries/summary", h.DeliverySummary)
@@ -17,6 +17,8 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	admin.POST("/webhooks", h.CreateEndpoint)
 	admin.PUT("/webhooks/:webhook_id", h.UpdateEndpoint)
 	admin.DELETE("/webhooks/:webhook_id", h.DeleteEndpoint)
-	admin.POST("/webhooks/:webhook_id/test", h.TestEndpoint)
+	test := admin.Group("")
+	test.Use(testLimiters...)
+	test.POST("/webhooks/:webhook_id/test", h.TestEndpoint)
 	admin.POST("/webhook-deliveries/:delivery_id/retry", h.RetryDelivery)
 }

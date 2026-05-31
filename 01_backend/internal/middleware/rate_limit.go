@@ -148,15 +148,22 @@ func (l *RateLimiter) IP(limit int) gin.HandlerFunc {
 }
 
 func (l *RateLimiter) TenantAndUser(tenantLimit, userLimit int) gin.HandlerFunc {
+	return l.TenantAndUserScoped("default", tenantLimit, userLimit)
+}
+
+func (l *RateLimiter) TenantAndUserScoped(scope string, tenantLimit, userLimit int) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if scope == "" {
+			scope = "default"
+		}
 		if t, ok := tenant.CurrentTenant(c); ok {
-			if !l.allow(c.Request.Context(), "tenant:"+t.ID, tenantLimit) {
+			if !l.allow(c.Request.Context(), "tenant:"+scope+":"+t.ID, tenantLimit) {
 				l.writeRateLimitError(c)
 				return
 			}
 		}
 		if u, ok := auth.CurrentUser(c); ok {
-			if !l.allow(c.Request.Context(), "user:"+u.ID, userLimit) {
+			if !l.allow(c.Request.Context(), "user:"+scope+":"+u.ID, userLimit) {
 				l.writeRateLimitError(c)
 				return
 			}

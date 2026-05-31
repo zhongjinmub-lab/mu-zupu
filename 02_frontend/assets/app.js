@@ -482,6 +482,19 @@ function renderRateLimitPolicy(error = "") {
   const windowText = windowSeconds % 60 === 0 ? `${windowSeconds / 60} 分钟` : `${windowSeconds} 秒`;
   const backendText = item.backend === "redis" ? "Redis 集中限流" : "内存限流";
   const redisText = item.redis_enabled ? "已启用 Redis，多实例共享计数" : "未启用 Redis，当前实例本地计数";
+  const scopedPolicies = (item.scoped_policies || []).map((policy) => {
+    const limitText = policy.key_strategy === "ip"
+      ? `同一 IP ${Number(policy.ip_per_window || 0).toLocaleString()} 次`
+      : `租户 ${Number(policy.tenant_per_window || 0).toLocaleString()} 次 / 用户 ${Number(policy.user_per_window || 0).toLocaleString()} 次`;
+    return `
+      <article>
+        <strong>${escapeHtml(policy.name || policy.scope || "分组策略")}</strong>
+        <span>${escapeHtml(limitText)}，每 ${escapeHtml(windowText)}</span>
+        <span>${escapeHtml(policy.route_pattern || "-")}</span>
+        <span>${escapeHtml(policy.description || "-")}</span>
+      </article>
+    `;
+  }).join("");
   el.innerHTML = `
     <article>
       <strong>租户 API</strong>
@@ -503,6 +516,7 @@ function renderRateLimitPolicy(error = "") {
       <strong>故障策略</strong>
       <span>${escapeHtml(item.redis_fallback_label || "异常时保持接口可用优先")}</span>
     </article>
+    ${scopedPolicies}
   `;
 }
 

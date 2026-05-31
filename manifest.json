@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T15:12:21+08:00",
+    "generated_at":  "2026-05-31T15:30:14+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  222,
+    "file_count":  223,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -127,8 +127,8 @@
                   },
                   {
                       "path":  "01_backend/internal/bootstrap/app.go",
-                      "size":  6585,
-                      "sha256":  "2aebd0c81e602a78a550f586cdbb7dcbe98afa5e5de68497955da1607810f77b"
+                      "size":  7058,
+                      "sha256":  "8bba47169d89bfbeee70bbb5d7df48a1d3bb8e832e0d17f24e20a8402e8c576d"
                   },
                   {
                       "path":  "01_backend/internal/config/config.go",
@@ -172,13 +172,13 @@
                   },
                   {
                       "path":  "01_backend/internal/middleware/rate_limit.go",
-                      "size":  4003,
-                      "sha256":  "ec4c0be8d7c33d780c54c2b27a8836935f3122aa83d0daa3197f05d63fd91281"
+                      "size":  4237,
+                      "sha256":  "5ecd27380a6de305bfcc9956d664751b377bd0a01fd643d6ee75a9535698e720"
                   },
                   {
                       "path":  "01_backend/internal/middleware/rate_limit_test.go",
-                      "size":  3616,
-                      "sha256":  "9c3b40744a8b855a4ad1357919dcded3ae05b7903a8c75141f7930a977267d8f"
+                      "size":  4805,
+                      "sha256":  "e1d8e4784b338f73cce355db0df95bbae5151e21d6d80728b1b11f96e6cf1842"
                   },
                   {
                       "path":  "01_backend/internal/middleware/request_id.go",
@@ -217,8 +217,8 @@
                   },
                   {
                       "path":  "01_backend/internal/module/agent/routes.go",
-                      "size":  1460,
-                      "sha256":  "e636fb31d307727cbde69a5f42cca2a89eaa4e50f7ebda8a285562da3d2a349a"
+                      "size":  1542,
+                      "sha256":  "f674e85d58268008d30af02e448ad244bfe9d3ab3d7166ee48ef94b04cabd77e"
                   },
                   {
                       "path":  "01_backend/internal/module/agent/types.go",
@@ -422,13 +422,13 @@
                   },
                   {
                       "path":  "01_backend/internal/module/settings/handler.go",
-                      "size":  13525,
-                      "sha256":  "3a34506a31587708510bce0e53072922002056cc487f977273c71d04d355fd70"
+                      "size":  15456,
+                      "sha256":  "ee88913b990ea406afd2aed2db69143a8de16c8be736848c85e06eda6ad539ea"
                   },
                   {
                       "path":  "01_backend/internal/module/settings/handler_test.go",
-                      "size":  13696,
-                      "sha256":  "0b711748dbcc470a4707dc0c360a3c206194a2ef720cacc2f740d2c5e286d17c"
+                      "size":  14332,
+                      "sha256":  "2412911d2903ca83c9c1d8d7df2195543ea4a0e5fe803e6b07926c5095a7b582"
                   },
                   {
                       "path":  "01_backend/internal/module/settings/routes.go",
@@ -437,8 +437,8 @@
                   },
                   {
                       "path":  "01_backend/internal/module/settings/types.go",
-                      "size":  4481,
-                      "sha256":  "41dff31a79d72a206236bbb0271714fe26c57bd8ffdc453eacb7a2c713bb1e41"
+                      "size":  5100,
+                      "sha256":  "bad9477a9beabaf3cfc45befa0320ba59de022f8925c67f98fdc3e9face0e5f5"
                   },
                   {
                       "path":  "01_backend/internal/module/tenant/handler.go",
@@ -482,8 +482,8 @@
                   },
                   {
                       "path":  "01_backend/internal/module/webhook/routes.go",
-                      "size":  704,
-                      "sha256":  "0346949bc7c4dc77f4a9fe57f8e86964da8b1a38cdd6daad23c99df2a5a590e5"
+                      "size":  788,
+                      "sha256":  "0b7cf8bf93865048a951deb6988ddcf11be93849183288e93de8c63311399280"
                   },
                   {
                       "path":  "01_backend/internal/module/webhook/service.go",
@@ -762,8 +762,8 @@
                   },
                   {
                       "path":  "02_docs_v1_delivery/04_API接口清单.md",
-                      "size":  44896,
-                      "sha256":  "3578a708c559215d104f125a9b80d7ddce15c1f897c4d0a41c25c09d25f420c6"
+                      "size":  45977,
+                      "sha256":  "4d9614a70dd3c12466dd7ba9630595e04141efa4dced8826170b4628a2227bc0"
                   },
                   {
                       "path":  "02_docs_v1_delivery/05_Redis_Key设计.md",
@@ -904,6 +904,11 @@
                       "path":  "02_docs_v1_delivery/2026-05-31_Agent工具安全策略增量验收.md",
                       "size":  1347,
                       "sha256":  "ee3ff6ffad0047b333fe64dab0df8224abe60482e0d362ed5491b0d85cb13a05"
+                  },
+                  {
+                      "path":  "02_docs_v1_delivery/2026-05-31_API分组限流策略增量验收.md",
+                      "size":  1342,
+                      "sha256":  "a8bd44f9968b3f50f919b4b61008837ba4a8d51c8d265541cfedf629a48c1cf0"
                   },
                   {
                       "path":  "02_docs_v1_delivery/2026-05-31_API限流与审计闭环摘要增量验收.md",
@@ -1072,8 +1077,8 @@
                   },
                   {
                       "path":  "02_frontend/assets/app.js",
-                      "size":  123239,
-                      "sha256":  "f0d0749b86bd033a1dbcc94095f69e5d5a46aed43eb720d01ddc13c137cd38c5"
+                      "size":  123969,
+                      "sha256":  "5665622cb3433f8055c2e2200da0d341a9a33f68f2442bf222de76e4055d061c"
                   },
                   {
                       "path":  "02_frontend/index.html",
@@ -1082,8 +1087,8 @@
                   },
                   {
                       "path":  "02_frontend/README.md",
-                      "size":  2763,
-                      "sha256":  "658410ea1b8810e9f5476608ae88a3d9aa7df0388f47bfd5d83e5f558c42fae9"
+                      "size":  2778,
+                      "sha256":  "3c759f33688c5f8f3220b8ce78501cdb81aa9e4965289d8e49586307ef48194c"
                   },
                   {
                       "path":  "03_智能体族谱SAAS_开发方案.md",

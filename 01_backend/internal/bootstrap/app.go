@@ -163,10 +163,10 @@ func NewApp(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	license.RegisterRoutes(tenantScoped, license.NewHandlerWithWebhook(license.NewRepository(db), licenseVerifier, webhookService))
-	webhook.RegisterRoutes(tenantScoped, webhook.NewHandler(webhookRepo, webhookService))
+	webhook.RegisterRoutes(tenantScoped, webhook.NewHandler(webhookRepo, webhookService), rateLimiter.TenantAndUserScoped("webhook_test", rateLimitShare(cfg.RateLimitTenantPerMinute, 2), rateLimitShare(cfg.RateLimitUserPerMinute, 2)))
 	filemodule.RegisterRoutes(tenantScoped, filemodule.NewHandler(filemodule.NewRepository(db), storageClient, cfg.UploadMaxBytes, billingRepo))
 	kb.RegisterRoutesWithHandler(tenantScoped, kb.NewHandlerWithStorageAndGeneration(db, storageClient, embedder, generator, billingRepo))
-	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntimeAndWebhook(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo, webhookService))
+	agent.RegisterRoutes(tenantScoped, agent.NewHandlerWithRuntimeAndWebhook(agent.NewRepository(db), kb.NewRepository(db), kb.NewVectorRepository(db), embedder, generator, billingRepo, webhookService), rateLimiter.TenantAndUserScoped("agent_stream", rateLimitShare(cfg.RateLimitTenantPerMinute, 3), rateLimitShare(cfg.RateLimitUserPerMinute, 3)))
 	return &App{Router: r, DB: db, RedisClient: redisClient}, nil
 }
 
@@ -177,4 +177,18 @@ func (a *App) Close() {
 	if a != nil && a.RedisClient != nil {
 		_ = a.RedisClient.Close()
 	}
+}
+
+func rateLimitShare(base, divisor int) int {
+	if base <= 0 {
+		return 0
+	}
+	if divisor <= 1 {
+		return base
+	}
+	value := base / divisor
+	if value < 1 {
+		return 1
+	}
+	return value
 }

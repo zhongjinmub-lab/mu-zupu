@@ -122,6 +122,40 @@ func TestTenantAndUserMiddlewareUsesSeparateKeys(t *testing.T) {
 	}
 }
 
+func TestTenantAndUserScopedUsesIndependentBuckets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	limiter := NewRateLimiter(NewMemoryRateLimiter(time.Minute), NewMemoryRateLimiter(time.Minute))
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set(tenant.ContextTenantKey, tenant.Tenant{ID: "tenant-1"})
+		c.Set(auth.ContextUserKey, auth.User{ID: "user-1"})
+	})
+	r.GET("/default", limiter.TenantAndUser(1, 1), func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+	r.GET("/stream", limiter.TenantAndUserScoped("agent_stream", 1, 1), func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/default", nil))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("default first status = %d", w.Code)
+	}
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/stream", nil))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("scoped first status = %d body=%s", w.Code, w.Body.String())
+	}
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/stream", nil))
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("scoped second status = %d", w.Code)
+	}
+}
+
 type failingCounter struct{}
 
 func (f failingCounter) Allow(ctx context.Context, key string, limit int) (bool, error) {
