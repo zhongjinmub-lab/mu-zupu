@@ -1,6 +1,9 @@
 package channel
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDefaultChannelTypesInstallableFlag(t *testing.T) {
 	byType := map[string]ChannelType{}
@@ -52,5 +55,44 @@ func TestCreateChannelRequestRejectsUnavailableType(t *testing.T) {
 	unknown.Normalize()
 	if err := unknown.Validate(); err == nil {
 		t.Fatal("expected error for unknown channel type")
+	}
+}
+
+func TestBuildChannelEmbedWeb(t *testing.T) {
+	ch := Channel{Type: "web", Status: StatusEnabled, ChannelKey: "ch_abc"}
+	embed := BuildChannelEmbed(ch, "https://demo.example.com/")
+	if !embed.Enabled {
+		t.Fatal("enabled web channel should report enabled")
+	}
+	if embed.APIEndpoint != "https://demo.example.com/api/v1/channels/ch_abc/chat" {
+		t.Fatalf("unexpected api endpoint: %s", embed.APIEndpoint)
+	}
+	if !strings.Contains(embed.EmbedSnippet, "ch_abc") || !strings.Contains(embed.EmbedSnippet, "<script") {
+		t.Fatalf("web snippet should contain script with key: %s", embed.EmbedSnippet)
+	}
+}
+
+func TestBuildChannelEmbedAPIIncludesCurl(t *testing.T) {
+	ch := Channel{Type: "api", Status: StatusEnabled, ChannelKey: "ch_x"}
+	embed := BuildChannelEmbed(ch, "http://localhost:8080")
+	if !strings.HasPrefix(embed.EmbedSnippet, "curl -X POST ") {
+		t.Fatalf("api snippet should be a curl example: %s", embed.EmbedSnippet)
+	}
+}
+
+func TestBuildChannelEmbedDisabledAddsHint(t *testing.T) {
+	ch := Channel{Type: "web", Status: StatusDisabled, ChannelKey: "ch_y"}
+	embed := BuildChannelEmbed(ch, "https://demo.example.com")
+	if embed.Enabled {
+		t.Fatal("disabled channel should not be enabled")
+	}
+	var hinted bool
+	for _, line := range embed.Instructions {
+		if strings.Contains(line, "未启用") {
+			hinted = true
+		}
+	}
+	if !hinted {
+		t.Fatalf("disabled channel should include a not-enabled hint: %#v", embed.Instructions)
 	}
 }

@@ -145,3 +145,23 @@ func writeChannelError(c *gin.Context, err error) {
 		response.Error(c, http.StatusInternalServerError, 50046, err.Error())
 	}
 }
+
+// ChannelEmbed 返回指定渠道的接入代码与说明（按当前请求推断 baseURL）。
+func (h Handler) ChannelEmbed(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	item, err := h.Repo.Get(c.Request.Context(), t.ID, c.Param("channel_id"))
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	baseURL := scheme + "://" + c.Request.Host
+	response.OK(c, BuildChannelEmbed(item, baseURL))
+}
