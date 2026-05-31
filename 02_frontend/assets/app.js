@@ -1310,9 +1310,11 @@ async function streamAgentConversation(agentID, body) {
   resultEl.innerHTML = `
     <div class="answer-main"><strong>流式回答</strong><p id="streamAnswerText"></p></div>
     <div id="streamReferenceList" class="reference-list"></div>
+    <div id="streamErrorText"></div>
   `;
   const answerEl = $("#streamAnswerText");
   const referenceEl = $("#streamReferenceList");
+  const errorEl = $("#streamErrorText");
   const response = await fetch(`${state.apiBase}/agents/${agentID}/chat/stream`, {
     method: "POST",
     headers: streamHeaders(),
@@ -1347,7 +1349,9 @@ async function streamAgentConversation(agentID, body) {
       } else if (event.event === "done") {
         finalPayload = event.data;
       } else if (event.event === "error") {
-        throw new Error(event.data?.message || "流式会话失败");
+        const message = event.data?.message || "流式会话失败";
+        errorEl.innerHTML = `<div class="item item-meta danger-text">错误：${escapeHtml(message)}</div>`;
+        return { ok: false, message };
       }
     }
   }
@@ -1355,6 +1359,7 @@ async function streamAgentConversation(agentID, body) {
     state.selectedConversationId = finalPayload.conversation_id;
   }
   toast("流式会话已完成");
+  return { ok: true, message: "流式会话已完成" };
 }
 
 function parseSSE(chunk) {
@@ -1707,9 +1712,13 @@ function bindEvents() {
       if (!data.agent_id || !data.message) {
         throw new Error("请选择智能体并输入消息");
       }
-      await streamAgentConversation(data.agent_id, body);
-      form.elements.message.value = "";
-      await Promise.allSettled([loadConversations(), loadUsage()]);
+      const streamResult = await streamAgentConversation(data.agent_id, body);
+      if (streamResult.ok) {
+        form.elements.message.value = "";
+        await Promise.allSettled([loadConversations(), loadUsage()]);
+      } else {
+        toast(streamResult.message);
+      }
     } catch (err) {
       renderAnswerSummary("#agentConversationResult", null, err.message);
     }
