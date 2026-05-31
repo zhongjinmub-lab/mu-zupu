@@ -3,6 +3,7 @@ package channel
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -164,4 +165,27 @@ func (h Handler) ChannelEmbed(c *gin.Context) {
 	}
 	baseURL := scheme + "://" + c.Request.Host
 	response.OK(c, BuildChannelEmbed(item, baseURL))
+}
+
+// ConnectChannel 是面向外部接入方的公开端点：按 channel_key 返回已启用渠道的接入配置，
+// 不经登录与租户中间件，仅返回接入所需的最小信息。
+func (h Handler) ConnectChannel(c *gin.Context) {
+	key := strings.TrimSpace(c.Param("channel_key"))
+	if key == "" {
+		response.Error(c, http.StatusBadRequest, 40002, "channel_key is required")
+		return
+	}
+	item, err := h.Repo.GetByChannelKey(c.Request.Context(), key)
+	if err != nil {
+		writeChannelError(c, err)
+		return
+	}
+	response.OK(c, gin.H{
+		"channel_key": item.ChannelKey,
+		"type":        item.Type,
+		"name":        item.Name,
+		"agent_id":    item.AgentID,
+		"status":      item.Status,
+		"connected":   true,
+	})
 }

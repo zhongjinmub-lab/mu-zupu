@@ -158,3 +158,23 @@ func scanChannel(rows pgx.Rows) (Channel, error) {
 	}
 	return item, nil
 }
+
+// GetByChannelKey 按公开接入凭据 channel_key 查询已启用渠道（不限租户，用于外部接入初始化）。
+func (r Repository) GetByChannelKey(ctx context.Context, channelKey string) (Channel, error) {
+	const q = `
+SELECT ` + channelColumns + `
+FROM agent_channels
+WHERE channel_key = $1 AND status = 'enabled' AND deleted_at IS NULL`
+	rows, err := r.DB.Query(ctx, q, channelKey)
+	if err != nil {
+		return Channel{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return Channel{}, rows.Err()
+		}
+		return Channel{}, ErrChannelNotFound
+	}
+	return scanChannel(rows)
+}
