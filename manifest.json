@@ -1,8 +1,8 @@
 {
-    "project":  "鏅鸿兘浣撴棌璋盨AAS",
-    "generated_at":  "2026-05-31T14:34:22+08:00",
+    "project":  "智能体族谱SAAS",
+    "generated_at":  "2026-05-31T14:39:28+08:00",
     "status":  "final_delivery_verified",
-    "assigned_to":  "Codex 寮€鍙戝姪鎵?,
+    "assigned_to":  "Codex 开发助手",
     "file_count":  220,
     "files":  [
                   {
@@ -722,8 +722,8 @@
                   },
                   {
                       "path":  "01_backend\\README.md",
-                      "size":  13551,
-                      "sha256":  "df52cdf6542042a709090e7863b99a1c0e7c7fbd267ea540d6669260c2d532fb"
+                      "size":  17172,
+                      "sha256":  "1084f1a62272326c25692df01bd2270f6bf6218b8c73b5c00d958ce584491188"
                   },
                   {
                       "path":  "01_backend\\scripts\\build_release.ps1",
@@ -741,317 +741,317 @@
                       "sha256":  "d6be44ead8ec8cb3d7a4b9c369fcf77c106a0441d69184aa4323872d096d41da"
                   },
                   {
-                      "path":  "01_backend\\鍚戦噺瀛樺偍涓庣储寮曚紭鍖栬鏄?md",
+                      "path":  "01_backend\\向量存储与索引优化说明.md",
                       "size":  1614,
                       "sha256":  "4de4028101540f51d191278a23bb926bc200075b0785fe1fc9a62867c6e6889a"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\01_寮€鍙戜换鍔℃竻鍗?md",
+                      "path":  "02_docs_v1_delivery\\01_开发任务清单.md",
                       "size":  1985,
                       "sha256":  "2f8a42865f50a51138602bf41a398d06678ad5466a77ac5487fb09949fd9ef94"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\02_MVP涓€鏈熷紑鍙戞帓鏈?md",
+                      "path":  "02_docs_v1_delivery\\02_MVP一期开发排期.md",
                       "size":  1579,
                       "sha256":  "e9e2c3dda6d001fdb832a01d29cff0c64d195450577601500f372d5c57772957"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\03_鏁版嵁搴撹〃缁撴瀯_v1.sql",
+                      "path":  "02_docs_v1_delivery\\03_数据库表结构_v1.sql",
                       "size":  12940,
                       "sha256":  "52cbb29a2c66546fe4649a0fe889c501c23104f62addb89412ef5390cc19d6a5"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\04_API鎺ュ彛娓呭崟.md",
+                      "path":  "02_docs_v1_delivery\\04_API接口清单.md",
                       "size":  43474,
                       "sha256":  "e7ff1783d1d8e1d69899359c159bc27be55d3215318d6284c02ab3b4b37d2bab"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\05_Redis_Key璁捐.md",
+                      "path":  "02_docs_v1_delivery\\05_Redis_Key设计.md",
                       "size":  2432,
                       "sha256":  "074d367903d9510179d83aca925af90371ebf603b5c78e74d55d8502cd711cbf"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\06_浜や粯楠屾敹娓呭崟.md",
+                      "path":  "02_docs_v1_delivery\\06_交付验收清单.md",
                       "size":  3021,
                       "sha256":  "6ae662697c60ec1ac297eb85bacf60fc5984615ff0bb54171ab57bdb869e77f1"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_KB鏂囨。鍒楄〃澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_KB文档列表增量验收.md",
                       "size":  1497,
                       "sha256":  "f68c104eb772cdf04a8920cefeb64ccee2f5b46ae173ecf95df0c6e77299c2a8"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_KB鏂囨。璇︽儏涓嶤hunk鍒楄〃澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_KB文档详情与Chunk列表增量验收.md",
                       "size":  1189,
                       "sha256":  "dc8d3676f9da88b0a11cd812d27aa4ec42b7c26d25b545d26a749727cff4d880"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_KB鏂囦欢閾捐矾绠＄悊鍙颁笌涓枃RAG澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_KB文件链路管理台与中文RAG增量验收.md",
                       "size":  1558,
                       "sha256":  "9ca0b38e768340b3f96040ecfb2616b2a6a5cfc510a2b553a2e0ae48c52d9c20"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_RBAC瀹¤澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_RBAC审计增量验收.md",
                       "size":  2199,
                       "sha256":  "93c894fb1b8e7c661b396d3f19115df73d6dc201c9c69cedd21f718eaca1fe96"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_绠＄悊鍙板璁℃棩蹇楃瓫閫夊垎椤靛閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_管理台审计日志筛选分页增量验收.md",
                       "size":  1263,
                       "sha256":  "53b51a42ee87121fff077d33d130d4cb03f2b9b2a4fd70936fcc06c479f2de3c"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_绠＄悊鍙颁腑鏂囨樉绀轰慨澶嶅閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_管理台中文显示修复增量验收.md",
                       "size":  1371,
                       "sha256":  "3079b62b313a53aebf272af1603dd9dcad9dcc44679f105414a1c7f86b54f397"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_瑙掕壊鏉冮檺鎷︽埅澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_角色权限拦截增量验收.md",
                       "size":  2042,
                       "sha256":  "6125fbbf67736f1e711252bdacd096b98094912a8effdc6b2d1021e383732673"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_瀹¤鏃ュ織绛涢€夊垎椤靛閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_审计日志筛选分页增量验收.md",
                       "size":  2125,
                       "sha256":  "b30d8d8bfc1fd40d424f52aceca94a016d8221c67a20b37f20f6fe631b7d6743"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_閫氱敤瀹¤涓棿浠跺閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_通用审计中间件增量验收.md",
                       "size":  1544,
                       "sha256":  "0c7f4b5b6604367a7d51d97db603677bbdc7c68f9bb0cdc243e3da2c8ba5c118"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_鏀粯闂幆澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_支付闭环增量验收.md",
                       "size":  2138,
                       "sha256":  "f68a17e279e0090dbabe61653b12c140495ea0446d2c6047e1ec0386c24fa31c"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-28_绉熸埛閭€璇峰閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-28_租户邀请增量验收.md",
                       "size":  2258,
                       "sha256":  "959b8931a0181939225b146fdf81fd96860b94c96a4a72e49a55bed455574993"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent缂栬緫绠＄悊鍙板閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent编辑管理台增量验收.md",
                       "size":  759,
                       "sha256":  "cbf3152ffc0078cc636d2d69e5243172472bec8e5cbea6b51bc0cea3a375829c"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent澶氳疆浼氳瘽绠＄悊鍙板閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent多轮会话管理台增量验收.md",
                       "size":  1019,
                       "sha256":  "2834f39ec3dcb24dadb0ab96db4fa8fc903cfca38379a4eab2317f3355521d0a"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent褰掓。绠＄悊鍙板閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent归档管理台增量验收.md",
                       "size":  737,
                       "sha256":  "5f8b21dcd19f95d49d17f637a9f7b22e946c8eef18a865f2c863dca7ee0c1b1f"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent鐭ヨ瘑搴撶粦瀹氱鐞嗗彴澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_Agent知识库绑定管理台增量验收.md",
                       "size":  957,
                       "sha256":  "ad0141d18eddaf8645b862e29e0d394564af7b5dbe76531f2fdadeb10de3f128"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_KB鏂囨。褰掓。澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_KB文档归档增量验收.md",
                       "size":  924,
                       "sha256":  "7f050b34b87f9eb22dbb09b541af0d13fc82b3890eecfe09c7af5a48bd898d28"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_鏂囦欢涓嬭浇澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_文件下载增量验收.md",
                       "size":  810,
                       "sha256":  "138042c8febc7853c33b26fe6112463eb3685e87de496113d529743b015900f9"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_鎬诲悗鍙板竷灞€鍙傝€冨浘鏀归€犲閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_总后台布局参考图改造增量验收.md",
                       "size":  1015,
                       "sha256":  "9b6187687d51d8269870d0b283f0c4633db86d87ffb2f0c083702f71896f41e4"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_鎬诲悗鍙版帓琛屼笌鍔ㄦ€佸閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_总后台排行与动态增量验收.md",
                       "size":  903,
                       "sha256":  "7f11fc9ae858d46488010d255ffef665fd8700f38b032325f7ec68ecd578c7ed"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-29_鎬诲悗鍙扮湡瀹炴暟鎹€昏UI浼樺寲澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-29_总后台真实数据总览UI优化增量验收.md",
                       "size":  1201,
                       "sha256":  "5c088aae7a5f46d45c73767193ce7410d183d9cbbe0ddcc53c53b462f31fe8d9"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-30_瀹¤鏃ュ織CSV瀵煎嚭澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-30_审计日志CSV导出增量验收.md",
                       "size":  1006,
                       "sha256":  "75c96994b33c4262255f57343f0ae6e9023fcfc23535f5c312e8a6592f89945c"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-30_缁熻API涓庢暟鎹垎鏋愰潰鏉垮閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-30_统计API与数据分析面板增量验收.md",
                       "size":  1096,
                       "sha256":  "c10d666f505f718fb233bc8d2afc829a6091ab08df970fce2ec5d8758bc7a492"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent_SSE绠＄悊鍙颁綋楠屽寮哄閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent_SSE管理台体验增强增量验收.md",
                       "size":  1922,
                       "sha256":  "9c5d3e5cc30aae4a522e0d4c1c0c3b6e37cdf644f2e51e05b7e591e67b822276"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent_SSE娴佸紡浣撻獙鍔犲浐澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent_SSE流式体验加固增量验收.md",
                       "size":  1065,
                       "sha256":  "64275abe1ac211630116cdbec41f89fb4aa028f6fe8fdf644827cb1e49324ebc"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent澶氳疆浼氳瘽缂栨帓绛栫暐澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent多轮会话编排策略增量验收.md",
                       "size":  1286,
                       "sha256":  "4da724872e96f97c956e5a92a1a6d390e87c75f7118b99442af2e473e6a1619f"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent宸ュ叿瀹夊叏绛栫暐澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Agent工具安全策略增量验收.md",
                       "size":  1347,
                       "sha256":  "ee3ff6ffad0047b333fe64dab0df8224abe60482e0d362ed5491b0d85cb13a05"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_API闄愭祦涓庡璁￠棴鐜憳瑕佸閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_API限流与审计闭环摘要增量验收.md",
                       "size":  1619,
                       "sha256":  "9332b3cc434f275f0ee2a64e486bfa0456aa3332e4bf5b991ebdede7e7364730"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_License鍦ㄧ嚎绂荤嚎鎺堟潈楠岃瘉澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_License在线离线授权验证增量验收.md",
                       "size":  1453,
                       "sha256":  "e3f65bd381aab616f0d2d80ff05ad4f68bfd884fa807238901ea58978490fdfd"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Redis闄愭祦澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Redis限流增量验收.md",
                       "size":  2773,
                       "sha256":  "2181a815e3709c9dc017331a151e6efa0b28628a6fd978fd488e546129c1bc49"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook_SSE_闄愭祦澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook_SSE_限流增量验收.md",
                       "size":  3444,
                       "sha256":  "f85171f3789d34b9173a3aa96f652d6e9e7a2f4379ad5e13427ece8eb0cc82c9"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鍗曟潯鎶曢€掓墜鍔ㄩ噸璇曞閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook单条投递手动重试增量验收.md",
                       "size":  1451,
                       "sha256":  "e1afea4bd9b343c9c3b53e664a0c02b72273c9f50451023a421feaffb6685aaa"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook閰嶇疆缂栬緫涓庡瘑閽ヤ繚鐣欏閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook配置编辑与密钥保留增量验收.md",
                       "size":  1707,
                       "sha256":  "d2a347afb68ea12b3523f2b75976e6b284aab712c2351ebb14df7b85a41b52a2"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook绛惧悕瀵嗛挜鍝嶅簲鑴辨晱澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook签名密钥响应脱敏增量验收.md",
                       "size":  1598,
                       "sha256":  "306ef135f7e0604986fc7ce710cb31b4b5ed38efb189c80026dfe3dfafb2fd96"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掕褰旵SV瀵煎嚭澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook投递记录CSV导出增量验收.md",
                       "size":  1456,
                       "sha256":  "b5467ff55fc6dc06b502087bc412da689a2239dd7d9e473fb5f04ee72118e396"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掕褰曠瓫閫夊閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook投递记录筛选增量验收.md",
                       "size":  1742,
                       "sha256":  "89fba42aba9830fffcf1f963d37ca282f4b69937b671a45ff9ac4e5cecba818d"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掕褰曟椂闂磋寖鍥寸瓫閫夊閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook投递记录时间范围筛选增量验收.md",
                       "size":  1422,
                       "sha256":  "2c563cee184ea59a1245e00d6219433b3b8f07b4beb7afc46199aa34e70ddac4"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掓憳瑕佺瓫閫夊彛寰勭粺涓€澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook投递摘要筛选口径统一增量验收.md",
                       "size":  1336,
                       "sha256":  "63b322b1fab74f6fc62ab61230ce7cd20b2fb45e8577cbed6acae559ef198755"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook鎶曢€掔姸鎬佹憳瑕佸閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook投递状态摘要增量验收.md",
                       "size":  1771,
                       "sha256":  "e2558a9d7bd2f5fd8711fcc18f2a4edf495af064dd3b6c3c6c780752048b281a"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook閲嶈瘯Worker澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_Webhook重试Worker增量验收.md",
                       "size":  2400,
                       "sha256":  "11fe58263397cd5e389aac5c28a26640c378854f9e17f34d8cdce9769ed33aef"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鐗堟湰鍗囩骇涓庡洖婊氳剼鏈閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_版本升级与回滚脚本增量验收.md",
                       "size":  2012,
                       "sha256":  "a306f240a2c0f5ffcb51a4105c9f3ce50a87a0a5ab374311d60f20f9dd5fd74d"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_瑙掕壊鏉冮檺鐭╅樀澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_角色权限矩阵增量验收.md",
                       "size":  1263,
                       "sha256":  "5a8e0a9ce6f9f7fb2da7ee93c74e9a65da5051cf915fc8fb490cb6407edbf9b0"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏁忔劅瀛楁淇濇姢鎽樿澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_敏感字段保护摘要增量验收.md",
                       "size":  1429,
                       "sha256":  "511e0c9f91badfb7c650d5e8013cf8fe5dcc8e1200aa16a08cf4940275b03247"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鍓嶇婧愮爜瀹屾暣鎬ц鏄庡閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_前端源码完整性说明增量验收.md",
                       "size":  1593,
                       "sha256":  "f274bf813d746414a637b7c475afd55e9f904015970b3607460f7a65be3dd583"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏁版嵁鍒嗘瀽鎽樿CSV瀵煎嚭澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_数据分析摘要CSV导出增量验收.md",
                       "size":  1707,
                       "sha256":  "e2dbe562003dbcdae59d9afd41e7a255c064be0771b90eea7dac78c6ff25d6c4"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏁版嵁搴撳浠芥仮澶嶆紨缁冭剼鏈閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_数据库备份恢复演练脚本增量验收.md",
                       "size":  2253,
                       "sha256":  "7b9b85106f6883064e9567d6913a5ae3243ea74bd94289090de12817c3c37ded"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_濂楅璁㈤槄棰濆害鐘舵€佸閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_套餐订阅额度状态增量验收.md",
                       "size":  1181,
                       "sha256":  "5884604d553788ae7b5c13e9f072be172665b69537caefdb3a4140d7806640c6"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_闄愭祦绛栫暐鎺ュ彛涓庤缃〉鍔ㄦ€佸睍绀哄閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_限流策略接口与设置页动态展示增量验收.md",
                       "size":  2174,
                       "sha256":  "147ac9cf3e599fef19d64b7dfdc0d4e8f752b9e9a55c55dc8ed7aab9c9a74bf1"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_杩愯鐩戞帶鎽樿鎺ュ彛涓庤缃〉灞曠ず澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_运行监控摘要接口与设置页展示增量验收.md",
                       "size":  1779,
                       "sha256":  "6aab2a3d547835233e18a10029ab9fd0dac0df5697329625656c48a2f2aac3b4"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_杩愯閰嶇疆鎽樿鎺ュ彛涓庤缃〉灞曠ず澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_运行配置摘要接口与设置页展示增量验收.md",
                       "size":  1813,
                       "sha256":  "3414beeec1f05108980b3a6dcd13fb105f93e47dc944fa41cbc38239e52e7b1f"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏀粯鍥炶皟楠岀涓庡箓绛夊閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_支付回调验签与幂等增量验收.md",
                       "size":  1260,
                       "sha256":  "cc389a729da4890d5b1a1315125930614aaf5510dbd515db54dba7b10ce3bb1c"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋盋SV瀵煎嚭澧為噺楠屾敹.md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_智能体族谱CSV导出增量验收.md",
                       "size":  1550,
                       "sha256":  "15f690e56a1bdd6c6868b89492bc03068a0c637b50a40abad3db22bc13675c25"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋卞叧绯荤淮鎶ゅ閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_智能体族谱关系维护增量验收.md",
                       "size":  1902,
                       "sha256":  "8ebc00f58e59d57596ce17a3d7d79432dcc3e0e4742866846b9fc15ce79f12d2"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋辩粨鏋勮瘖鏂憳瑕佸閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_智能体族谱结构诊断摘要增量验收.md",
                       "size":  1850,
                       "sha256":  "41b9c4356c8e668ee651c83e922f70fa9799cf6f3764cc9c290e3f581b3bb22a"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋辩瓫閫夊閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_智能体族谱筛选增量验收.md",
                       "size":  2053,
                       "sha256":  "abe7e417a3f0ea05f493740f9c8fcab8f743318d80c065ce8a82303026b82e67"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋辩粺璁″垎鏋愬閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_智能体族谱统计分析增量验收.md",
                       "size":  2011,
                       "sha256":  "141db1561782d32031b99a8755b13dfb8c6e4360b5a83f0f3a88bb15f5a61446"
                   },
                   {
-                      "path":  "02_docs_v1_delivery\\2026-05-31_鏅鸿兘浣撴棌璋卞浘璋卞彧璇绘帴鍙ｅ閲忛獙鏀?md",
+                      "path":  "02_docs_v1_delivery\\2026-05-31_智能体族谱图谱只读接口增量验收.md",
                       "size":  1833,
                       "sha256":  "c0195a9a7e5973acf1bc5f966925694ce2b3680bb6a9e1650d778b897a5c6604"
                   },
@@ -1077,16 +1077,16 @@
                   },
                   {
                       "path":  "02_frontend\\README.md",
-                      "size":  2679,
-                      "sha256":  "3173ee44ccf9b4282721a44f8f658f06205869d847f9e563e8db9173aaeccb6f"
+                      "size":  2736,
+                      "sha256":  "e00b6c66a2bb5cee9e6bdb263d16a67799ac3c40b4834981585d0185b5831030"
                   },
                   {
-                      "path":  "03_鏅鸿兘浣撴棌璋盨AAS_寮€鍙戞柟妗?md",
+                      "path":  "03_智能体族谱SAAS_开发方案.md",
                       "size":  6741,
                       "sha256":  "1909ed1b4a8bcb799faec25c16cbaf8ae17a12a3d796ac3433b209c0a8b78e2d"
                   },
                   {
-                      "path":  "04_鏈€缁堜氦浠橀獙鏀舵竻鍗?md",
+                      "path":  "04_最终交付验收清单.md",
                       "size":  8946,
                       "sha256":  "f6001ee4f3fce3d02bf396d63d1b954f03506acdf40461bbc725ac12b8c61629"
                   },
@@ -1096,12 +1096,12 @@
                       "sha256":  "d5b3525b9e537b1331d4202179d8f5e6d9f6ee3104fc35eb60d8664deed85cc8"
                   },
                   {
-                      "path":  "缁檁Codex_寮€鍙戝惎鍔ㄦ寚浠?md",
+                      "path":  "给_Codex_开发启动指令.md",
                       "size":  5993,
                       "sha256":  "48c1e8a38e89e7b97f69116b330d4634309f78f5a1188dff8e711c6fea33f07a"
                   },
                   {
-                      "path":  "缁檁鑱婂ぉ绐楀彛_鏃忚氨寮€鍙慱鍚姩鎸囦护.md",
+                      "path":  "给_聊天窗口_族谱开发_启动指令.md",
                       "size":  4014,
                       "sha256":  "85fd6bc0b1d749d2ea5055904def71d51aa3ff2eee8d97df62ffefbb93560a91"
                   }
