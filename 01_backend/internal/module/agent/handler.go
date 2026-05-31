@@ -701,6 +701,8 @@ func writeAgentError(c *gin.Context, err error) {
 		response.Error(c, http.StatusNotFound, 40443, "agent genealogy edge not found")
 	case errors.Is(err, ErrGenealogyEdgeExists):
 		response.Error(c, http.StatusConflict, 40941, "agent genealogy edge already exists")
+	case errors.Is(err, ErrGenealogyEdgeCycle):
+		response.Error(c, http.StatusBadRequest, 40044, "族谱关系会形成循环，请调整父子节点")
 	default:
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {

@@ -134,6 +134,13 @@ func (r Repository) CreateGenealogyEdge(ctx context.Context, tenantID string, re
 		if _, err := r.Get(ctx, tenantID, req.ParentAgentID); err != nil {
 			return GenealogyEdge{}, err
 		}
+		hasCycle, err := r.wouldCreateGenealogyCycle(ctx, tenantID, req.ParentAgentID, req.ChildAgentID)
+		if err != nil {
+			return GenealogyEdge{}, err
+		}
+		if hasCycle {
+			return GenealogyEdge{}, ErrGenealogyEdgeCycle
+		}
 	}
 	var exists bool
 	if err := r.DB.QueryRow(ctx, `
@@ -575,6 +582,29 @@ WHERE tenant_id = $1 AND agent_id = $2 AND knowledge_base_id = $3 AND deleted_at
 	return nil
 }
 
+func (r Repository) wouldCreateGenealogyCycle(ctx context.Context, tenantID, parentAgentID, childAgentID string) (bool, error) {
+	const q = `
+WITH RECURSIVE descendants AS (
+  SELECT child_agent_id
+  FROM agent_genealogy
+  WHERE tenant_id = $1
+    AND parent_agent_id = $3::uuid
+  UNION
+  SELECT g.child_agent_id
+  FROM agent_genealogy g
+  JOIN descendants d ON g.parent_agent_id = d.child_agent_id
+  WHERE g.tenant_id = $1
+)
+SELECT EXISTS (
+  SELECT 1
+  FROM descendants
+  WHERE child_agent_id = $2::uuid
+)`
+	var exists bool
+	err := r.DB.QueryRow(ctx, q, tenantID, parentAgentID, childAgentID).Scan(&exists)
+	return exists, err
+}
+
 func scanAgent(rows pgx.Rows) (Agent, error) {
 	var item Agent
 	err := rows.Scan(
@@ -624,4 +654,5 @@ var (
 	ErrConversationNotFound  = errors.New("conversation not found")
 	ErrGenealogyEdgeNotFound = errors.New("agent genealogy edge not found")
 	ErrGenealogyEdgeExists   = errors.New("agent genealogy edge already exists")
+	ErrGenealogyEdgeCycle    = errors.New("agent genealogy edge would create cycle")
 )
