@@ -305,3 +305,22 @@ func (h Handler) DuplicateWorkflow(c *gin.Context) {
 	}
 	response.OK(c, item)
 }
+
+// EvaluateConditionExpr 对单个条件表达式按给定 input 求值，便于在管理台测试条件分支。
+func (h Handler) EvaluateConditionExpr(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	var req EvaluateConditionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	matched, err := EvaluateCondition(req.Expression, req.Input)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40047, err.Error())
+		return
+	}
+	response.OK(c, EvaluateConditionResult{Expression: strings.TrimSpace(req.Expression), Matched: matched})
+}

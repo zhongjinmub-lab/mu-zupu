@@ -2150,6 +2150,36 @@ async function validateWorkflow() {
   renderWorkflow();
 }
 
+// evaluateWorkflowCondition 读取条件表达式与 input JSON，调用后端求值并展示结果。
+async function evaluateWorkflowCondition() {
+  const form = $("#conditionEvalForm");
+  if (!form) return;
+  const expression = (form.querySelector('input[name="expression"]').value || "").trim();
+  if (!expression) throw new Error("请输入条件表达式");
+  const rawInput = (form.querySelector('input[name="input"]').value || "").trim();
+  let input = {};
+  if (rawInput) {
+    try {
+      input = JSON.parse(rawInput);
+    } catch (err) {
+      throw new Error("输入 JSON 解析失败：" + err.message);
+    }
+  }
+  const result = await api("/workflows/evaluate-condition", { method: "POST", body: { expression, input } });
+  const box = $("#conditionEvalBox");
+  if (box) {
+    box.innerHTML = `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(result.expression || expression)}</strong>
+          <span class="badge ${result.matched ? "ok" : "warn"}">${result.matched ? "匹配" : "不匹配"}</span>
+        </div>
+      </article>
+    `;
+  }
+  toast(result.matched ? "条件匹配" : "条件不匹配");
+}
+
 // loadWorkflows 拉取当前租户的工作流定义列表并渲染。
 async function loadWorkflows() {
   if (!state.tenantId) return;
@@ -3611,6 +3641,7 @@ function bindEvents() {
   $("#loadPluginsBtn").addEventListener("click", () => loadPlugins().then(() => toast("插件市场已刷新")).catch((err) => renderPlugins(err.message)));
   $("#loadWorkflowBtn").addEventListener("click", () => loadWorkflow().then(() => toast("工作流编排已刷新")).catch((err) => renderWorkflow(err.message)));
   $("#validateWorkflowBtn").addEventListener("click", () => validateWorkflow().then(() => toast("工作流校验完成")).catch((err) => toast(err.message)));
+  $("#evalConditionBtn").addEventListener("click", () => evaluateWorkflowCondition().catch((err) => toast(err.message)));
   $("#loadWorkflowsBtn").addEventListener("click", () => loadWorkflows().then(() => toast("工作流定义已刷新")).catch((err) => renderWorkflowList(err.message)));
   $("#workflowCreateForm").addEventListener("submit", (event) => {
     event.preventDefault();

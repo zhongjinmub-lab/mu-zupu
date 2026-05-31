@@ -1,6 +1,9 @@
 package workflow
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // 构造一个合法的线性工作流：start -> llm -> end。
 func validLinearGraph() WorkflowGraph {
@@ -337,5 +340,109 @@ func TestDuplicateWorkflowRequestTruncatesLongCode(t *testing.T) {
 	req := DuplicateWorkflowRequest(src, "150405")
 	if len(req.Code) > 64 {
 		t.Fatalf("duplicated code must be <= 64, got %d (%q)", len(req.Code), req.Code)
+	}
+}
+
+func TestEvaluateConditionNumeric(t *testing.T) {
+	input := map[string]any{"score": 85.0}
+	cases := []struct {
+		expr string
+		want bool
+	}{
+		{"score >= 80", true},
+		{"score > 90", false},
+		{"score == 85", true},
+		{"score != 85", false},
+		{"score < 100", true},
+	}
+	for _, tc := range cases {
+		got, err := EvaluateCondition(tc.expr, input)
+		if err != nil {
+			t.Fatalf("eval %q: %v", tc.expr, err)
+		}
+		if got != tc.want {
+			t.Fatalf("eval %q = %v, want %v", tc.expr, got, tc.want)
+		}
+	}
+}
+
+func TestEvaluateConditionString(t *testing.T) {
+	input := map[string]any{"status": "approved"}
+	if ok, _ := EvaluateCondition(`status == approved`, input); !ok {
+		t.Fatal("expected status==approved to match")
+	}
+	if ok, _ := EvaluateCondition(`status == "approved"`, input); !ok {
+		t.Fatal("quoted value should match")
+	}
+	if ok, _ := EvaluateCondition(`status != approved`, input); ok {
+		t.Fatal("status!=approved should be false")
+	}
+}
+
+func TestEvaluateConditionMissingKeyIsFalse(t *testing.T) {
+	ok, err := EvaluateCondition("missing >= 1", map[string]any{})
+	if err != nil {
+		t.Fatalf("missing key should not error: %v", err)
+	}
+	if ok {
+		t.Fatal("missing key should evaluate to false")
+	}
+}
+
+func TestEvaluateConditionInvalidSyntax(t *testing.T) {
+	for _, expr := range []string{"", "scoreonly", "score => 80", " >= 80", "score >= "} {
+		if _, err := EvaluateCondition(expr, map[string]any{"score": 1}); err == nil {
+			t.Fatalf("expected error for invalid expr %q", expr)
+		}
+	}
+}
+
+func TestValidateWorkflowGraphChecksConditionEdges(t *testing.T) {
+	// condition 节点出边带非法条件 -> 应记为错误
+	graph := WorkflowGraph{
+		Nodes: []WorkflowNode{
+			{ID: "n_start", Type: "start"},
+			{ID: "n_cond", Type: "condition"},
+			{ID: "n_a", Type: "end"},
+			{ID: "n_b", Type: "end"},
+		},
+		Edges: []WorkflowEdge{
+			{From: "n_start", To: "n_cond"},
+			{From: "n_cond", To: "n_a", Condition: "score >= 80"},
+			{From: "n_cond", To: "n_b", Condition: "bad-condition"},
+		},
+	}
+	result := ValidateWorkflowGraph(graph)
+	if result.Valid {
+		t.Fatalf("expected invalid graph due to bad condition, issues=%v", result.Issues)
+	}
+}
+
+func TestValidateWorkflowGraphWarnsOnConditionWithoutConditions(t *testing.T) {
+	graph := WorkflowGraph{
+		Nodes: []WorkflowNode{
+			{ID: "n_start", Type: "start"},
+			{ID: "n_cond", Type: "condition"},
+			{ID: "n_a", Type: "end"},
+			{ID: "n_b", Type: "end"},
+		},
+		Edges: []WorkflowEdge{
+			{From: "n_start", To: "n_cond"},
+			{From: "n_cond", To: "n_a"},
+			{From: "n_cond", To: "n_b"},
+		},
+	}
+	result := ValidateWorkflowGraph(graph)
+	if !result.Valid {
+		t.Fatalf("graph without conditions should still be valid, issues=%v", result.Issues)
+	}
+	var warned bool
+	for _, w := range result.Warnings {
+		if strings.Contains(w, "condition") {
+			warned = true
+		}
+	}
+	if !warned {
+		t.Fatalf("expected a warning about missing condition annotations, warnings=%v", result.Warnings)
 	}
 }

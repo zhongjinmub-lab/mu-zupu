@@ -1079,6 +1079,7 @@ P1「工作流」第二增量，引入工作流定义持久化，镜像 Agent �
 - `PUT /workflows/{workflow_id}`：更新名称/描述/定义；更新定义会再次图校验；已发布的工作流更新后回到 `draft` 并 `version + 1`。
 - `POST /workflows/{workflow_id}/publish`：发布，发布前要求当前定义通过图结构校验。
 - `POST /workflows/{workflow_id}/duplicate`：将工作流复制为新草稿（名称追加"副本"，编码追加 `-copy-<时间后缀>`，定义整体复制）。
+- `POST /workflows/evaluate-condition`：对单个条件表达式（形如 `key op value`，op 支持 `== != > >= < <=`）按给定 `input` 求值，返回 `{expression, matched}`，用于测试 condition 分支。
 - `DELETE /workflows/{workflow_id}`：归档（软删除）。
 
 所有写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`code` 在租户内唯一，重复创建返回 409。配套新增 `000023_workflows` 迁移（含 down 回滚）。管理台“工作流编排”面板新增“工作流定义”列表与创建表单，支持一键发布/归档。后续增量将基于已发布定义接入执行引擎与执行日志（`workflow_runs`）。

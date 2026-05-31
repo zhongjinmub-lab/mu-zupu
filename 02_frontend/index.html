@@ -403,6 +403,15 @@
               <textarea id="workflowDefinitionInput" rows="8" placeholder='{"nodes":[{"id":"n_start","type":"start"},{"id":"n_llm","type":"llm"},{"id":"n_end","type":"end"}],"edges":[{"from":"n_start","to":"n_llm"},{"from":"n_llm","to":"n_end"}]}'></textarea>
               <div id="workflowValidationBox" class="list"></div>
               <div class="panel-subhead">
+                <strong>条件分支求值</strong>
+                <button id="evalConditionBtn" class="button small" type="button">求值</button>
+              </div>
+              <form id="conditionEvalForm" class="filter-form">
+                <input name="expression" placeholder="条件，如 score >= 80" />
+                <input name="input" placeholder='输入 JSON，如 {&quot;score&quot;:85}' />
+              </form>
+              <div id="conditionEvalBox" class="list"></div>
+              <div class="panel-subhead">
                 <strong>工作流定义</strong>
                 <button id="loadWorkflowsBtn" class="button small secondary" type="button">刷新</button>
               </div>

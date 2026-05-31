@@ -20,6 +20,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write := rg.Group("")
 	write.Use(tenant.RequireTenantWriter())
 	write.POST("/workflows/validate", h.ValidateWorkflow)
+	write.POST("/workflows/evaluate-condition", h.EvaluateConditionExpr)
 	write.POST("/workflows", h.CreateWorkflow)
 	write.PUT("/workflows/:workflow_id", h.UpdateWorkflow)
 	write.POST("/workflows/:workflow_id/publish", h.PublishWorkflow)
