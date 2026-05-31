@@ -34,6 +34,13 @@ try {
     Copy-Item -Recurse -Force .\deploy\production\nginx (Join-Path $PackageDir "nginx")
     Copy-Item -Force .\deploy\production\README.md (Join-Path $PackageDir "README.md")
 
+    foreach ($RequiredScript in @("backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh")) {
+        $ScriptPath = Join-Path $PackageDir "scripts/$RequiredScript"
+        if (-not (Test-Path $ScriptPath)) {
+            throw "missing release script: $RequiredScript"
+        }
+    }
+
     $Archive = Join-Path $Dist "$PackageName.tar.gz"
     if (Test-Path $Archive) {
         Remove-Item -LiteralPath $Archive -Force

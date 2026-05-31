@@ -1,0 +1,75 @@
+package scripts_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestProductionUpgradeRollbackScriptsArePackaged(t *testing.T) {
+	root := repoRoot(t)
+	for _, name := range []string{"backup.sh", "smoke.sh", "upgrade.sh", "rollback.sh"} {
+		path := filepath.Join(root, "deploy", "production", "scripts", name)
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatalf("missing production script %s: %v", name, err)
+		}
+		if info.IsDir() {
+			t.Fatalf("production script should be a file: %s", path)
+		}
+	}
+
+	buildScript := readFile(t, filepath.Join(root, "scripts", "build_release.sh"))
+	buildScriptPS := readFile(t, filepath.Join(root, "scripts", "build_release.ps1"))
+	for _, want := range []string{"upgrade.sh", "rollback.sh"} {
+		if !strings.Contains(buildScript, want) {
+			t.Fatalf("build_release.sh should verify %s is packaged", want)
+		}
+		if !strings.Contains(buildScriptPS, want) {
+			t.Fatalf("build_release.ps1 should verify %s is packaged", want)
+		}
+	}
+}
+
+func TestProductionUpgradeRollbackDocsMentionSafeSteps(t *testing.T) {
+	root := repoRoot(t)
+	readme := readFile(t, filepath.Join(root, "deploy", "production", "README.md"))
+	for _, want := range []string{"升级", "回滚", "backup.sh", "smoke.sh", "MIGRATION_STEPS"} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("production README should mention %s", want)
+		}
+	}
+
+	upgrade := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "upgrade.sh"))
+	for _, want := range []string{"backup.sh", "mu-agent-migrate up", "smoke.sh", "rollback/last_release_path"} {
+		if !strings.Contains(upgrade, want) {
+			t.Fatalf("upgrade.sh should include %s", want)
+		}
+	}
+
+	rollback := readFile(t, filepath.Join(root, "deploy", "production", "scripts", "rollback.sh"))
+	for _, want := range []string{"backup.sh", "MIGRATION_STEPS", "mu-agent-migrate down", "smoke.sh"} {
+		if !strings.Contains(rollback, want) {
+			t.Fatalf("rollback.sh should include %s", want)
+		}
+	}
+}
+
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return filepath.Clean(filepath.Join(wd, ".."))
+}
+
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	return string(data)
+}

@@ -26,5 +26,11 @@ cp -R deploy/production/scripts "$PACKAGE_DIR/scripts"
 cp -R deploy/production/nginx "$PACKAGE_DIR/nginx"
 cp deploy/production/README.md "$PACKAGE_DIR/README.md"
 
+test -x "$PACKAGE_DIR/scripts/backup.sh"
+test -x "$PACKAGE_DIR/scripts/smoke.sh"
+test -f "$PACKAGE_DIR/scripts/upgrade.sh"
+test -f "$PACKAGE_DIR/scripts/rollback.sh"
+chmod +x "$PACKAGE_DIR/scripts/"*.sh
+
 tar -C "$DIST" -czf "$DIST/$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
 echo "release package: $DIST/$PACKAGE_NAME.tar.gz"

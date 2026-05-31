@@ -1,8 +1,8 @@
-# Production Deploy Templates
+# 生产部署模板
 
-This directory records the production layout used for the current server deployment.
+本目录固化当前私有化部署结构，所有示例文件只放占位配置，不写入真实密钥。
 
-## Layout
+## 目录结构
 
 ```text
 /opt/mu-agent-saas
@@ -11,42 +11,48 @@ This directory records the production layout used for the current server deploym
 ├── bin/mu-agent-document-worker
 ├── bin/mu-agent-webhook-worker
 ├── docker-compose.yml
+├── compose.env
 ├── mu-agent-saas.env
 ├── migrations/
 ├── scripts/
+├── rollback/
 └── backups/
 ```
 
-## Install Outline
+## 打包
 
-Build a Linux amd64 package from the backend root:
+在后端根目录执行：
 
 ```bash
 VERSION=v0.1.0 make release
 ```
 
-On Windows:
+Windows 本地打包：
 
 ```powershell
 .\scripts\build_release.ps1 -Version v0.1.0
 ```
 
-Then upload and extract the generated `dist/mu-agent-saas-*-linux-amd64.tar.gz`.
+生成产物：`dist/mu-agent-saas-<version>-linux-amd64.tar.gz`。
+
+## 首次安装
+
+将发布包上传到服务器并解压，然后安装文件：
 
 ```bash
 install -m 0755 bin/mu-agent-server /opt/mu-agent-saas/bin/mu-agent-server
 install -m 0755 bin/mu-agent-migrate /opt/mu-agent-saas/bin/mu-agent-migrate
 install -m 0755 bin/mu-agent-document-worker /opt/mu-agent-saas/bin/mu-agent-document-worker
 install -m 0755 bin/mu-agent-webhook-worker /opt/mu-agent-saas/bin/mu-agent-webhook-worker
-cp -r migrations /opt/mu-agent-saas/
-cp deploy/production/docker-compose.yml /opt/mu-agent-saas/docker-compose.yml
-cp deploy/production/mu-agent-saas.env.example /opt/mu-agent-saas/mu-agent-saas.env
-cp deploy/production/systemd/*.service /etc/systemd/system/
-cp deploy/production/systemd/*.timer /etc/systemd/system/
+cp -r migrations scripts nginx systemd /opt/mu-agent-saas/
+cp docker-compose.yml /opt/mu-agent-saas/docker-compose.yml
+cp compose.env.example /opt/mu-agent-saas/compose.env
+cp mu-agent-saas.env.example /opt/mu-agent-saas/mu-agent-saas.env
+cp systemd/*.service /etc/systemd/system/
+cp systemd/*.timer /etc/systemd/system/
 ```
 
-Replace all secrets in `mu-agent-saas.env` and Compose `.env` before starting.
-Keep `MINIO_ROOT_USER/MINIO_ROOT_PASSWORD` aligned with `STORAGE_ACCESS_KEY/STORAGE_SECRET_KEY`.
+启动前必须替换 `mu-agent-saas.env` 和 `compose.env` 中的全部生产密钥。`MINIO_ROOT_USER/MINIO_ROOT_PASSWORD` 需与 `STORAGE_ACCESS_KEY/STORAGE_SECRET_KEY` 保持一致。
 
 ```bash
 cd /opt/mu-agent-saas
@@ -60,9 +66,49 @@ systemctl enable --now mu-agent-webhook-worker
 systemctl enable --now mu-agent-saas-backup.timer
 ```
 
-## Verification
+## 升级
+
+升级脚本会先执行备份，再解压新发布包、保存当前运行文件快照、安装新二进制和迁移文件、执行 `mu-agent-migrate up`、重启服务并运行冒烟检查。
+
+```bash
+cd /opt/mu-agent-saas
+RELEASE_ARCHIVE=/opt/mu-agent-saas/releases/mu-agent-saas-v0.2.0-linux-amd64.tar.gz ./scripts/upgrade.sh
+```
+
+成功后会输出 `rollback_snapshot=/opt/mu-agent-saas/rollback/current-...`，用于必要时回滚。
+
+## 回滚
+
+默认回滚到最近一次升级前保存的运行文件快照。默认不回滚数据库迁移，避免误删生产数据；确需回滚迁移时，明确设置 `MIGRATION_STEPS`。
+
+```bash
+cd /opt/mu-agent-saas
+./scripts/rollback.sh
+```
+
+指定快照回滚：
+
+```bash
+ROLLBACK_DIR=/opt/mu-agent-saas/rollback/current-20260531120000 ./scripts/rollback.sh
+```
+
+回滚 1 个数据库迁移版本：
+
+```bash
+MIGRATION_STEPS=1 ./scripts/rollback.sh
+```
+
+## 验证
 
 ```bash
 /opt/mu-agent-saas/scripts/smoke.sh
 /opt/mu-agent-saas/scripts/backup.sh
 ```
+
+升级和回滚后都必须确认：
+
+- `systemctl status mu-agent-saas`
+- `systemctl status mu-agent-document-worker`
+- `systemctl status mu-agent-webhook-worker`
+- `/health` 和 `/ready` 返回正常
+- `./bin/mu-agent-migrate status` 输出符合预期
