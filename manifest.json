@@ -1,6 +1,6 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T16:16:59+08:00",
+    "generated_at":  "2026-05-31T16:19:44+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
     "file_count":  230,
@@ -982,8 +982,8 @@
                   },
                   {
                       "path":  "02_docs_v1_delivery/2026-05-31_版本升级与回滚脚本增量验收.md",
-                      "size":  2012,
-                      "sha256":  "a306f240a2c0f5ffcb51a4105c9f3ce50a87a0a5ab374311d60f20f9dd5fd74d"
+                      "size":  2561,
+                      "sha256":  "beb1ee6ce6073806a6365a78785c813d3898e13d42f24702f62cb3cbb442f27a"
                   },
                   {
                       "path":  "02_docs_v1_delivery/2026-05-31_后端运维入口文档同步增量验收.md",
@@ -1132,8 +1132,8 @@
                   },
                   {
                       "path":  "manifest.json",
-                      "size":  542401,
-                      "sha256":  "f3faec0ff69146d911cae95a3fb5f7317b6290022064c114481d928ad052c8b4"
+                      "size":  62410,
+                      "sha256":  "5ee13a6652540f2a2b182be8f86baa41c71b8ec8fe957fef479bb6b613fc7f76"
                   },
                   {
                       "path":  "README.md",
