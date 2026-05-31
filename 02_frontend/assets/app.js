@@ -1416,13 +1416,24 @@ function streamHeaders() {
 async function streamAgentConversation(agentID, body) {
   const resultEl = $("#agentConversationResult");
   resultEl.innerHTML = `
-    <div class="answer-main"><strong>流式回答</strong><p id="streamAnswerText"></p></div>
-    <div id="streamReferenceList" class="reference-list"></div>
+    <article class="answer-block">
+      <h4>流式回答</h4>
+      <p id="streamAnswerText"></p>
+    </article>
+    <div id="streamStatusText" class="answer-meta"><span>正在连接流式会话</span></div>
+    <article class="answer-block">
+      <h4>引用资料</h4>
+      <div id="streamReferenceList" class="reference-list"><div class="item item-meta">等待引用资料</div></div>
+    </article>
     <div id="streamErrorText"></div>
   `;
   const answerEl = $("#streamAnswerText");
+  const statusEl = $("#streamStatusText");
   const referenceEl = $("#streamReferenceList");
   const errorEl = $("#streamErrorText");
+  const startedAt = Date.now();
+  let deltaCount = 0;
+  let referenceCount = 0;
   const response = await fetch(`${state.apiBase}/agents/${agentID}/chat/stream`, {
     method: "POST",
     headers: streamHeaders(),
@@ -1440,6 +1451,28 @@ async function streamAgentConversation(agentID, body) {
   const decoder = new TextDecoder();
   let buffer = "";
   let finalPayload = null;
+  const handleEvent = (event) => {
+    if (!event) return;
+    if (event.event === "start") {
+      statusEl.innerHTML = `<span>${escapeHtml(event.data?.message || "流式会话已开始")}</span>`;
+    } else if (event.event === "delta") {
+      deltaCount += 1;
+      answerEl.textContent += event.data?.content || "";
+      statusEl.innerHTML = `<span>正在接收第 ${deltaCount.toLocaleString()} 段回答</span>`;
+    } else if (event.event === "reference") {
+      const ref = event.data || {};
+      referenceCount += 1;
+      if (referenceCount === 1) referenceEl.innerHTML = "";
+      referenceEl.insertAdjacentHTML("beforeend", `<article class="reference-item"><strong>${escapeHtml(ref.title || "引用片段")}</strong><span>相关度：${Number(ref.score || 0).toFixed(3)}</span></article>`);
+    } else if (event.event === "done") {
+      finalPayload = event.data;
+    } else if (event.event === "error") {
+      const message = event.data?.message || "流式会话失败";
+      errorEl.innerHTML = `<div class="item item-meta danger-text">错误：${escapeHtml(message)}</div>`;
+      statusEl.innerHTML = `<span>流式会话失败，已保留当前回答内容</span>`;
+      throw new Error(message);
+    }
+  };
   while (true) {
     const { value, done } = await reader.read();
     if (done) break;
@@ -1447,25 +1480,35 @@ async function streamAgentConversation(agentID, body) {
     const parts = buffer.split("\n\n");
     buffer = parts.pop() || "";
     for (const part of parts) {
-      const event = parseSSE(part);
-      if (!event) continue;
-      if (event.event === "delta") {
-        answerEl.textContent += event.data?.content || "";
-      } else if (event.event === "reference") {
-        const ref = event.data || {};
-        referenceEl.insertAdjacentHTML("beforeend", `<article class="reference-item"><strong>${escapeHtml(ref.title || "引用片段")}</strong><span>相关度：${Number(ref.score || 0).toFixed(3)}</span></article>`);
-      } else if (event.event === "done") {
-        finalPayload = event.data;
-      } else if (event.event === "error") {
-        const message = event.data?.message || "流式会话失败";
-        errorEl.innerHTML = `<div class="item item-meta danger-text">错误：${escapeHtml(message)}</div>`;
-        return { ok: false, message };
+      try {
+        handleEvent(parseSSE(part));
+      } catch (err) {
+        return { ok: false, message: err.message };
       }
+    }
+  }
+  if (buffer.trim()) {
+    try {
+      handleEvent(parseSSE(buffer));
+    } catch (err) {
+      return { ok: false, message: err.message };
     }
   }
   if (finalPayload?.conversation_id) {
     state.selectedConversationId = finalPayload.conversation_id;
   }
+  const elapsedSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+  const meta = [
+    finalPayload?.conversation_id ? `会话：${finalPayload.conversation_id}` : "",
+    finalPayload?.knowledge_base_id ? `知识库：${finalPayload.knowledge_base_id}` : "",
+    finalPayload?.history_used !== undefined ? `使用历史：${Number(finalPayload.history_used || 0).toLocaleString()} 条` : "",
+    finalPayload?.generation_model ? `生成模型：${finalPayload.generation_model}` : "",
+    finalPayload?.generation_source ? `生成来源：${finalPayload.generation_source}` : "",
+    `引用：${referenceCount.toLocaleString()} 条`,
+    `耗时：${elapsedSeconds.toLocaleString()} 秒`,
+  ].filter(Boolean);
+  statusEl.innerHTML = meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+  if (!answerEl.textContent.trim()) answerEl.textContent = "暂无回答内容";
   toast("流式会话已完成");
   return { ok: true, message: "流式会话已完成" };
 }
@@ -1815,6 +1858,7 @@ function bindEvents() {
   });
 
   $("#streamConversationBtn").addEventListener("click", async () => {
+    const button = $("#streamConversationBtn");
     const form = $("#agentConversationForm");
     const data = formData(form);
     const body = {
@@ -1828,6 +1872,8 @@ function bindEvents() {
       if (!data.agent_id || !data.message) {
         throw new Error("请选择智能体并输入消息");
       }
+      button.disabled = true;
+      button.textContent = "流式发送中";
       const streamResult = await streamAgentConversation(data.agent_id, body);
       if (streamResult.ok) {
         form.elements.message.value = "";
@@ -1837,6 +1883,9 @@ function bindEvents() {
       }
     } catch (err) {
       renderAnswerSummary("#agentConversationResult", null, err.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = "流式发送";
     }
   });
 
