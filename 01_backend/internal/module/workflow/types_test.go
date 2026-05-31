@@ -149,3 +149,61 @@ func TestDefaultWorkflowOrchestrationPolicyIsSafeByDefault(t *testing.T) {
 		t.Fatalf("unexpected policy %#v", policy)
 	}
 }
+
+func TestCreateWorkflowRequestNormalizeAndValidate(t *testing.T) {
+	req := CreateWorkflowRequest{
+		Name:       "  订单审批流  ",
+		Code:       "  Order_Approve-1 ",
+		Definition: validLinearGraph(),
+	}
+	req.Normalize()
+	if req.Name != "订单审批流" || req.Code != "order_approve-1" {
+		t.Fatalf("normalized request = %#v", req)
+	}
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected valid request: %v", err)
+	}
+
+	bad := CreateWorkflowRequest{Name: "x", Code: "bad code", Definition: validLinearGraph()}
+	bad.Normalize()
+	if err := bad.Validate(); err == nil {
+		t.Fatal("expected invalid code error")
+	}
+
+	empty := CreateWorkflowRequest{Name: "x", Code: "ok"}
+	empty.Normalize()
+	if err := empty.Validate(); err == nil {
+		t.Fatal("expected error when nodes are empty")
+	}
+}
+
+func TestUpdateWorkflowRequestValidate(t *testing.T) {
+	graph := validLinearGraph()
+	req := UpdateWorkflowRequest{Name: "新名称", Definition: &graph}
+	req.Normalize()
+	if err := req.Validate(); err != nil {
+		t.Fatalf("expected valid update: %v", err)
+	}
+
+	emptyGraph := WorkflowGraph{Nodes: []WorkflowNode{}, Edges: []WorkflowEdge{}}
+	bad := UpdateWorkflowRequest{Definition: &emptyGraph}
+	if err := bad.Validate(); err == nil {
+		t.Fatal("expected error when definition has no nodes")
+	}
+
+	// Definition 为 nil 时不校验图，仅做名称长度校验。
+	ok := UpdateWorkflowRequest{Name: "只改名"}
+	if err := ok.Validate(); err != nil {
+		t.Fatalf("expected nil-definition update to be valid: %v", err)
+	}
+}
+
+func TestMarshalDefinitionFillsEmptySlices(t *testing.T) {
+	raw, err := marshalDefinition(WorkflowGraph{})
+	if err != nil {
+		t.Fatalf("marshal definition: %v", err)
+	}
+	if raw != `{"nodes":[],"edges":[]}` {
+		t.Fatalf("unexpected marshalled definition: %s", raw)
+	}
+}

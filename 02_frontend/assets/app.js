@@ -25,6 +25,7 @@ const state = {
   workflowPolicy: null,
   workflowNodeTypes: [],
   workflowValidation: null,
+  workflows: [],
   toolCallLogFilters: {
     agent_id: "",
     tool_name: "",
@@ -2145,6 +2146,86 @@ async function validateWorkflow() {
   renderWorkflow();
 }
 
+// loadWorkflows 拉取当前租户的工作流定义列表并渲染。
+async function loadWorkflows() {
+  if (!state.tenantId) return;
+  const data = await api("/workflows");
+  state.workflows = data.items || [];
+  renderWorkflowList();
+}
+
+function renderWorkflowList(error = "") {
+  const el = $("#workflowListBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`工作流定义加载失败：${error}`);
+    return;
+  }
+  const workflows = state.workflows || [];
+  el.innerHTML = workflows.map((wf) => {
+    const nodeCount = (wf.definition && wf.definition.nodes ? wf.definition.nodes.length : 0);
+    return `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(wf.name || wf.code)}</strong>
+          <span class="badge ${wf.status === "published" ? "ok" : (wf.status === "archived" ? "danger" : "warn")}">${escapeHtml(workflowStatusLabel(wf.status))}</span>
+        </div>
+        <div class="item-meta">${escapeHtml(wf.code || "-")} / v${Number(wf.version || 1)} / 节点 ${nodeCount} 个</div>
+        <div class="item-meta">${escapeHtml(wf.description || "")}</div>
+        <div class="item-actions">
+          ${wf.status === "draft" ? `<button class="button small" data-workflow-publish="${escapeHtml(wf.id || "")}" type="button">发布</button>` : ""}
+          ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-archive="${escapeHtml(wf.id || "")}" type="button">归档</button>` : ""}
+        </div>
+      </article>
+    `;
+  }).join("") || empty("暂无工作流定义");
+}
+
+function workflowStatusLabel(status) {
+  return {
+    draft: "草稿",
+    published: "已发布",
+    archived: "已归档",
+  }[status] || status || "未知";
+}
+
+// createWorkflow 读取创建表单与上方校验框的定义 JSON，创建工作流。
+async function createWorkflow() {
+  const form = $("#workflowCreateForm");
+  if (!form) return;
+  const name = (form.querySelector('input[name="name"]').value || "").trim();
+  const code = (form.querySelector('input[name="code"]').value || "").trim();
+  if (!name || !code) throw new Error("请填写工作流名称与编码");
+  const raw = ($("#workflowDefinitionInput") && $("#workflowDefinitionInput").value ? $("#workflowDefinitionInput").value : "").trim();
+  if (!raw) throw new Error("请在“图结构校验”输入框粘贴工作流定义 JSON");
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch (err) {
+    throw new Error("定义 JSON 解析失败：" + err.message);
+  }
+  const definition = payload.definition ? payload.definition : payload;
+  await api("/workflows", { method: "POST", body: { name, code, definition } });
+  form.reset();
+  await loadWorkflows();
+  toast("工作流已创建");
+}
+
+// toggleWorkflow 发布或归档指定工作流后刷新列表。
+async function toggleWorkflow(workflowID, action) {
+  if (!workflowID) return;
+  if (action === "archive") {
+    if (!window.confirm("确认归档该工作流？")) return;
+    await api(`/workflows/${workflowID}`, { method: "DELETE" });
+    await loadWorkflows();
+    toast("工作流已归档");
+    return;
+  }
+  await api(`/workflows/${workflowID}/publish`, { method: "POST" });
+  await loadWorkflows();
+  toast("工作流已发布");
+}
+
 async function loadToolCallLogs() {
   if (!state.tenantId) return;
   const data = await api(`/tool-call-logs${toolCallLogQuery()}`);
@@ -2720,6 +2801,7 @@ async function refreshAll() {
     loadMCPGateway(),
     loadPlugins(),
     loadWorkflow(),
+    loadWorkflows(),
     loadAgentGenealogy(),
     loadAgentBindings(),
     loadConversations(),
@@ -2789,6 +2871,7 @@ function bindEvents() {
       loadMCPGateway(),
       loadPlugins(),
       loadWorkflow(),
+      loadWorkflows(),
       loadAgentGenealogy(),
       loadAgentBindings(),
       loadConversations(),
@@ -3280,6 +3363,11 @@ function bindEvents() {
   $("#loadPluginsBtn").addEventListener("click", () => loadPlugins().then(() => toast("插件市场已刷新")).catch((err) => renderPlugins(err.message)));
   $("#loadWorkflowBtn").addEventListener("click", () => loadWorkflow().then(() => toast("工作流编排已刷新")).catch((err) => renderWorkflow(err.message)));
   $("#validateWorkflowBtn").addEventListener("click", () => validateWorkflow().then(() => toast("工作流校验完成")).catch((err) => toast(err.message)));
+  $("#loadWorkflowsBtn").addEventListener("click", () => loadWorkflows().then(() => toast("工作流定义已刷新")).catch((err) => renderWorkflowList(err.message)));
+  $("#workflowCreateForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    createWorkflow().catch((err) => toast(err.message));
+  });
   $("#agentGenealogyFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     agentGenealogyFiltersFromForm();
@@ -3383,6 +3471,8 @@ function bindEvents() {
     const mcpTestId = target.dataset?.mcpTest;
     const pluginEnableId = target.dataset?.pluginEnable;
     const pluginDisableId = target.dataset?.pluginDisable;
+    const workflowPublishId = target.dataset?.workflowPublish;
+    const workflowArchiveId = target.dataset?.workflowArchive;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3408,6 +3498,12 @@ function bindEvents() {
       }
       if (pluginDisableId) {
         await togglePlugin(pluginDisableId, false);
+      }
+      if (workflowPublishId) {
+        await toggleWorkflow(workflowPublishId, "publish");
+      }
+      if (workflowArchiveId) {
+        await toggleWorkflow(workflowArchiveId, "archive");
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();

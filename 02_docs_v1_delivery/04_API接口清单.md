@@ -47,6 +47,12 @@
 | GET | /workflows/orchestration-policy | 工作流编排安全策略摘要（引擎默认关闭，validate_only） | tenant |
 | GET | /workflow-node-types | 工作流内置节点类型目录（start/llm/tool/condition/human_approval/end） | tenant |
 | POST | /workflows/validate | 工作流图结构校验，返回错误/警告/人工确认节点/拓扑执行顺序，不执行真实动作 | tenant writer |
+| GET | /workflows | 当前租户工作流定义列表 | tenant |
+| GET | /workflows/{workflow_id} | 工作流定义详情 | tenant |
+| POST | /workflows | 创建工作流定义，写入前做图结构校验 | tenant writer |
+| PUT | /workflows/{workflow_id} | 更新工作流定义，已发布更新后回到草稿并递增版本 | tenant writer |
+| POST | /workflows/{workflow_id}/publish | 发布工作流，发布前必须通过图结构校验 | tenant writer |
+| DELETE | /workflows/{workflow_id} | 归档（软删除）工作流 | tenant writer |
 | GET | /plugins | 插件市场目录，合并当前租户启用状态与市场安全策略 | tenant |
 | POST | /plugins/{plugin_code}/enable | 启用内置插件（仅 active 插件可启用） | tenant writer |
 | POST | /plugins/{plugin_code}/disable | 禁用内置插件 | tenant writer |
@@ -1058,3 +1064,17 @@ P1「工作流」第一个增量，采用与工具/MCP 一致的安全默认模�
 - `POST /workflows/validate`：对提交的图定义 `{name, code, definition:{nodes,edges}}` 做结构校验，返回 `valid`、`node_count`、`edge_count`、`issues`、`warnings`、`human_approval_nodes` 与拓扑 `execution_order`。校验规则：节点 id 唯一非空、类型合法；必须且只有一个 start、至少一个 end；边引用的节点必须存在；end 节点不应有出边；condition 建议至少两个分支；通过 Kahn 拓扑排序检测环（有环则无法生成执行顺序）。
 
 `POST /workflows/validate` 需要 `tenant writer/admin` 权限（`RequireTenantWriter`）并携带 `X-Tenant-ID`，节点数上限 100。后续增量将引入工作流定义持久化（草稿/发布/回滚）与基于该校验契约的执行引擎，工具/插件节点必须遵循既有安全策略，危险操作必经 human_approval 人工确认。管理台“工作流编排”面板用中文展示策略、节点类型目录，并提供图定义校验输入框与诊断结果。
+
+
+## 2026-05-31 增量：工作流定义持久化（草稿/发布/归档）
+
+P1「工作流」第二增量，引入工作流定义持久化，镜像 Agent 的 CRUD/发布/归档/软删除模式。新增 `workflows` 表（唯一约束 `tenant_id + code`，软删除 `deleted_at`，`version` 版本号，`definition` JSONB 存图）。
+
+- `GET /workflows`：当前租户未归档工作流列表。
+- `GET /workflows/{workflow_id}`：工作流详情（含 definition、status、version）。
+- `POST /workflows`：创建，请求体 `{name, code, description, definition:{nodes,edges}}`，写入前先做图结构校验（不通过返回 40046）。code 规则同 Agent（小写字母数字与 - _，≤64）。
+- `PUT /workflows/{workflow_id}`：更新名称/描述/定义；更新定义会再次图校验；已发布的工作流更新后回到 `draft` 并 `version + 1`。
+- `POST /workflows/{workflow_id}/publish`：发布，发布前要求当前定义通过图结构校验。
+- `DELETE /workflows/{workflow_id}`：归档（软删除）。
+
+所有写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`code` 在租户内唯一，重复创建返回 409。配套新增 `000023_workflows` 迁移（含 down 回滚）。管理台“工作流编排”面板新增“工作流定义”列表与创建表单，支持一键发布/归档。后续增量将基于已发布定义接入执行引擎与执行日志（`workflow_runs`）。
