@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 创建 axios 实例，统一 baseURL 与认证头
 const http = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE || '/api/v1',
   timeout: 30000,
 })
 
@@ -21,7 +21,7 @@ http.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      window.location.href = `${import.meta.env.BASE_URL}login`
     }
     return Promise.reject(err.response?.data ?? err)
   },
