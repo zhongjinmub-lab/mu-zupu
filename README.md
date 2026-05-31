@@ -2,6 +2,8 @@
 
 更新时间：2026-05-31
 
+交付状态：`final_delivery_verified`
+
 ## 1. 目录说明
 
 | 目录/文件 | 说明 |
@@ -38,6 +40,14 @@
 - `02_docs_v1_delivery/06_交付验收清单.md` 已全部勾选。
 
 ## 4. 验证命令
+
+一键交付校验：
+
+```powershell
+.\verify_delivery.ps1
+```
+
+该脚本会执行前端语法检查、后端全量测试、`git diff --check`、验收清单未完成项检查和 `manifest.json` 状态检查。
 
 ```bash
 cd 01_backend
