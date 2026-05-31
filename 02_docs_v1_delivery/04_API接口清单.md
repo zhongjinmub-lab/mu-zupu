@@ -677,6 +677,31 @@ Generation provider 配置：
 
 管理台设置页已新增“限流与审计闭环摘要”，用中文卡片展示租户/用户/IP 限流、自动审计动作、业务审计动作、筛选分页和 CSV 导出能力，不展示黑色 JSON 原文区域。
 
+## 2026-05-31 增量：向量检索健康摘要
+
+`GET /settings/vector-search` 用于返回当前 RAG 向量检索能力、隔离校验和运维检查摘要，供管理台设置页只读展示。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | user，需携带 `Authorization: Bearer <token>` |
+| 租户头 | 不强制 `X-Tenant-ID`，该接口返回全局检索能力摘要 |
+| 敏感信息 | 不返回数据库连接串、模型 API Key、原始向量内容或检索请求原文 |
+
+响应 `data` 字段：
+
+| 字段 | 说明 |
+|---|---|
+| `status` | 向量检索能力状态，当前为 `ready` |
+| `embedding_provider` / `embedding_model` | 当前 Embedding Provider 和模型名称摘要 |
+| `embedding_dimension` | 当前固定向量维度，首版为 `1536` |
+| `index_profile` | pgvector、HNSW、ef_search、向量/全文权重、TopK 和最低分配置摘要 |
+| `isolation_checks` | 租户隔离、知识库隔离、删除态过滤等检查项 |
+| `retrieval_checks` | 向量维度、混合检索、检索日志等链路检查项 |
+| `operations_checks` | 索引迁移、批量导入维护、慢查询观察等运维检查项 |
+| `operational_notes` | 运维说明和后续调优边界 |
+
+管理台设置页已新增“向量检索健康摘要”，用中文卡片展示 pgvector/HNSW、1536 维 embedding、租户隔离、知识库隔离、检索日志和 ANALYZE 运维建议，不展示黑色 JSON 原文区域。
+
 ## 2026-05-31 增量：Webhook 投递记录 CSV 导出
 
 `GET /webhook-deliveries/export` 已支持按当前租户导出 Webhook 投递记录 CSV。

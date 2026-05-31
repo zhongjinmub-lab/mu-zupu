@@ -41,6 +41,10 @@ func (h Handler) RateLimitAuditSummary(c *gin.Context) {
 	response.OK(c, BuildRateLimitAuditSummary(h.cfg))
 }
 
+func (h Handler) VectorSearchSummary(c *gin.Context) {
+	response.OK(c, BuildVectorSearchSummary(h.cfg))
+}
+
 func BuildRateLimitPolicy(cfg config.Config) RateLimitPolicy {
 	backend := strings.ToLower(strings.TrimSpace(cfg.RateLimitBackend))
 	if backend != "redis" {
@@ -115,35 +119,35 @@ func BuildSensitiveFieldSummary(cfg config.Config) SensitiveFieldSummary {
 				Scope:       "JWT_SECRET",
 				Protection:  "仅从环境变量读取，用于签发和校验登录令牌",
 				APIExposure: "不通过任何 API 返回原文",
-				Configured:   strings.TrimSpace(cfg.JWTSecret) != "",
+				Configured:  strings.TrimSpace(cfg.JWTSecret) != "",
 			},
 			{
 				Name:        "数据库连接串",
 				Scope:       "DATABASE_DSN",
 				Protection:  "仅在后端进程内使用，设置页只展示运行摘要",
 				APIExposure: "不返回 DSN、用户名或密码",
-				Configured:   strings.TrimSpace(cfg.DatabaseDSN) != "",
+				Configured:  strings.TrimSpace(cfg.DatabaseDSN) != "",
 			},
 			{
 				Name:        "对象存储密钥",
 				Scope:       "STORAGE_ACCESS_KEY / STORAGE_SECRET_KEY",
 				Protection:  "仅用于服务端访问 MinIO/S3，前端通过业务接口访问文件",
 				APIExposure: "不返回 AccessKey 或 SecretKey",
-				Configured:   strings.TrimSpace(cfg.StorageSecretKey) != "",
+				Configured:  strings.TrimSpace(cfg.StorageSecretKey) != "",
 			},
 			{
 				Name:        "模型服务 API Key",
 				Scope:       "EMBEDDING_API_KEY / GENERATION_API_KEY",
 				Protection:  "仅用于服务端调用外部模型 Provider",
 				APIExposure: "只返回是否已配置，不返回 Key 原文",
-				Configured:   strings.TrimSpace(cfg.EmbeddingAPIKey) != "" || strings.TrimSpace(cfg.GenerationAPIKey) != "",
+				Configured:  strings.TrimSpace(cfg.EmbeddingAPIKey) != "" || strings.TrimSpace(cfg.GenerationAPIKey) != "",
 			},
 			{
 				Name:        "支付回调验签密钥",
 				Scope:       "PAYMENT_CALLBACK_SECRET",
 				Protection:  "仅从环境变量读取，用于 HMAC 验证支付回调",
 				APIExposure: "不入库、不返回、不展示",
-				Configured:   strings.TrimSpace(cfg.PaymentCallbackSecret) != "",
+				Configured:  strings.TrimSpace(cfg.PaymentCallbackSecret) != "",
 			},
 		},
 		StoredSecrets: []SensitiveFieldItem{
@@ -152,28 +156,28 @@ func BuildSensitiveFieldSummary(cfg config.Config) SensitiveFieldSummary {
 				Scope:       "users.password_hash",
 				Protection:  "数据库仅保存密码哈希，登录时做哈希校验",
 				APIExposure: "用户接口不返回 password_hash",
-				Configured:   true,
+				Configured:  true,
 			},
 			{
 				Name:        "租户邀请 Token",
 				Scope:       "tenant_invitations.token_hash",
 				Protection:  "数据库仅保存 token_hash，明文 Token 只在创建响应中返回一次",
 				APIExposure: "列表接口不返回明文 Token",
-				Configured:   true,
+				Configured:  true,
 			},
 			{
 				Name:        "Webhook 签名密钥",
 				Scope:       "webhook_endpoints.secret",
 				Protection:  "数据库保留密钥用于 HMAC 投递签名，编辑留空时保留原密钥",
 				APIExposure: "Webhook 响应只返回 has_secret",
-				Configured:   true,
+				Configured:  true,
 			},
 			{
 				Name:        "License 离线签名",
 				Scope:       "licenses.signature",
 				Protection:  "数据库保留签名用于离线验签",
 				APIExposure: "License 响应只返回 has_signature",
-				Configured:   true,
+				Configured:  true,
 			},
 		},
 		ResponseRedactions: []SensitiveFieldItem{
@@ -182,21 +186,21 @@ func BuildSensitiveFieldSummary(cfg config.Config) SensitiveFieldSummary {
 				Scope:       "GET /settings/runtime",
 				Protection:  "按 Provider、存储模式和 Worker 参数输出中文摘要",
 				APIExposure: "不返回 DSN、Redis 密码、对象存储密钥或模型 Key",
-				Configured:   true,
+				Configured:  true,
 			},
 			{
 				Name:        "限流策略摘要",
 				Scope:       "GET /settings/rate-limit",
 				Protection:  "只展示限流后端与窗口阈值",
 				APIExposure: "不返回 Redis 地址、密码或数据库编号",
-				Configured:   true,
+				Configured:  true,
 			},
 			{
 				Name:        "运行监控摘要",
 				Scope:       "GET /settings/monitoring",
 				Protection:  "只返回进程健康和内存指标",
 				APIExposure: "不返回任何连接串或密钥",
-				Configured:   true,
+				Configured:  true,
 			},
 		},
 		OperationalNotes: []string{
@@ -288,6 +292,86 @@ func BuildRateLimitAuditSummary(cfg config.Config) RateLimitAuditSummary {
 			"登录和注册按 IP 限流，租户级 API 按租户和用户双维度限流。",
 			"Redis 限流异常时回退内存计数，保障接口可用性；内存限流适合单实例或本地环境。",
 			"审计日志按 tenant_id 隔离，管理台支持筛选、分页和 CSV 导出。",
+		},
+	}
+}
+
+func BuildVectorSearchSummary(cfg config.Config) VectorSearchSummary {
+	provider := normalizedProvider(cfg.EmbeddingProvider, "local")
+	model := strings.TrimSpace(cfg.EmbeddingModel)
+	if model == "" {
+		model = "local-hash-1536"
+	}
+
+	return VectorSearchSummary{
+		Status:             "ready",
+		EmbeddingProvider:  provider,
+		EmbeddingModel:     model,
+		EmbeddingDimension: 1536,
+		IndexProfile: VectorIndexProfileSummary{
+			Extension:       "pgvector",
+			IndexMethod:     "HNSW",
+			HNSWEFSearch:    80,
+			VectorWeight:    0.72,
+			TextWeight:      0.28,
+			DefaultTopK:     5,
+			DefaultMinScore: 0.20,
+		},
+		IsolationChecks: []VectorSearchCheck{
+			{
+				Name:        "租户隔离",
+				Status:      "covered",
+				Description: "检索、Chunk 查询和向量写入均要求 tenant_id 参与过滤。",
+			},
+			{
+				Name:        "知识库隔离",
+				Status:      "covered",
+				Description: "检索请求必须绑定 knowledge_base_id，避免跨知识库返回资料。",
+			},
+			{
+				Name:        "删除态过滤",
+				Status:      "covered",
+				Description: "文档、Chunk 和知识库查询默认排除 deleted_at 不为空的数据。",
+			},
+		},
+		RetrievalChecks: []VectorSearchCheck{
+			{
+				Name:        "向量维度",
+				Status:      "covered",
+				Description: "知识库和 Chunk 写入统一使用 1536 维 embedding。",
+			},
+			{
+				Name:        "混合检索",
+				Status:      "covered",
+				Description: "向量相似度与全文检索按权重融合，并受 top_k、candidate_k、min_score 控制。",
+			},
+			{
+				Name:        "检索日志",
+				Status:      "covered",
+				Description: "检索请求写入 vector_search_logs，记录租户、知识库、查询文本和召回参数。",
+			},
+		},
+		OperationsChecks: []VectorSearchCheck{
+			{
+				Name:        "索引迁移",
+				Status:      "covered",
+				Description: "迁移脚本创建 pgvector 扩展、HNSW 索引和 vector_index_profiles 默认配置。",
+			},
+			{
+				Name:        "批量导入维护",
+				Status:      "manual",
+				Description: "大批量导入后建议执行 ANALYZE document_chunks 刷新统计信息。",
+			},
+			{
+				Name:        "慢查询观察",
+				Status:      "manual",
+				Description: "生产环境可结合 PostgreSQL 慢查询日志和检索日志观察召回耗时。",
+			},
+		},
+		OperationalNotes: []string{
+			"该摘要只返回检索能力和运维检查项，不返回数据库连接串、模型 API Key 或原始向量内容。",
+			"当前版本以 pgvector HNSW 为默认向量索引，后续多实例压测可继续调优 hnsw_ef_search 与候选集规模。",
+			"如切换外部 Embedding Provider，应保持模型输出维度与知识库 embedding_dim 一致。",
 		},
 	}
 }

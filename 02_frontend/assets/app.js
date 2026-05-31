@@ -39,6 +39,7 @@ const state = {
   monitoringSnapshot: null,
   sensitiveFieldSummary: null,
   rateLimitAuditSummary: null,
+  vectorSearchSummary: null,
   members: [],
   rolePermissions: null,
   auditLogs: [],
@@ -219,6 +220,7 @@ function renderShell() {
   renderRuntimeSummary();
   renderSensitiveFieldSummary();
   renderRateLimitAuditSummary();
+  renderVectorSearchSummary();
 }
 
 function renderMetrics() {
@@ -703,6 +705,60 @@ function renderRateLimitAuditSummary(error = "") {
     <article>
       <strong>闭环说明</strong>
       <span>${escapeHtml((item.notes || []).join("；") || "-")}</span>
+    </article>
+  `;
+}
+
+function renderVectorSearchSummary(error = "") {
+  const el = $("#vectorSearchSummaryGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.vectorSearchSummary;
+  if (!item) {
+    el.innerHTML = `<article><strong>向量检索健康</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const profile = item.index_profile || {};
+  const checkCards = [
+    ...(item.isolation_checks || []).map((entry) => ({ ...entry, group: "隔离校验" })),
+    ...(item.retrieval_checks || []).map((entry) => ({ ...entry, group: "检索链路" })),
+    ...(item.operations_checks || []).map((entry) => ({ ...entry, group: "运维检查" })),
+  ].map((entry) => `
+    <article>
+      <strong>${escapeHtml(entry.group)} · ${escapeHtml(entry.name || "-")}</strong>
+      <span>${escapeHtml(entry.status === "covered" ? "已覆盖" : entry.status === "manual" ? "需人工巡检" : entry.status || "未知")}</span>
+      <span>${escapeHtml(entry.description || "-")}</span>
+    </article>
+  `);
+  el.innerHTML = `
+    <article>
+      <strong>检索状态</strong>
+      <span>${escapeHtml(item.status === "ready" ? "已就绪" : item.status || "未知")}；${escapeHtml(item.embedding_provider || "local")} / ${escapeHtml(item.embedding_model || "-")}</span>
+    </article>
+    <article>
+      <strong>向量维度</strong>
+      <span>${Number(item.embedding_dimension || 0).toLocaleString()} 维，知识库写入与检索保持一致</span>
+    </article>
+    <article>
+      <strong>索引配置</strong>
+      <span>${escapeHtml(profile.extension || "pgvector")} ${escapeHtml(profile.index_method || "HNSW")}；ef_search ${Number(profile.hnsw_ef_search || 0).toLocaleString()}</span>
+    </article>
+    <article>
+      <strong>召回权重</strong>
+      <span>向量 ${Number(profile.vector_weight || 0).toFixed(2)} / 全文 ${Number(profile.text_weight || 0).toFixed(2)}；TopK ${Number(profile.default_top_k || 0).toLocaleString()}；最低分 ${Number(profile.default_min_score || 0).toFixed(2)}</span>
+    </article>
+    ${checkCards.join("")}
+    <article>
+      <strong>运维说明</strong>
+      <span>${escapeHtml((item.operational_notes || []).join("；") || "-")}</span>
     </article>
   `;
 }
@@ -1857,6 +1913,11 @@ async function loadRateLimitAuditSummary() {
   renderRateLimitAuditSummary();
 }
 
+async function loadVectorSearchSummary() {
+  state.vectorSearchSummary = await api("/settings/vector-search", { tenant: false });
+  renderVectorSearchSummary();
+}
+
 async function loadOrders() {
   if (!state.tenantId) return;
   const data = await api("/orders");
@@ -2246,6 +2307,7 @@ async function refreshAll() {
     loadMonitoringSnapshot(),
     loadSensitiveFieldSummary(),
     loadRateLimitAuditSummary(),
+    loadVectorSearchSummary(),
     loadMembers(),
     loadRolePermissions(),
     loadAuditLogs(),
@@ -2311,6 +2373,7 @@ function bindEvents() {
       loadMonitoringSnapshot(),
       loadSensitiveFieldSummary(),
       loadRateLimitAuditSummary(),
+      loadVectorSearchSummary(),
       loadMembers(),
       loadRolePermissions(),
       loadAuditLogs(),
@@ -2386,6 +2449,9 @@ function bindEvents() {
   });
   $("#loadRateLimitAuditSummaryBtn").addEventListener("click", () => {
     loadRateLimitAuditSummary().then(() => toast("限流与审计闭环摘要已刷新")).catch((err) => renderRateLimitAuditSummary(err.message));
+  });
+  $("#loadVectorSearchSummaryBtn").addEventListener("click", () => {
+    loadVectorSearchSummary().then(() => toast("向量检索健康摘要已刷新")).catch((err) => renderVectorSearchSummary(err.message));
   });
 
   $("#kbForm").addEventListener("submit", async (event) => {

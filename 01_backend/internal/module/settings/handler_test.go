@@ -296,3 +296,64 @@ func TestRateLimitAuditSummaryHandlerReturnsUnifiedResponseWithoutRedisSecret(t 
 		}
 	}
 }
+
+func TestBuildVectorSearchSummaryIncludesIsolationAndIndexChecks(t *testing.T) {
+	summary := BuildVectorSearchSummary(config.Config{
+		EmbeddingProvider: " openai_compatible ",
+		EmbeddingModel:    "text-embedding-3-small",
+		EmbeddingAPIKey:   "embedding-secret",
+		DatabaseDSN:       "postgres://mu:secret@localhost/db",
+	})
+
+	if summary.Status != "ready" || summary.EmbeddingProvider != "openai_compatible" {
+		t.Fatalf("unexpected vector search summary: %#v", summary)
+	}
+	if summary.EmbeddingDimension != 1536 || summary.IndexProfile.Extension != "pgvector" || summary.IndexProfile.IndexMethod != "HNSW" {
+		t.Fatalf("unexpected index profile: %#v", summary.IndexProfile)
+	}
+	if len(summary.IsolationChecks) < 3 || len(summary.RetrievalChecks) < 3 || len(summary.OperationsChecks) < 3 {
+		t.Fatalf("expected complete vector checks: %#v", summary)
+	}
+	foundTenantIsolation := false
+	foundSearchLog := false
+	for _, item := range summary.IsolationChecks {
+		if item.Name == "租户隔离" && item.Status == "covered" {
+			foundTenantIsolation = true
+		}
+	}
+	for _, item := range summary.RetrievalChecks {
+		if item.Name == "检索日志" && item.Status == "covered" {
+			foundSearchLog = true
+		}
+	}
+	if !foundTenantIsolation || !foundSearchLog {
+		t.Fatalf("expected tenant isolation and search log checks: %#v %#v", summary.IsolationChecks, summary.RetrievalChecks)
+	}
+}
+
+func TestVectorSearchSummaryHandlerReturnsUnifiedResponseWithoutSecrets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	RegisterRoutes(r.Group("/api/v1"), NewHandler(config.Config{
+		DatabaseDSN:     "postgres://mu:secret@localhost/db",
+		EmbeddingModel:  "local-hash-1536",
+		EmbeddingAPIKey: "embedding-secret",
+	}))
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/settings/vector-search", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, want := range []string{`"code":0`, `"embedding_dimension":1536`, `"extension":"pgvector"`, `"index_method":"HNSW"`, `"租户隔离"`, `"检索日志"`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("response missing %s: %s", want, body)
+		}
+	}
+	for _, forbidden := range []string{"postgres://", "secret@localhost", "embedding-secret"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("response should not expose %s: %s", forbidden, body)
+		}
+	}
+}

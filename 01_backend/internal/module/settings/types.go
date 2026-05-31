@@ -53,13 +53,41 @@ type SensitiveFieldItem struct {
 	Scope       string `json:"scope"`
 	Protection  string `json:"protection"`
 	APIExposure string `json:"api_exposure"`
-	Configured   bool   `json:"configured"`
+	Configured  bool   `json:"configured"`
 }
 
 type RateLimitAuditSummary struct {
 	RateLimit RateLimitPolicy `json:"rate_limit"`
 	Audit     AuditCoverage   `json:"audit"`
 	Notes     []string        `json:"notes"`
+}
+
+type VectorSearchSummary struct {
+	Status             string                    `json:"status"`
+	EmbeddingProvider  string                    `json:"embedding_provider"`
+	EmbeddingModel     string                    `json:"embedding_model"`
+	EmbeddingDimension int                       `json:"embedding_dimension"`
+	IndexProfile       VectorIndexProfileSummary `json:"index_profile"`
+	IsolationChecks    []VectorSearchCheck       `json:"isolation_checks"`
+	RetrievalChecks    []VectorSearchCheck       `json:"retrieval_checks"`
+	OperationsChecks   []VectorSearchCheck       `json:"operations_checks"`
+	OperationalNotes   []string                  `json:"operational_notes"`
+}
+
+type VectorIndexProfileSummary struct {
+	Extension       string  `json:"extension"`
+	IndexMethod     string  `json:"index_method"`
+	HNSWEFSearch    int     `json:"hnsw_ef_search"`
+	VectorWeight    float64 `json:"vector_weight"`
+	TextWeight      float64 `json:"text_weight"`
+	DefaultTopK     int     `json:"default_top_k"`
+	DefaultMinScore float64 `json:"default_min_score"`
+}
+
+type VectorSearchCheck struct {
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
 }
 
 type AuditCoverage struct {
