@@ -2,8 +2,11 @@ package workflow
 
 import (
 	"errors"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -211,4 +214,56 @@ func writeWorkflowError(c *gin.Context, err error) {
 		}
 		response.Error(c, http.StatusInternalServerError, 50045, err.Error())
 	}
+}
+
+// RunWorkflow 对指定工作流做一次 dry-run 模拟执行，并写入执行日志。
+func (h Handler) RunWorkflow(c *gin.Context) {
+	started := time.Now()
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	u, _ := auth.CurrentUser(c)
+	workflowID := c.Param("workflow_id")
+	wf, err := h.Repo.Get(c.Request.Context(), t.ID, workflowID)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	var body struct {
+		Input map[string]any `json:"input"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil && !errors.Is(err, io.EOF) {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	result := SimulateWorkflowRun(wf.Definition)
+	run, err := h.Repo.InsertWorkflowRun(c.Request.Context(), t.ID, workflowID, u.ID, result.Status, "dry_run", body.Input, result.Steps, int(time.Since(started).Milliseconds()))
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	response.OK(c, gin.H{
+		"run":                    run,
+		"execution_order":        result.ExecutionOrder,
+		"awaiting_approval_node": result.AwaitingApprovalNode,
+		"issues":                 result.Issues,
+	})
+}
+
+// ListWorkflowRuns 返回指定工作流的运行记录（执行日志）。
+func (h Handler) ListWorkflowRuns(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	items, err := h.Repo.ListWorkflowRuns(c.Request.Context(), t.ID, c.Param("workflow_id"), limit)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"items": items})
 }

@@ -52,6 +52,8 @@
 | POST | /workflows | 创建工作流定义，写入前做图结构校验 | tenant writer |
 | PUT | /workflows/{workflow_id} | 更新工作流定义，已发布更新后回到草稿并递增版本 | tenant writer |
 | POST | /workflows/{workflow_id}/publish | 发布工作流，发布前必须通过图结构校验 | tenant writer |
+| POST | /workflows/{workflow_id}/run | 工作流 dry-run 试运行，按拓扑顺序模拟执行并写入执行日志，不执行真实动作 | tenant writer |
+| GET | /workflows/{workflow_id}/runs | 工作流运行记录（执行日志）列表 | tenant |
 | DELETE | /workflows/{workflow_id} | 归档（软删除）工作流 | tenant writer |
 | GET | /plugins | 插件市场目录，合并当前租户启用状态与市场安全策略 | tenant |
 | POST | /plugins/{plugin_code}/enable | 启用内置插件（仅 active 插件可启用） | tenant writer |
@@ -1078,3 +1080,13 @@ P1「工作流」第二增量，引入工作流定义持久化，镜像 Agent �
 - `DELETE /workflows/{workflow_id}`：归档（软删除）。
 
 所有写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`code` 在租户内唯一，重复创建返回 409。配套新增 `000023_workflows` 迁移（含 down 回滚）。管理台“工作流编排”面板新增“工作流定义”列表与创建表单，支持一键发布/归档。后续增量将基于已发布定义接入执行引擎与执行日志（`workflow_runs`）。
+
+
+## 2026-05-31 增量：工作流执行引擎（dry-run 模拟）与执行日志
+
+P1「工作流」第三增量，引入安全的 dry-run 执行引擎与执行日志，当前版本不执行任何真实节点动作。新增 `workflow_runs` 表存储执行日志。
+
+- `POST /workflows/{workflow_id}/run`：对工作流做一次 dry-run 模拟执行。先做图结构校验，校验不通过整体返回 `blocked`；否则按拓扑顺序遍历节点生成步骤：`llm`/`tool` 节点标记为 `simulated`（已模拟，不真实调用），控制节点标记为 `passed`，遇 `human_approval` 节点标记 `awaiting_approval` 并暂停，其后节点标记 `pending`。整体状态为 `completed_dry_run` 或 `awaiting_approval`。请求体可选 `{input:{...}}`。每次运行写入 `workflow_runs`，记录 status、mode、input、steps、cost_ms。
+- `GET /workflows/{workflow_id}/runs`：返回该工作流的运行记录（执行日志），按时间倒序，默认 20 条、最大 100。
+
+两个接口都按当前 `X-Tenant-ID` 租户隔离；`run` 走 `RequireTenantWriter`。`run` 复用 `Get`（已排除归档工作流），因此草稿与已发布工作流均可 dry-run。后续接入真实执行引擎时，`tool`/`llm` 节点将遵循既有工具安全策略与插件启用状态，`human_approval` 节点对接真实人工确认，失败/拒绝/确认均写入审计。管理台“工作流编排”面板的工作流定义列表新增“试运行”按钮，并新增“运行记录（执行日志）”展示区，用中文展示状态与各步骤。
