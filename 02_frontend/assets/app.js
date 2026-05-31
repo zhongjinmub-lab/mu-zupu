@@ -1571,6 +1571,32 @@ async function exportAgentGenealogy() {
   URL.revokeObjectURL(objectURL);
 }
 
+async function exportAnalyticsSummary() {
+  if (!state.tenantId) return;
+  const url = `${state.apiBase}/analytics/summary/export`;
+  const headers = {};
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  if (state.tenantId) headers["X-Tenant-ID"] = state.tenantId;
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    let message = `导出失败：HTTP ${response.status}`;
+    try {
+      const payload = await response.json();
+      message = payload.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const blob = await response.blob();
+  const objectURL = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectURL;
+  link.download = `analytics-summary-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "")}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectURL);
+}
+
 async function exportWebhookDeliveries() {
   if (!state.tenantId) return;
   webhookDeliveryFiltersFromForm();
@@ -2320,6 +2346,7 @@ function bindEvents() {
   $("#loadPaymentsBtn").addEventListener("click", () => loadPayments().catch((err) => toast(err.message)));
   $("#loadPaymentEventsBtn").addEventListener("click", () => loadPaymentEvents().catch((err) => toast(err.message)));
   $("#loadAnalyticsBtn").addEventListener("click", () => loadAnalytics().then(() => toast("分析已刷新")).catch((err) => toast(err.message)));
+  $("#exportAnalyticsSummaryBtn").addEventListener("click", () => exportAnalyticsSummary().then(() => toast("分析摘要已导出")).catch((err) => toast(err.message)));
   $("#loadMembersBtn").addEventListener("click", () => loadMembers().catch((err) => toast(err.message)));
   $("#loadInvitationsBtn").addEventListener("click", () => loadInvitations().catch((err) => toast(err.message)));
   $("#loadWebhooksBtn").addEventListener("click", () => loadWebhooks().catch((err) => toast(err.message)));

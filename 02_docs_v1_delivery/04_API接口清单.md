@@ -49,6 +49,7 @@
 | POST | /payments/{payment_id}/query | 查询当前租户支付单 | tenant |
 | POST | /payment-callbacks/{channel} | mock 支付回调 | tenant |
 | GET | /analytics/summary | 当前租户统计汇总，包含资源、经营、智能体族谱、用量趋势、最近操作和风险 | tenant |
+| GET | /analytics/summary/export | 导出当前租户统计汇总 CSV，包含资源、经营、智能体族谱、用量趋势、风险和最近操作 | tenant |
 | GET | /licenses | 当前租户 License 列表 | tenant |
 | POST | /licenses | 创建当前租户 License | tenant |
 | POST | /licenses/{license_id}/verify | 验证当前租户 License 离线签名和状态 | tenant |
@@ -768,3 +769,27 @@ CSV 字段：
 | `relation_types` | 按 `fork`、`inherit`、`compose`、`route` 等关系类型聚合的数量 |
 
 管理台“数据分析面板”已新增“智能体族谱结构”区域，展示节点、关系、根节点、孤立节点和关系类型分布。所有结果使用中文摘要展示，不新增黑色 JSON 原文区域。
+
+## 2026-05-31 增量：数据分析摘要 CSV 导出
+
+`GET /analytics/summary/export` 用于导出当前租户的数据分析摘要，返回 `text/csv` 文件。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | tenant |
+| 租户隔离 | 固定使用当前 `X-Tenant-ID`，只导出当前租户统计 |
+| 导出范围 | 资源结构、经营指标、智能体族谱结构、用量趋势、风险和最近操作 |
+
+CSV 字段：
+
+| 字段 | 说明 |
+|---|---|
+| `section` | 统计分区，例如 `resource`、`business`、`genealogy`、`usage_trend`、`risk`、`recent_action` |
+| `name` | 中文指标名称或操作名称 |
+| `status` | 状态、风险等级或补充信息 |
+| `quantity` | 数量或金额 |
+| `unit` | 单位 |
+| `occurred_at` | 用量趋势日期或最近操作发生时间，可为空 |
+| `generated_at` | 本次统计生成时间 |
+
+管理台“数据分析面板”已新增“导出 CSV”按钮，点击后直接下载分析摘要文件，不展示黑色 JSON 原文区域。
