@@ -170,6 +170,14 @@ func (r Repository) listDeliveries(ctx context.Context, query DeliveryQuery) ([]
 		args = append(args, query.Status)
 		filters = append(filters, fmt.Sprintf("status = $%d", len(args)))
 	}
+	if !query.From.IsZero() {
+		args = append(args, query.From)
+		filters = append(filters, fmt.Sprintf("created_at >= $%d", len(args)))
+	}
+	if !query.To.IsZero() {
+		args = append(args, query.To)
+		filters = append(filters, fmt.Sprintf("created_at <= $%d", len(args)))
+	}
 	args = append(args, query.Limit)
 	limitArg := len(args)
 	q := `

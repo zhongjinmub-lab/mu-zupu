@@ -55,6 +55,8 @@ type DeliveryQuery struct {
 	EndpointID string
 	EventType  string
 	Status     string
+	From       time.Time
+	To         time.Time
 	Limit      int
 }
 
@@ -181,6 +183,9 @@ func (q DeliveryQuery) Validate() error {
 	}
 	if q.Status != "" && q.Status != "success" && q.Status != "failed" {
 		return errors.New("status must be success or failed")
+	}
+	if !q.From.IsZero() && !q.To.IsZero() && q.From.After(q.To) {
+		return errors.New("from must be before to")
 	}
 	return nil
 }

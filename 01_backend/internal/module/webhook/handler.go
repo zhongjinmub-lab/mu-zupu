@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -119,12 +120,24 @@ func (h Handler) ListDeliveries(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
+	from, err := parseDeliveryTime(c.Query("from"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, "from must be RFC3339 or YYYY-MM-DD")
+		return
+	}
+	to, err := parseDeliveryTime(c.Query("to"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, "to must be RFC3339 or YYYY-MM-DD")
+		return
+	}
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	query := DeliveryQuery{
 		TenantID:   t.ID,
 		EndpointID: c.Query("endpoint_id"),
 		EventType:  c.Query("event_type"),
 		Status:     c.Query("status"),
+		From:       from,
+		To:         to,
 		Limit:      limit,
 	}
 	query.Normalize()
@@ -160,12 +173,24 @@ func (h Handler) ExportDeliveries(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
 		return
 	}
+	from, err := parseDeliveryTime(c.Query("from"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, "from must be RFC3339 or YYYY-MM-DD")
+		return
+	}
+	to, err := parseDeliveryTime(c.Query("to"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, "to must be RFC3339 or YYYY-MM-DD")
+		return
+	}
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "1000"))
 	query := DeliveryQuery{
 		TenantID:   t.ID,
 		EndpointID: c.Query("endpoint_id"),
 		EventType:  c.Query("event_type"),
 		Status:     c.Query("status"),
+		From:       from,
+		To:         to,
 		Limit:      limit,
 	}
 	query.NormalizeForExport()
@@ -240,6 +265,20 @@ func jsonMapString(value map[string]any) string {
 		return "{}"
 	}
 	return string(b)
+}
+
+func parseDeliveryTime(raw string) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return time.Time{}, nil
+	}
+	if t, err := time.Parse(time.RFC3339Nano, raw); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse("2006-01-02", raw); err == nil {
+		return t, nil
+	}
+	return time.Time{}, errors.New("invalid time")
 }
 
 func writeWebhookError(c *gin.Context, err error) {

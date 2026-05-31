@@ -140,3 +140,38 @@ func TestDeliveryQueryNormalizeForExportAllowsLargerLimit(t *testing.T) {
 		t.Fatalf("expected export limit capped at 1000, got %d", query.Limit)
 	}
 }
+
+func TestDeliveryQueryValidateTimeRange(t *testing.T) {
+	query := DeliveryQuery{
+		TenantID: "tenant-1",
+		From:     time.Date(2026, 5, 31, 10, 0, 0, 0, time.UTC),
+		To:       time.Date(2026, 5, 31, 9, 0, 0, 0, time.UTC),
+	}
+	if err := query.Validate(); err == nil {
+		t.Fatal("expected invalid time range")
+	}
+	query.To = query.From.Add(time.Hour)
+	if err := query.Validate(); err != nil {
+		t.Fatalf("expected valid time range, got %v", err)
+	}
+}
+
+func TestParseDeliveryTimeSupportsDateAndRFC3339(t *testing.T) {
+	day, err := parseDeliveryTime("2026-05-31")
+	if err != nil {
+		t.Fatalf("parse date: %v", err)
+	}
+	if day.Year() != 2026 || day.Month() != 5 || day.Day() != 31 {
+		t.Fatalf("unexpected date: %s", day)
+	}
+	instant, err := parseDeliveryTime("2026-05-31T10:20:30Z")
+	if err != nil {
+		t.Fatalf("parse rfc3339: %v", err)
+	}
+	if instant.Hour() != 10 || instant.Minute() != 20 {
+		t.Fatalf("unexpected instant: %s", instant)
+	}
+	if _, err := parseDeliveryTime("bad-time"); err == nil {
+		t.Fatal("expected invalid time")
+	}
+}

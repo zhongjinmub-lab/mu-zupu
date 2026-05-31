@@ -48,6 +48,8 @@ const state = {
     endpoint_id: "",
     event_type: "",
     status: "",
+    from: "",
+    to: "",
     limit: "50",
   },
 };
@@ -1480,6 +1482,8 @@ function webhookDeliveryFiltersFromForm() {
     endpoint_id: data.endpoint_id || "",
     event_type: data.event_type || "",
     status: data.status || "",
+    from: data.from ? new Date(data.from).toISOString() : "",
+    to: data.to ? new Date(`${data.to}T23:59:59.999`).toISOString() : "",
     limit: data.limit || "50",
   };
   return state.webhookDeliveryFilters;
@@ -2105,6 +2109,8 @@ function bindEvents() {
       endpoint_id: "",
       event_type: "",
       status: "",
+      from: "",
+      to: "",
       limit: "50",
     };
     const form = $("#webhookDeliveryFilterForm");

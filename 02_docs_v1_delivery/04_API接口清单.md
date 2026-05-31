@@ -462,6 +462,8 @@ Generation provider 配置：
 | `endpoint_id` | Webhook 配置 ID，可选，必须是合法 UUID |
 | `event_type` | 事件类型，可选，例如 `order.paid`、`license.activated` |
 | `status` | 投递状态，可选，支持 `success`、`failed` |
+| `from` | 创建时间起点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
+| `to` | 创建时间终点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
 | `limit` | 返回数量，默认 50，最大 200 |
 
 管理台 Webhook 页面已增加投递记录筛选栏，可按 Webhook、事件类型、状态和数量查看中文摘要结果。
@@ -586,11 +588,24 @@ Generation provider 配置：
 | `endpoint_id` | Webhook 配置 ID，可选，必须是合法 UUID |
 | `event_type` | 事件类型，可选，例如 `webhook.test`、`order.paid` |
 | `status` | 投递状态，可选，支持 `success`、`failed` |
+| `from` | 创建时间起点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
+| `to` | 创建时间终点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
 | `limit` | 导出数量，默认 1000，最大 1000 |
 
 导出字段包括：投递 ID、租户 ID、Webhook ID、事件类型、目标地址、状态、HTTP 状态、耗时、重试次数、下次重试时间、最近尝试时间、错误信息、响应摘要、请求体和创建时间。
 
 管理台 Webhook 投递记录区已新增“导出 CSV”按钮，导出时使用当前筛选条件，不展示黑色 JSON 原文区域。
+
+## 2026-05-31 增量：Webhook 投递记录时间范围筛选
+
+`GET /webhook-deliveries` 和 `GET /webhook-deliveries/export` 已支持按创建时间范围筛选。
+
+| 参数 | 说明 |
+|---|---|
+| `from` | 创建时间起点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
+| `to` | 创建时间终点，可选，支持 RFC3339 或 `YYYY-MM-DD` |
+
+当同时传入 `from` 和 `to` 时，服务端会校验起点不能晚于终点。管理台 Webhook 投递记录筛选栏已增加“开始日期”“结束日期”，列表刷新和 CSV 导出均复用该日期范围。
 
 ## 2026-05-31 增量：Agent SSE 管理台体验增强
 
