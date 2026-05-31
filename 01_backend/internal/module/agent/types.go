@@ -42,8 +42,22 @@ type GenealogyEdge struct {
 }
 
 type GenealogyGraph struct {
-	Nodes []GenealogyNode `json:"nodes"`
-	Edges []GenealogyEdge `json:"edges"`
+	Nodes   []GenealogyNode       `json:"nodes"`
+	Edges   []GenealogyEdge       `json:"edges"`
+	Summary GenealogyGraphSummary `json:"summary"`
+}
+
+type GenealogyGraphSummary struct {
+	Nodes         int64                    `json:"nodes"`
+	Edges         int64                    `json:"edges"`
+	Roots         int64                    `json:"roots"`
+	Isolated      int64                    `json:"isolated"`
+	RelationTypes []GenealogyRelationCount `json:"relation_types"`
+}
+
+type GenealogyRelationCount struct {
+	RelationType string `json:"relation_type"`
+	Count        int64  `json:"count"`
 }
 
 type GenealogyGraphQuery struct {

@@ -878,11 +878,16 @@ function renderAgentGenealogy(error = "") {
   const filters = [];
   if (state.agentGenealogyFilters.q) filters.push(`关键词：${state.agentGenealogyFilters.q}`);
   if (state.agentGenealogyFilters.relation_type) filters.push(`关系：${relationLabel(state.agentGenealogyFilters.relation_type)}`);
-  const roots = nodes.filter((node) => !edges.some((edge) => edge.child_agent_id === node.id && edge.parent_agent_id));
+  const summary = state.agentGenealogy.summary || {};
+  const relationSummary = (summary.relation_types || [])
+    .map((item) => `${relationLabel(item.relation_type)} ${Number(item.count || 0).toLocaleString()}`)
+    .join(" / ");
   summaryEl.innerHTML = `
-    <article><strong>${nodes.length.toLocaleString()}</strong><span>智能体节点</span></article>
-    <article><strong>${edges.length.toLocaleString()}</strong><span>族谱关系</span></article>
-    <article><strong>${roots.length.toLocaleString()}</strong><span>根节点</span></article>
+    <article><strong>${Number(summary.nodes ?? nodes.length).toLocaleString()}</strong><span>智能体节点</span></article>
+    <article><strong>${Number(summary.edges ?? edges.length).toLocaleString()}</strong><span>族谱关系</span></article>
+    <article><strong>${Number(summary.roots || 0).toLocaleString()}</strong><span>根节点</span></article>
+    <article><strong>${Number(summary.isolated || 0).toLocaleString()}</strong><span>孤立节点</span></article>
+    <article><strong>${relationSummary ? "有分布" : "无关系"}</strong><span>${escapeHtml(relationSummary || "暂无关系类型")}</span></article>
     <article><strong>${filters.length ? "已筛选" : "全部"}</strong><span>${escapeHtml(filters.join(" / ") || "当前范围")}</span></article>
   `;
   graphEl.innerHTML = nodes.map((node, index) => {

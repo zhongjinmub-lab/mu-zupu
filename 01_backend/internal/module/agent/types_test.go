@@ -102,6 +102,43 @@ func TestGenealogyGraphQueryNormalizeAndValidate(t *testing.T) {
 	}
 }
 
+func TestBuildGenealogyGraphSummary(t *testing.T) {
+	nodes := []GenealogyNode{
+		{ID: "root"},
+		{ID: "child"},
+		{ID: "route"},
+		{ID: "isolated"},
+	}
+	edges := []GenealogyEdge{
+		{ParentAgentID: "root", ChildAgentID: "child", RelationType: "fork"},
+		{ParentAgentID: "child", ChildAgentID: "route", RelationType: "route"},
+	}
+
+	summary := buildGenealogyGraphSummary(nodes, edges)
+	if summary.Nodes != 4 || summary.Edges != 2 || summary.Roots != 2 || summary.Isolated != 1 {
+		t.Fatalf("unexpected summary = %#v", summary)
+	}
+	if len(summary.RelationTypes) != 2 {
+		t.Fatalf("unexpected relation type count = %#v", summary.RelationTypes)
+	}
+	if summary.RelationTypes[0].RelationType != "fork" || summary.RelationTypes[0].Count != 1 {
+		t.Fatalf("unexpected first relation count = %#v", summary.RelationTypes[0])
+	}
+	if summary.RelationTypes[1].RelationType != "route" || summary.RelationTypes[1].Count != 1 {
+		t.Fatalf("unexpected second relation count = %#v", summary.RelationTypes[1])
+	}
+}
+
+func TestBuildGenealogyGraphSummaryRootMarkerIsNotIsolated(t *testing.T) {
+	nodes := []GenealogyNode{{ID: "root"}}
+	edges := []GenealogyEdge{{ChildAgentID: "root", RelationType: "fork"}}
+
+	summary := buildGenealogyGraphSummary(nodes, edges)
+	if summary.Roots != 1 || summary.Isolated != 0 {
+		t.Fatalf("root marker summary = %#v", summary)
+	}
+}
+
 func TestTestChatRequestNormalizeAndValidate(t *testing.T) {
 	req := TestChatRequest{Message: " hello ", KnowledgeBaseID: " kb-1 ", TopK: 99, CandidateK: 1, MinScore: -1, MaxTokens: 9000, Temperature: 9}
 	req.Normalize()

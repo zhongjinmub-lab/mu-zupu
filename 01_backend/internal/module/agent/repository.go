@@ -170,7 +170,55 @@ ORDER BY g.created_at ASC`
 		return GenealogyGraph{}, err
 	}
 
-	return GenealogyGraph{Nodes: nodes, Edges: edges}, nil
+	summary := buildGenealogyGraphSummary(nodes, edges)
+	return GenealogyGraph{Nodes: nodes, Edges: edges, Summary: summary}, nil
+}
+
+func buildGenealogyGraphSummary(nodes []GenealogyNode, edges []GenealogyEdge) GenealogyGraphSummary {
+	hasParent := make(map[string]bool, len(nodes))
+	hasIncoming := make(map[string]bool, len(nodes))
+	hasChild := make(map[string]bool, len(nodes))
+	relationCounts := make(map[string]int64)
+	for _, edge := range edges {
+		hasIncoming[edge.ChildAgentID] = true
+		if edge.ParentAgentID != "" {
+			hasParent[edge.ChildAgentID] = true
+			hasChild[edge.ParentAgentID] = true
+		}
+		relationCounts[edge.RelationType]++
+	}
+
+	var roots int64
+	var isolated int64
+	for _, node := range nodes {
+		if !hasParent[node.ID] {
+			roots++
+		}
+		if !hasIncoming[node.ID] && !hasChild[node.ID] {
+			isolated++
+		}
+	}
+
+	relationTypes := make([]GenealogyRelationCount, 0, len(relationCounts))
+	for _, relationType := range []string{"fork", "inherit", "compose", "route"} {
+		count := relationCounts[relationType]
+		if count == 0 {
+			continue
+		}
+		relationTypes = append(relationTypes, GenealogyRelationCount{RelationType: relationType, Count: count})
+		delete(relationCounts, relationType)
+	}
+	for relationType, count := range relationCounts {
+		relationTypes = append(relationTypes, GenealogyRelationCount{RelationType: relationType, Count: count})
+	}
+
+	return GenealogyGraphSummary{
+		Nodes:         int64(len(nodes)),
+		Edges:         int64(len(edges)),
+		Roots:         roots,
+		Isolated:      isolated,
+		RelationTypes: relationTypes,
+	}
 }
 
 func (r Repository) CreateGenealogyEdge(ctx context.Context, tenantID string, req CreateGenealogyEdgeRequest) (GenealogyEdge, error) {
