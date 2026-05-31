@@ -137,6 +137,20 @@ func (h Handler) ListDeliveries(c *gin.Context) {
 	response.OK(c, gin.H{"items": items})
 }
 
+func (h Handler) DeliverySummary(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	item, err := h.Repo.DeliverySummary(c.Request.Context(), t.ID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 50092, err.Error())
+		return
+	}
+	response.OK(c, item)
+}
+
 func (h Handler) RetryDelivery(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {

@@ -41,6 +41,7 @@ const state = {
   },
   invitations: [],
   webhooks: [],
+  webhookDeliverySummary: null,
   webhookDeliveries: [],
   webhookDeliveryFilters: {
     endpoint_id: "",
@@ -1030,6 +1031,55 @@ function renderWebhookDeliveries() {
   }).join("") || empty("暂无投递记录");
 }
 
+function renderWebhookDeliverySummary(error = "") {
+  const el = $("#webhookDeliverySummaryGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.webhookDeliverySummary;
+  if (!item) {
+    el.innerHTML = `<article><strong>投递状态</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const total = Number(item.total || 0);
+  const success = Number(item.success || 0);
+  const failed = Number(item.failed || 0);
+  const rate = total > 0 ? `${Math.round((success / total) * 100)}%` : "暂无数据";
+  el.innerHTML = `
+    <article>
+      <strong>总投递</strong>
+      <span>${total.toLocaleString()} 次，成功率 ${escapeHtml(rate)}</span>
+    </article>
+    <article>
+      <strong>成功</strong>
+      <span>${success.toLocaleString()} 次已完成</span>
+    </article>
+    <article>
+      <strong>失败</strong>
+      <span>${failed.toLocaleString()} 次失败记录</span>
+    </article>
+    <article>
+      <strong>自动重试</strong>
+      <span>${Number(item.retry_scheduled || 0).toLocaleString()} 条已排队，${Number(item.retry_due || 0).toLocaleString()} 条已到期</span>
+    </article>
+    <article>
+      <strong>人工处理</strong>
+      <span>${Number(item.manual_review || 0).toLocaleString()} 条需要人工确认或手动重试</span>
+    </article>
+    <article>
+      <strong>最近尝试</strong>
+      <span>${escapeHtml(formatDateTime(item.last_attempt_at, "暂无投递"))}</span>
+    </article>
+  `;
+}
+
 async function loadTenants() {
   const data = await api("/tenants", { tenant: false });
   state.tenants = data.items || [];
@@ -1321,6 +1371,12 @@ async function loadWebhooks() {
   renderWebhooks();
 }
 
+async function loadWebhookDeliverySummary() {
+  if (!state.tenantId) return;
+  state.webhookDeliverySummary = await api("/webhook-deliveries/summary");
+  renderWebhookDeliverySummary();
+}
+
 async function loadWebhookDeliveries() {
   if (!state.tenantId) return;
   const data = await api(`/webhook-deliveries${webhookDeliveryQuery()}`);
@@ -1455,6 +1511,7 @@ async function refreshAll() {
     loadAuditLogs(),
     loadInvitations(),
     loadWebhooks(),
+    loadWebhookDeliverySummary(),
     loadWebhookDeliveries(),
   ]);
   renderShell();
@@ -1510,6 +1567,7 @@ function bindEvents() {
       loadAuditLogs(),
       loadInvitations(),
       loadWebhooks(),
+      loadWebhookDeliverySummary(),
       loadWebhookDeliveries(),
     ]);
     renderTenants();
@@ -1897,7 +1955,7 @@ function bindEvents() {
   $("#webhookDeliveryFilterForm").addEventListener("submit", (event) => {
     event.preventDefault();
     webhookDeliveryFiltersFromForm();
-    loadWebhookDeliveries().catch((err) => toast(err.message));
+    Promise.all([loadWebhookDeliverySummary(), loadWebhookDeliveries()]).catch((err) => toast(err.message));
   });
 
   $("#resetWebhookDeliveryFilterBtn").addEventListener("click", () => {
@@ -1910,7 +1968,7 @@ function bindEvents() {
     const form = $("#webhookDeliveryFilterForm");
     form.reset();
     form.elements.limit.value = "50";
-    loadWebhookDeliveries().catch((err) => toast(err.message));
+    Promise.all([loadWebhookDeliverySummary(), loadWebhookDeliveries()]).catch((err) => toast(err.message));
   });
 
   $("#loadKbsBtn").addEventListener("click", () => loadKbs().catch((err) => toast(err.message)));
@@ -1930,9 +1988,12 @@ function bindEvents() {
   $("#loadMembersBtn").addEventListener("click", () => loadMembers().catch((err) => toast(err.message)));
   $("#loadInvitationsBtn").addEventListener("click", () => loadInvitations().catch((err) => toast(err.message)));
   $("#loadWebhooksBtn").addEventListener("click", () => loadWebhooks().catch((err) => toast(err.message)));
+  $("#loadWebhookDeliverySummaryBtn").addEventListener("click", () => {
+    loadWebhookDeliverySummary().then(() => toast("投递摘要已刷新")).catch((err) => renderWebhookDeliverySummary(err.message));
+  });
   $("#loadWebhookDeliveriesBtn").addEventListener("click", () => {
     webhookDeliveryFiltersFromForm();
-    loadWebhookDeliveries().catch((err) => toast(err.message));
+    Promise.all([loadWebhookDeliverySummary(), loadWebhookDeliveries()]).catch((err) => toast(err.message));
   });
   $("#loadSubscriptionBtn").addEventListener("click", async () => {
     try {
@@ -2040,7 +2101,7 @@ function bindEvents() {
       }
       if (webhookTestId) {
         const delivery = await api(`/webhooks/${webhookTestId}/test`, { method: "POST", body: {} });
-        await loadWebhookDeliveries();
+        await Promise.allSettled([loadWebhookDeliverySummary(), loadWebhookDeliveries()]);
         toast(delivery.status === "success" ? "Webhook 测试发送成功" : "Webhook 测试发送失败");
       }
       if (webhookToggleId) {
@@ -2053,12 +2114,12 @@ function bindEvents() {
       if (webhookDeleteId) {
         if (!window.confirm("确认删除该 Webhook 配置？")) return;
         await api(`/webhooks/${webhookDeleteId}`, { method: "DELETE" });
-        await Promise.allSettled([loadWebhooks(), loadWebhookDeliveries()]);
+        await Promise.allSettled([loadWebhooks(), loadWebhookDeliverySummary(), loadWebhookDeliveries()]);
         toast("Webhook 已删除");
       }
       if (webhookDeliveryRetryId) {
         const delivery = await api(`/webhook-deliveries/${webhookDeliveryRetryId}/retry`, { method: "POST", body: {} });
-        await loadWebhookDeliveries();
+        await Promise.allSettled([loadWebhookDeliverySummary(), loadWebhookDeliveries()]);
         toast(delivery.status === "success" ? "Webhook 重试发送成功" : "Webhook 重试发送失败");
       }
       if (publishId) {

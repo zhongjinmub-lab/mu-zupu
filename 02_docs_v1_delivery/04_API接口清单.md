@@ -515,3 +515,29 @@ Generation provider 配置：
 ```
 
 管理台设置页已从静态说明改为读取该接口动态展示，展示内容为中文摘要，不展示黑色 JSON 原文区域。
+
+## 2026-05-31 增量：Webhook 投递状态摘要
+
+`GET /webhook-deliveries/summary` 已支持查询当前租户下 Webhook 投递聚合状态。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | tenant |
+| 租户隔离 | 固定使用当前 `X-Tenant-ID`，不接受客户端覆盖 `tenant_id` |
+| 返回内容 | 总投递、成功、失败、已排队重试、已到期重试、需要人工处理、最近尝试时间 |
+
+响应 `data` 示例：
+
+```json
+{
+  "total": 12,
+  "success": 9,
+  "failed": 3,
+  "retry_scheduled": 2,
+  "retry_due": 1,
+  "manual_review": 1,
+  "last_attempt_at": "2026-05-31T10:20:30Z"
+}
+```
+
+管理台 Webhook 页面已新增“投递状态摘要”，使用中文摘要卡片展示，不展示黑色 JSON 原文区域。

@@ -9,6 +9,7 @@ import (
 func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/webhooks", h.ListEndpoints)
 	rg.GET("/webhook-deliveries", h.ListDeliveries)
+	rg.GET("/webhook-deliveries/summary", h.DeliverySummary)
 
 	admin := rg.Group("")
 	admin.Use(tenant.RequireTenantAdmin())

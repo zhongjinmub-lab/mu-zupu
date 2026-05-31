@@ -187,6 +187,33 @@ LIMIT $` + fmt.Sprint(limitArg)
 	return items, rows.Err()
 }
 
+func (r Repository) DeliverySummary(ctx context.Context, tenantID string) (DeliverySummary, error) {
+	const q = `
+SELECT
+    COUNT(*)::int,
+    COUNT(*) FILTER (WHERE status = 'success')::int,
+    COUNT(*) FILTER (WHERE status = 'failed')::int,
+    COUNT(*) FILTER (WHERE status = 'failed' AND next_retry_at IS NOT NULL)::int,
+    COUNT(*) FILTER (WHERE status = 'failed' AND next_retry_at IS NOT NULL AND next_retry_at <= now())::int,
+    COUNT(*) FILTER (WHERE status = 'failed' AND next_retry_at IS NULL)::int,
+    MAX(last_attempt_at)
+FROM webhook_deliveries
+WHERE tenant_id = $1`
+	var item DeliverySummary
+	if err := r.DB.QueryRow(ctx, q, tenantID).Scan(
+		&item.Total,
+		&item.Success,
+		&item.Failed,
+		&item.RetryScheduled,
+		&item.RetryDue,
+		&item.ManualReview,
+		&item.LastAttemptAt,
+	); err != nil {
+		return DeliverySummary{}, err
+	}
+	return item, nil
+}
+
 func (r Repository) ClaimRetryJobs(ctx context.Context, limit int) ([]RetryJob, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20

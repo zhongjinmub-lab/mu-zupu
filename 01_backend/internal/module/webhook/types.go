@@ -58,6 +58,16 @@ type DeliveryQuery struct {
 	Limit      int
 }
 
+type DeliverySummary struct {
+	Total          int        `json:"total"`
+	Success        int        `json:"success"`
+	Failed         int        `json:"failed"`
+	RetryScheduled int        `json:"retry_scheduled"`
+	RetryDue       int        `json:"retry_due"`
+	ManualReview   int        `json:"manual_review"`
+	LastAttemptAt  *time.Time `json:"last_attempt_at,omitempty"`
+}
+
 type CreateEndpointRequest struct {
 	Name   string   `json:"name" binding:"required"`
 	URL    string   `json:"url" binding:"required"`
