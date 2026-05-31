@@ -739,3 +739,227 @@ func DefaultConversationOrchestrationPolicy() ConversationOrchestrationPolicy {
 		},
 	}
 }
+
+type MCPGatewayPolicy struct {
+	Enabled              bool            `json:"enabled"`
+	DefaultAction        string          `json:"default_action"`
+	PermissionRole       string          `json:"permission_role"`
+	AuditAction          string          `json:"audit_action"`
+	DangerConfirmation   bool            `json:"danger_confirmation"`
+	TransportSupport     []string        `json:"transport_support"`
+	AvailableServers     []MCPServerItem `json:"available_servers"`
+	DangerousServers     []MCPServerItem `json:"dangerous_servers"`
+	Guardrails           []string        `json:"guardrails"`
+	AgentPolicyHint      string          `json:"agent_policy_hint"`
+	FutureExecutionNotes []string        `json:"future_execution_notes"`
+}
+
+type MCPServerItem struct {
+	Code                 string   `json:"code"`
+	Name                 string   `json:"name"`
+	Transport            string   `json:"transport"`
+	Category             string   `json:"category"`
+	Status               string   `json:"status"`
+	Description          string   `json:"description"`
+	RequiresConfirmation bool     `json:"requires_confirmation"`
+	Capabilities         []string `json:"capabilities"`
+}
+
+type MCPCatalogItem struct {
+	Code                 string   `json:"code"`
+	Name                 string   `json:"name"`
+	Transport            string   `json:"transport"`
+	Category             string   `json:"category"`
+	Status               string   `json:"status"`
+	Description          string   `json:"description"`
+	Scope                string   `json:"scope"`
+	PermissionRole       string   `json:"permission_role"`
+	RequiresConfirmation bool     `json:"requires_confirmation"`
+	AuditAction          string   `json:"audit_action"`
+	Capabilities         []string `json:"capabilities"`
+	OperationalNotes     []string `json:"operational_notes"`
+}
+
+type MCPTestRequest struct {
+	Input map[string]any `json:"input"`
+}
+
+type MCPTestResult struct {
+	ServerCode           string   `json:"server_code"`
+	ServerName           string   `json:"server_name"`
+	Transport            string   `json:"transport"`
+	Status               string   `json:"status"`
+	Allowed              bool     `json:"allowed"`
+	DryRun               bool     `json:"dry_run"`
+	RequiresConfirmation bool     `json:"requires_confirmation"`
+	Message              string   `json:"message"`
+	InputSummary         string   `json:"input_summary"`
+	NextSteps            []string `json:"next_steps"`
+	AuditAction          string   `json:"audit_action"`
+}
+
+func DefaultMCPGatewayPolicy() MCPGatewayPolicy {
+	return MCPGatewayPolicy{
+		Enabled:            false,
+		DefaultAction:      "deny",
+		PermissionRole:     "tenant_writer",
+		AuditAction:        "agent.mcp.call",
+		DangerConfirmation: true,
+		TransportSupport:   []string{"stdio", "sse", "http"},
+		AvailableServers: []MCPServerItem{
+			{
+				Code:                 "kb_resource",
+				Name:                 "知识库资源服务",
+				Transport:            "sse",
+				Category:             "read",
+				Status:               "planned",
+				Description:          "以 MCP resources 暴露当前租户已授权知识库的只读片段。",
+				RequiresConfirmation: false,
+				Capabilities:         []string{"resources/list", "resources/read"},
+			},
+			{
+				Code:                 "agent_catalog",
+				Name:                 "Agent 工具目录服务",
+				Transport:            "http",
+				Category:             "read",
+				Status:               "planned",
+				Description:          "以 MCP tools 暴露当前租户 Agent 工具目录，仅支持 dry-run 调用。",
+				RequiresConfirmation: false,
+				Capabilities:         []string{"tools/list", "tools/call(dry-run)"},
+			},
+		},
+		DangerousServers: []MCPServerItem{
+			{
+				Code:                 "external_http",
+				Name:                 "外部 HTTP MCP 服务",
+				Transport:            "http",
+				Category:             "write",
+				Status:               "blocked",
+				Description:          "连接租户自定义的外部 MCP Server，首版默认禁止，防止 SSRF 和数据外泄。",
+				RequiresConfirmation: true,
+				Capabilities:         []string{"tools/call", "resources/read"},
+			},
+			{
+				Code:                 "local_stdio",
+				Name:                 "本地命令 MCP 服务",
+				Transport:            "stdio",
+				Category:             "admin",
+				Status:               "blocked",
+				Description:          "通过 stdio 启动本地进程执行命令，风险极高，默认阻断。",
+				RequiresConfirmation: true,
+				Capabilities:         []string{"tools/call"},
+			},
+		},
+		Guardrails: []string{
+			"MCP 网关默认关闭，未显式启用前不允许连接任何 MCP Server。",
+			"启用 MCP Server 时必须校验当前租户、当前用户角色和 Agent 绑定范围。",
+			"外部和本地命令类 MCP Server 必须先返回待确认状态，不能由模型直接连接。",
+			"所有 MCP 调用必须写入审计日志，记录 request_id、agent_id、server_code、入参摘要和结果状态。",
+		},
+		AgentPolicyHint: "mcp_policy 为空时按 deny 处理；显式启用前不允许模型自主连接外部 MCP Server。",
+		FutureExecutionNotes: []string{
+			"真实 MCP 网关上线后复用 tenant writer/admin 权限中间件。",
+			"MCP 入参和响应只保存摘要，敏感字段需要脱敏。",
+			"连接失败、拒绝和人工确认都需要进入审计日志。",
+			"外部 MCP Server 需要配置出站白名单，防止 SSRF 与数据外泄。",
+		},
+	}
+}
+
+func DefaultMCPServerCatalog() []MCPCatalogItem {
+	policy := DefaultMCPGatewayPolicy()
+	items := make([]MCPCatalogItem, 0, len(policy.AvailableServers)+len(policy.DangerousServers))
+	for _, server := range policy.AvailableServers {
+		items = append(items, mcpCatalogItemFromPolicy(server, policy))
+	}
+	for _, server := range policy.DangerousServers {
+		items = append(items, mcpCatalogItemFromPolicy(server, policy))
+	}
+	return items
+}
+
+func FindMCPCatalogItem(code string) (MCPCatalogItem, bool) {
+	code = strings.ToLower(strings.TrimSpace(code))
+	for _, item := range DefaultMCPServerCatalog() {
+		if item.Code == code {
+			return item, true
+		}
+	}
+	return MCPCatalogItem{}, false
+}
+
+func BuildMCPTestResult(item MCPCatalogItem, req MCPTestRequest) MCPTestResult {
+	summary := summarizeToolInput(req.Input)
+	if item.Status == "blocked" || item.RequiresConfirmation {
+		return MCPTestResult{
+			ServerCode:           item.Code,
+			ServerName:           item.Name,
+			Transport:            item.Transport,
+			Status:               "blocked",
+			Allowed:              false,
+			DryRun:               true,
+			RequiresConfirmation: item.RequiresConfirmation,
+			Message:              "MCP 连通性测试已被安全策略阻断，当前版本不会建立真实连接或执行外部动作。",
+			InputSummary:         summary,
+			NextSteps: []string{
+				"由租户管理员配置出站白名单并完成人工确认后再启用。",
+				"后续启用真实 MCP 网关前，需要补充人工确认和审计日志。",
+			},
+			AuditAction: item.AuditAction,
+		}
+	}
+	return MCPTestResult{
+		ServerCode:           item.Code,
+		ServerName:           item.Name,
+		Transport:            item.Transport,
+		Status:               "dry_run_ok",
+		Allowed:              true,
+		DryRun:               true,
+		RequiresConfirmation: item.RequiresConfirmation,
+		Message:              "MCP 连通性测试通过安全预检；当前版本仅返回 dry-run 摘要，不建立真实连接。",
+		InputSummary:         summary,
+		NextSteps: []string{
+			"可继续在 Agent 对话中使用 RAG 和知识库问答能力。",
+			"真实 MCP 网关上线后，将复用当前权限、审计和脱敏要求。",
+		},
+		AuditAction: item.AuditAction,
+	}
+}
+
+func mcpCatalogItemFromPolicy(server MCPServerItem, policy MCPGatewayPolicy) MCPCatalogItem {
+	permissionRole := policy.PermissionRole
+	if server.Category == "admin" {
+		permissionRole = "tenant_admin"
+	}
+	scope := "当前租户"
+	if server.Category == "read" {
+		scope = "当前租户已授权资源"
+	}
+	return MCPCatalogItem{
+		Code:                 server.Code,
+		Name:                 server.Name,
+		Transport:            server.Transport,
+		Category:             server.Category,
+		Status:               server.Status,
+		Description:          server.Description,
+		Scope:                scope,
+		PermissionRole:       permissionRole,
+		RequiresConfirmation: server.RequiresConfirmation,
+		AuditAction:          policy.AuditAction,
+		Capabilities:         server.Capabilities,
+		OperationalNotes:     mcpOperationalNotes(server),
+	}
+}
+
+func mcpOperationalNotes(server MCPServerItem) []string {
+	if server.Status == "blocked" {
+		return []string{
+			"当前版本默认阻断，不允许模型直接连接。",
+			"启用前必须加入出站白名单、人工确认、角色校验和审计记录。",
+		}
+	}
+	return []string{
+		"当前版本仅开放 dry-run 测试，不建立真实连接。",
+		"后续接入真实 MCP 网关时必须校验 Agent 绑定范围。",
+	}
+}

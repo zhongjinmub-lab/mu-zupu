@@ -275,3 +275,79 @@ func TestToolCallLogCursorDecodeRejectsInvalidCursor(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultMCPGatewayPolicyIsSafeByDefault(t *testing.T) {
+	policy := DefaultMCPGatewayPolicy()
+	if policy.Enabled {
+		t.Fatal("MCP gateway must be disabled by default")
+	}
+	if policy.DefaultAction != "deny" {
+		t.Fatalf("default action = %q, want deny", policy.DefaultAction)
+	}
+	if policy.AuditAction != "agent.mcp.call" {
+		t.Fatalf("audit action = %q", policy.AuditAction)
+	}
+	if !policy.DangerConfirmation {
+		t.Fatal("danger confirmation must be required")
+	}
+	if len(policy.AvailableServers) == 0 || len(policy.DangerousServers) == 0 {
+		t.Fatal("expected both available and dangerous servers")
+	}
+}
+
+func TestDefaultMCPServerCatalogHasUniqueCodes(t *testing.T) {
+	items := DefaultMCPServerCatalog()
+	if len(items) == 0 {
+		t.Fatal("expected non-empty MCP catalog")
+	}
+	seen := map[string]bool{}
+	for _, item := range items {
+		if item.Code == "" {
+			t.Fatal("catalog item missing code")
+		}
+		if seen[item.Code] {
+			t.Fatalf("duplicate MCP server code %q", item.Code)
+		}
+		seen[item.Code] = true
+		if item.AuditAction != "agent.mcp.call" {
+			t.Fatalf("catalog item %q audit action = %q", item.Code, item.AuditAction)
+		}
+	}
+}
+
+func TestFindMCPCatalogItem(t *testing.T) {
+	if _, ok := FindMCPCatalogItem("  KB_Resource "); !ok {
+		t.Fatal("expected to find kb_resource ignoring case and spaces")
+	}
+	if _, ok := FindMCPCatalogItem("does-not-exist"); ok {
+		t.Fatal("expected missing server to be not found")
+	}
+}
+
+func TestBuildMCPTestResultBlocksDangerousServer(t *testing.T) {
+	item, ok := FindMCPCatalogItem("external_http")
+	if !ok {
+		t.Fatal("external_http server should exist")
+	}
+	result := BuildMCPTestResult(item, MCPTestRequest{})
+	if result.Allowed || result.Status != "blocked" {
+		t.Fatalf("dangerous server result = %#v", result)
+	}
+	if !result.DryRun {
+		t.Fatal("result must be dry run")
+	}
+}
+
+func TestBuildMCPTestResultAllowsReadServer(t *testing.T) {
+	item, ok := FindMCPCatalogItem("kb_resource")
+	if !ok {
+		t.Fatal("kb_resource server should exist")
+	}
+	result := BuildMCPTestResult(item, MCPTestRequest{Input: map[string]any{"query": "hello"}})
+	if !result.Allowed || result.Status != "dry_run_ok" {
+		t.Fatalf("read server result = %#v", result)
+	}
+	if result.InputSummary == "" {
+		t.Fatal("expected input summary")
+	}
+}
