@@ -590,6 +590,32 @@ Generation provider 配置：
 
 管理台设置页已新增“运行配置摘要”，用中文卡片展示环境、上传上限、对象存储模式、模型 Provider、文档 Worker、Webhook Worker 和重试策略，不展示黑色 JSON 原文区域。
 
+## 2026-05-31 增量：运行监控只读摘要
+
+`GET /settings/monitoring` 用于返回当前后端进程的运行监控快照，供管理台设置页只读展示。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | user，需携带 `Authorization: Bearer <token>` |
+| 租户头 | 不强制 `X-Tenant-ID`，该接口返回当前服务进程指标 |
+| 敏感信息 | 不返回数据库 DSN、Redis 地址、MinIO 密钥、模型 API Key、JWT 密钥或 License 公钥原文 |
+
+响应 `data` 字段：
+
+| 字段 | 说明 |
+|---|---|
+| `status` | 进程状态，当前为 `ok` |
+| `checked_at` | 指标采集时间 |
+| `uptime_seconds` | 进程启动至今秒数 |
+| `goroutines` | 当前 goroutine 数量 |
+| `heap_alloc_mb` | 当前堆内存已分配 MB |
+| `heap_sys_mb` | 堆内存向系统申请 MB |
+| `heap_objects` | 当前堆对象数量 |
+| `gc_count` | 累计 GC 次数 |
+| `last_gc_ago_seconds` | 距离最近一次 GC 的秒数；无 GC 记录时为 `-1` |
+
+管理台设置页已新增“运行监控摘要”，用中文卡片展示进程状态、启动时长、goroutine、堆内存、堆对象和 GC 状态，不展示黑色 JSON 原文区域。
+
 ## 2026-05-31 增量：Webhook 投递记录 CSV 导出
 
 `GET /webhook-deliveries/export` 已支持按当前租户导出 Webhook 投递记录 CSV。

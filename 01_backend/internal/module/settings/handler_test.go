@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -120,6 +121,45 @@ func TestRuntimeSummaryHandlerReturnsUnifiedResponseWithoutSecrets(t *testing.T)
 	}
 	body := w.Body.String()
 	for _, want := range []string{`"code":0`, `"env":"dev"`, `"upload_max_mb":50`, `"storage_mode":"s3/minio http"`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("response missing %s: %s", want, body)
+		}
+	}
+	for _, forbidden := range []string{"secret", "postgres://", "embedding-secret", "generation-secret", "storage-secret"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("response should not expose %s: %s", forbidden, body)
+		}
+	}
+}
+
+func TestBuildMonitoringSnapshotReturnsRuntimeMetrics(t *testing.T) {
+	snapshot := BuildMonitoringSnapshot(processStartedAt.Add(2 * time.Hour))
+
+	if snapshot.Status != "ok" {
+		t.Fatalf("unexpected monitoring status: %#v", snapshot)
+	}
+	if snapshot.CheckedAt == "" || snapshot.Goroutines <= 0 {
+		t.Fatalf("missing runtime metrics: %#v", snapshot)
+	}
+}
+
+func TestMonitoringSnapshotHandlerReturnsUnifiedResponseWithoutSecrets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	RegisterRoutes(r.Group("/api/v1"), NewHandler(config.Config{
+		DatabaseDSN:      "postgres://mu:secret@localhost/db",
+		StorageSecretKey: "storage-secret",
+		EmbeddingAPIKey:  "embedding-secret",
+		GenerationAPIKey: "generation-secret",
+	}))
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/settings/monitoring", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, want := range []string{`"code":0`, `"status":"ok"`, `"goroutines":`, `"heap_alloc_mb":`} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("response missing %s: %s", want, body)
 		}

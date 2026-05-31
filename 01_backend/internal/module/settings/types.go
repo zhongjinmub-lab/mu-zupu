@@ -28,3 +28,15 @@ type RuntimeSummary struct {
 	WebhookMaxRetries             int    `json:"webhook_max_retries"`
 	WebhookRetryBaseSeconds       int    `json:"webhook_retry_base_seconds"`
 }
+
+type MonitoringSnapshot struct {
+	Status           string `json:"status"`
+	CheckedAt        string `json:"checked_at"`
+	UptimeSeconds    int64  `json:"uptime_seconds"`
+	Goroutines       int    `json:"goroutines"`
+	HeapAllocMB      uint64 `json:"heap_alloc_mb"`
+	HeapSysMB        uint64 `json:"heap_sys_mb"`
+	HeapObjects      uint64 `json:"heap_objects"`
+	GCCount          uint32 `json:"gc_count"`
+	LastGCAgoSeconds int64  `json:"last_gc_ago_seconds"`
+}

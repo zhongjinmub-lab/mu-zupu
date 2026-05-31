@@ -1,13 +1,17 @@
 package settings
 
 import (
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"mu-agent-saas/internal/config"
 	"mu-agent-saas/pkg/response"
 )
+
+var processStartedAt = time.Now()
 
 type Handler struct {
 	cfg config.Config
@@ -23,6 +27,10 @@ func (h Handler) RateLimitPolicy(c *gin.Context) {
 
 func (h Handler) RuntimeSummary(c *gin.Context) {
 	response.OK(c, BuildRuntimeSummary(h.cfg))
+}
+
+func (h Handler) MonitoringSnapshot(c *gin.Context) {
+	response.OK(c, BuildMonitoringSnapshot(time.Now()))
 }
 
 func BuildRateLimitPolicy(cfg config.Config) RateLimitPolicy {
@@ -63,12 +71,44 @@ func BuildRuntimeSummary(cfg config.Config) RuntimeSummary {
 	}
 }
 
+func BuildMonitoringSnapshot(now time.Time) MonitoringSnapshot {
+	var stats runtime.MemStats
+	runtime.ReadMemStats(&stats)
+	lastGCAgoSeconds := int64(-1)
+	if stats.LastGC > 0 {
+		lastGC := time.Unix(0, int64(stats.LastGC))
+		lastGCAgoSeconds = int64(now.Sub(lastGC).Seconds())
+		if lastGCAgoSeconds < 0 {
+			lastGCAgoSeconds = 0
+		}
+	}
+	uptimeSeconds := int64(now.Sub(processStartedAt).Seconds())
+	if uptimeSeconds < 0 {
+		uptimeSeconds = 0
+	}
+	return MonitoringSnapshot{
+		Status:           "ok",
+		CheckedAt:        now.UTC().Format(time.RFC3339),
+		UptimeSeconds:    uptimeSeconds,
+		Goroutines:       runtime.NumGoroutine(),
+		HeapAllocMB:      bytesToMB(stats.HeapAlloc),
+		HeapSysMB:        bytesToMB(stats.HeapSys),
+		HeapObjects:      stats.HeapObjects,
+		GCCount:          stats.NumGC,
+		LastGCAgoSeconds: lastGCAgoSeconds,
+	}
+}
+
 func normalizedProvider(value, fallback string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
 	if value == "" {
 		return fallback
 	}
 	return value
+}
+
+func bytesToMB(value uint64) uint64 {
+	return value / 1024 / 1024
 }
 
 func storageMode(cfg config.Config) string {

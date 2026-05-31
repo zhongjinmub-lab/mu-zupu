@@ -32,6 +32,7 @@ const state = {
   analytics: null,
   rateLimitPolicy: null,
   runtimeSummary: null,
+  monitoringSnapshot: null,
   members: [],
   auditLogs: [],
   auditNextCursor: "",
@@ -519,6 +520,55 @@ function renderRuntimeSummary(error = "") {
     <article>
       <strong>Webhook 重试</strong>
       <span>最多 ${Number(item.webhook_max_retries || 0).toLocaleString()} 次，基础间隔 ${Number(item.webhook_retry_base_seconds || 0).toLocaleString()} 秒</span>
+    </article>
+  `;
+}
+
+function renderMonitoringSnapshot(error = "") {
+  const el = $("#monitoringSnapshotGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.monitoringSnapshot;
+  if (!item) {
+    el.innerHTML = `<article><strong>运行监控</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const uptimeMinutes = Math.floor(Number(item.uptime_seconds || 0) / 60);
+  const lastGCText = Number(item.last_gc_ago_seconds) >= 0
+    ? `${Number(item.last_gc_ago_seconds || 0).toLocaleString()} 秒前`
+    : "暂无 GC 记录";
+  el.innerHTML = `
+    <article>
+      <strong>进程状态</strong>
+      <span>${escapeHtml(item.status === "ok" ? "正常" : item.status || "未知")} / 已运行 ${uptimeMinutes.toLocaleString()} 分钟</span>
+    </article>
+    <article>
+      <strong>协程数量</strong>
+      <span>${Number(item.goroutines || 0).toLocaleString()} 个 goroutine</span>
+    </article>
+    <article>
+      <strong>堆内存</strong>
+      <span>已用 ${Number(item.heap_alloc_mb || 0).toLocaleString()} MB / 向系统申请 ${Number(item.heap_sys_mb || 0).toLocaleString()} MB</span>
+    </article>
+    <article>
+      <strong>堆对象</strong>
+      <span>${Number(item.heap_objects || 0).toLocaleString()} 个对象</span>
+    </article>
+    <article>
+      <strong>GC 状态</strong>
+      <span>累计 ${Number(item.gc_count || 0).toLocaleString()} 次，最近 ${escapeHtml(lastGCText)}</span>
+    </article>
+    <article>
+      <strong>检查时间</strong>
+      <span>${escapeHtml(formatDateTime(item.checked_at))}</span>
     </article>
   `;
 }
@@ -1484,6 +1534,11 @@ async function loadRuntimeSummary() {
   renderRuntimeSummary();
 }
 
+async function loadMonitoringSnapshot() {
+  state.monitoringSnapshot = await api("/settings/monitoring", { tenant: false });
+  renderMonitoringSnapshot();
+}
+
 async function loadOrders() {
   if (!state.tenantId) return;
   const data = await api("/orders");
@@ -1861,6 +1916,7 @@ async function refreshAll() {
     loadSubscription(),
     loadRateLimitPolicy(),
     loadRuntimeSummary(),
+    loadMonitoringSnapshot(),
     loadMembers(),
     loadAuditLogs(),
     loadInvitations(),
@@ -1984,6 +2040,9 @@ function bindEvents() {
   });
   $("#loadRuntimeSummaryBtn").addEventListener("click", () => {
     loadRuntimeSummary().then(() => toast("运行配置已刷新")).catch((err) => renderRuntimeSummary(err.message));
+  });
+  $("#loadMonitoringSnapshotBtn").addEventListener("click", () => {
+    loadMonitoringSnapshot().then(() => toast("运行监控已刷新")).catch((err) => renderMonitoringSnapshot(err.message));
   });
 
   $("#kbForm").addEventListener("submit", async (event) => {
