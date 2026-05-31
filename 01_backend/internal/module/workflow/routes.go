@@ -26,5 +26,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	write.POST("/workflows/:workflow_id/publish", h.PublishWorkflow)
 	write.POST("/workflows/:workflow_id/duplicate", h.DuplicateWorkflow)
 	write.POST("/workflows/:workflow_id/run", h.RunWorkflow)
+	write.POST("/workflow-runs/:run_id/approve", h.ApproveWorkflowRun)
+	write.POST("/workflow-runs/:run_id/reject", h.RejectWorkflowRun)
 	write.DELETE("/workflows/:workflow_id", h.ArchiveWorkflow)
 }

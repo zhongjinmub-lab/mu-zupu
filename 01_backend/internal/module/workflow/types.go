@@ -655,3 +655,17 @@ func EvaluateCondition(expr string, input map[string]any) (bool, error) {
 		return false, errors.New("非数值操作数仅支持 == 和 != 运算符")
 	}
 }
+
+// ApproveRejectRequest 是人工审批动作的请求体（可选备注）。
+type ApproveRejectRequest struct {
+	Comment string `json:"comment"`
+}
+
+// ApprovalAction 表示一次人工审批动作记录。
+type ApprovalAction struct {
+	RunID     string `json:"run_id"`
+	Action    string `json:"action"`
+	Comment   string `json:"comment"`
+	ActorID   string `json:"actor_id"`
+	Timestamp string `json:"timestamp"`
+}

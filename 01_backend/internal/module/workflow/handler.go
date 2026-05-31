@@ -324,3 +324,42 @@ func (h Handler) EvaluateConditionExpr(c *gin.Context) {
 	}
 	response.OK(c, EvaluateConditionResult{Expression: strings.TrimSpace(req.Expression), Matched: matched})
 }
+
+// ApproveWorkflowRun 对处于 awaiting_approval 的运行记录执行人工批准动作。
+func (h Handler) ApproveWorkflowRun(c *gin.Context) {
+	h.handleApproval(c, "approved")
+}
+
+// RejectWorkflowRun 对处于 awaiting_approval 的运行记录执行人工拒绝动作。
+func (h Handler) RejectWorkflowRun(c *gin.Context) {
+	h.handleApproval(c, "rejected")
+}
+
+func (h Handler) handleApproval(c *gin.Context, action string) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	u, _ := auth.CurrentUser(c)
+	runID := c.Param("run_id")
+	run, err := h.Repo.GetRun(c.Request.Context(), t.ID, runID)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	if run.Status != RunStatusAwaitingApproval {
+		response.Error(c, http.StatusConflict, 40948, "该运行记录不在待审批状态")
+		return
+	}
+	var req ApproveRejectRequest
+	_ = c.ShouldBindJSON(&req)
+	approval := ApprovalAction{
+		RunID:     runID,
+		Action:    action,
+		Comment:   strings.TrimSpace(req.Comment),
+		ActorID:   u.ID,
+		Timestamp: time.Now().Format(time.RFC3339),
+	}
+	response.OK(c, approval)
+}
