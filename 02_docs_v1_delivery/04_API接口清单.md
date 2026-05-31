@@ -1019,3 +1019,14 @@ P1「插件工具」继续推进 MCP 网关首版，采用与工具安全策略�
 - `POST /mcp-servers/{server_id}/test`：连通性 dry-run 预检。只读服务返回 `dry_run_ok` 中文摘要，危险服务返回 `blocked` 中文说明，均不建立真实连接、不执行外部动作。测试会复用 `tool_call_logs`，以 `mcp:<server_code>` 记录工具名、传输方式、参数 key 摘要与结果摘要，不保存敏感明文。
 
 `POST /mcp-servers/{server_id}/test` 需要 `tenant writer/admin` 权限（复用 `RequireTenantWriter`），并携带 `Authorization` 与 `X-Tenant-ID`。后续启用真实 MCP 网关前，外部 MCP Server 必须配置出站白名单防止 SSRF 与数据外泄，连接失败、拒绝和人工确认都要进入审计日志。管理台“MCP 网关安全策略”用中文卡片展示网关状态、服务目录、传输方式、连通性测试结果、危险确认、审计动作和后续执行要求，不展示黑色 JSON 原文。
+
+
+## 2026-05-31 增量：工具 Tool Schema 与参数校验
+
+P1「插件工具」继续补齐 Tool Schema，为工具目录提供正式参数描述，并在 dry-run 预检中做参数校验。
+
+- `GET /tools` 的每个工具新增 `input_schema` 字段，使用 `{name, type, required, description, example}` 数组声明参数。当前内置：`kb_search`（必填 `query`，可选 `knowledge_base_id`、`top_k`）、`file_lookup`（可选 `file_id`、`keyword`）、`kb_mutation`（必填 `knowledge_base_id`、`action`）、`billing_operation`（必填 `operation`、`target_id`）。
+- `POST /tools/{id}/test` 的返回新增 `schema_valid` 与 `schema_issues`：按 `input_schema` 校验入参，缺少必填参数或包含未声明参数时给出中文提示。该校验为信息性提示，不改变安全语义——只读工具仍返回 `dry_run_ok`，危险工具仍 `blocked`。
+- 管理台“Agent 工具安全策略”工具卡片新增“参数 Schema”一行，安全测试会按 Schema 自动构造示例必填参数，并展示 Schema 校验结果。
+
+后续启用真实工具执行器时，将以 `input_schema` 作为入参契约做强校验，不合规直接拒绝并写入审计。

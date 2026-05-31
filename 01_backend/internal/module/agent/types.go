@@ -215,17 +215,26 @@ type ToolPolicyItem struct {
 }
 
 type ToolCatalogItem struct {
-	Code                 string   `json:"code"`
-	Name                 string   `json:"name"`
-	Category             string   `json:"category"`
-	Status               string   `json:"status"`
-	Description          string   `json:"description"`
-	Scope                string   `json:"scope"`
-	PermissionRole       string   `json:"permission_role"`
-	RequiresConfirmation bool     `json:"requires_confirmation"`
-	AuditAction          string   `json:"audit_action"`
-	SupportedActions     []string `json:"supported_actions"`
-	OperationalNotes     []string `json:"operational_notes"`
+	Code                 string            `json:"code"`
+	Name                 string            `json:"name"`
+	Category             string            `json:"category"`
+	Status               string            `json:"status"`
+	Description          string            `json:"description"`
+	Scope                string            `json:"scope"`
+	PermissionRole       string            `json:"permission_role"`
+	RequiresConfirmation bool              `json:"requires_confirmation"`
+	AuditAction          string            `json:"audit_action"`
+	SupportedActions     []string          `json:"supported_actions"`
+	OperationalNotes     []string          `json:"operational_notes"`
+	InputSchema          []ToolParamSchema `json:"input_schema"`
+}
+
+type ToolParamSchema struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Required    bool   `json:"required"`
+	Description string `json:"description"`
+	Example     string `json:"example,omitempty"`
 }
 
 type ToolTestRequest struct {
@@ -241,6 +250,8 @@ type ToolTestResult struct {
 	RequiresConfirmation bool     `json:"requires_confirmation"`
 	Message              string   `json:"message"`
 	InputSummary         string   `json:"input_summary"`
+	SchemaValid          bool     `json:"schema_valid"`
+	SchemaIssues         []string `json:"schema_issues"`
 	NextSteps            []string `json:"next_steps"`
 	AuditAction          string   `json:"audit_action"`
 }
@@ -606,6 +617,9 @@ func FindToolCatalogItem(code string) (ToolCatalogItem, bool) {
 
 func BuildToolTestResult(item ToolCatalogItem, req ToolTestRequest) ToolTestResult {
 	summary := summarizeToolInput(req.Input)
+	// 按工具 Schema 校验入参，结果作为信息性提示附加到 dry-run 返回中。
+	schemaIssues := validateToolInput(item.InputSchema, req.Input)
+	schemaValid := len(schemaIssues) == 0
 	if item.Status == "blocked" || item.RequiresConfirmation {
 		return ToolTestResult{
 			ToolCode:             item.Code,
@@ -616,12 +630,18 @@ func BuildToolTestResult(item ToolCatalogItem, req ToolTestRequest) ToolTestResu
 			RequiresConfirmation: item.RequiresConfirmation,
 			Message:              "工具测试已被安全策略阻断，当前版本不会执行真实外部动作。",
 			InputSummary:         summary,
+			SchemaValid:          schemaValid,
+			SchemaIssues:         schemaIssues,
 			NextSteps: []string{
 				"由租户管理员在管理台完成对应业务操作。",
 				"后续启用真实工具执行前，需要补充人工确认和审计日志。",
 			},
 			AuditAction: item.AuditAction,
 		}
+	}
+	message := "工具测试通过安全预检；当前版本仅返回 dry-run 摘要，不执行真实查询或写入。"
+	if !schemaValid {
+		message = "工具通过安全预检，但参数 Schema 校验存在问题，请在真实调用前补全必填参数。"
 	}
 	return ToolTestResult{
 		ToolCode:             item.Code,
@@ -630,8 +650,10 @@ func BuildToolTestResult(item ToolCatalogItem, req ToolTestRequest) ToolTestResu
 		Allowed:              true,
 		DryRun:               true,
 		RequiresConfirmation: item.RequiresConfirmation,
-		Message:              "工具测试通过安全预检；当前版本仅返回 dry-run 摘要，不执行真实查询或写入。",
+		Message:              message,
 		InputSummary:         summary,
+		SchemaValid:          schemaValid,
+		SchemaIssues:         schemaIssues,
 		NextSteps: []string{
 			"可在 Agent 对话中继续使用 RAG 和知识库问答能力。",
 			"真实工具执行器上线后，将复用当前权限、审计和脱敏要求。",
@@ -661,6 +683,81 @@ func toolCatalogItemFromPolicy(tool ToolPolicyItem, policy ToolSafetyPolicy) Too
 		AuditAction:          policy.AuditAction,
 		SupportedActions:     supportedToolActions(tool),
 		OperationalNotes:     toolOperationalNotes(tool),
+		InputSchema:          toolInputSchema(tool.Code),
+	}
+}
+
+// toolInputSchema 返回指定工具的参数 Schema 定义，作为工具入参契约。
+func toolInputSchema(code string) []ToolParamSchema {
+	switch code {
+	case "kb_search":
+		return []ToolParamSchema{
+			{Name: "query", Type: "string", Required: true, Description: "检索问题或关键词", Example: "公司报销流程"},
+			{Name: "knowledge_base_id", Type: "string", Required: false, Description: "指定知识库 ID，缺省时使用 Agent 默认绑定知识库", Example: "kb_xxx"},
+			{Name: "top_k", Type: "integer", Required: false, Description: "返回片段数量，默认 5，最大 20", Example: "5"},
+		}
+	case "file_lookup":
+		return []ToolParamSchema{
+			{Name: "file_id", Type: "string", Required: false, Description: "文件 ID，与 keyword 至少提供其一", Example: "file_xxx"},
+			{Name: "keyword", Type: "string", Required: false, Description: "文件名或文档标题关键词", Example: "合同"},
+		}
+	case "kb_mutation":
+		return []ToolParamSchema{
+			{Name: "knowledge_base_id", Type: "string", Required: true, Description: "目标知识库 ID", Example: "kb_xxx"},
+			{Name: "action", Type: "string", Required: true, Description: "写入动作：create、update 或 archive", Example: "create"},
+			{Name: "payload", Type: "object", Required: false, Description: "文档或 Chunk 内容载荷"},
+		}
+	case "billing_operation":
+		return []ToolParamSchema{
+			{Name: "operation", Type: "string", Required: true, Description: "授权操作：order_query、payment_close 或 license_change", Example: "order_query"},
+			{Name: "target_id", Type: "string", Required: true, Description: "订单、支付单或 License 的目标 ID", Example: "order_xxx"},
+		}
+	default:
+		return []ToolParamSchema{}
+	}
+}
+
+// validateToolInput 按 Schema 校验入参，返回中文提示：
+// 缺少必填参数或出现未声明参数时给出说明；该校验仅作信息性提示，不改变安全语义。
+func validateToolInput(schema []ToolParamSchema, input map[string]any) []string {
+	issues := make([]string, 0)
+	known := make(map[string]bool, len(schema))
+	for _, param := range schema {
+		known[param.Name] = true
+		if !param.Required {
+			continue
+		}
+		value, ok := input[param.Name]
+		if !ok || isEmptyToolParam(value) {
+			issues = append(issues, "缺少必填参数："+param.Name+"（"+param.Description+"）")
+		}
+	}
+	if len(schema) > 0 {
+		extras := make([]string, 0)
+		for key := range input {
+			key = strings.TrimSpace(key)
+			if key == "" || known[key] {
+				continue
+			}
+			extras = append(extras, key)
+		}
+		if len(extras) > 0 {
+			sort.Strings(extras)
+			issues = append(issues, "包含未在 Schema 中声明的参数："+strings.Join(extras, "、"))
+		}
+	}
+	return issues
+}
+
+// isEmptyToolParam 判断参数值是否为空（nil 或空白字符串视为空）。
+func isEmptyToolParam(value any) bool {
+	switch v := value.(type) {
+	case nil:
+		return true
+	case string:
+		return strings.TrimSpace(v) == ""
+	default:
+		return false
 	}
 }
 

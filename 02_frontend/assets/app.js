@@ -1151,11 +1151,13 @@ function renderToolSafetyPolicy(error = "") {
           <div class="item-meta">${escapeHtml(tool.code || "-")} / ${escapeHtml(tool.category || "-")} / ${escapeHtml(tool.permission_role || policy.permission_role || "-")} / ${tool.requires_confirmation ? "需要确认" : "无需确认"}</div>
           <div class="item-meta">${escapeHtml(tool.description || "")}</div>
           <div class="item-meta">${escapeHtml([tool.scope, ...(tool.supported_actions || [])].filter(Boolean).join("；") || "当前版本仅提供安全摘要")}</div>
+          <div class="item-meta">参数 Schema：${escapeHtml(toolSchemaSummary(tool.input_schema))}</div>
           ${state.toolTestResults[tool.code] ? `
             <div class="tool-test-result ${state.toolTestResults[tool.code].allowed ? "ok" : "blocked"}">
               <strong>${escapeHtml(state.toolTestResults[tool.code].allowed ? "测试通过" : "测试已阻断")}</strong>
               <span>${escapeHtml(state.toolTestResults[tool.code].message || "")}</span>
               <span>${escapeHtml(state.toolTestResults[tool.code].input_summary || "")}</span>
+              <span class="${(state.toolTestResults[tool.code].schema_issues || []).length ? "danger-text" : ""}">Schema 校验：${escapeHtml((state.toolTestResults[tool.code].schema_issues || []).length ? state.toolTestResults[tool.code].schema_issues.join("；") : "通过")}</span>
             </div>
           ` : ""}
           <div class="item-actions">
@@ -1200,8 +1202,32 @@ function renderToolSafetyPolicy(error = "") {
   `;
 }
 
-function toolNameLabel(code) {
-  const item = state.tools.find((tool) => tool.code === code);
+// toolSchemaSummary 将工具参数 Schema 拼成中文摘要，用于卡片展示。
+function toolSchemaSummary(schema) {
+  if (!Array.isArray(schema) || schema.length === 0) {
+    return "无显式参数";
+  }
+  return schema
+    .map((param) => `${param.name}:${param.type || "any"}${param.required ? "(必填)" : ""}`)
+    .join("、");
+}
+
+// buildToolExampleInput 按工具 Schema 构造示例必填入参，便于安全测试通过 Schema 校验。
+function buildToolExampleInput(tool) {
+  const schema = (tool && tool.input_schema) || [];
+  if (!schema.length) {
+    return { source: "admin_console", checked_at: new Date().toISOString() };
+  }
+  const input = {};
+  schema.forEach((param) => {
+    if (param.required) {
+      input[param.name] = param.example || `示例_${param.name}`;
+    }
+  });
+  return input;
+}
+
+function toolNameLabel(code) {  const item = state.tools.find((tool) => tool.code === code);
   return item?.name || code || "未知工具";
 }
 
@@ -1876,9 +1902,10 @@ async function loadToolSafetyPolicy() {
 
 async function testTool(toolCode) {
   if (!toolCode) return;
+  const tool = state.tools.find((item) => item.code === toolCode);
   const result = await api(`/tools/${encodeURIComponent(toolCode)}/test`, {
     method: "POST",
-    body: { input: { source: "admin_console", checked_at: new Date().toISOString() } },
+    body: { input: buildToolExampleInput(tool) },
   });
   state.toolTestResults[toolCode] = result;
   await loadToolCallLogs();

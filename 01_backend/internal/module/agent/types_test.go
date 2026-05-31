@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -349,5 +350,75 @@ func TestBuildMCPTestResultAllowsReadServer(t *testing.T) {
 	}
 	if result.InputSummary == "" {
 		t.Fatal("expected input summary")
+	}
+}
+
+func TestToolCatalogIncludesInputSchema(t *testing.T) {
+	item, ok := FindToolCatalogItem("kb_search")
+	if !ok {
+		t.Fatal("kb_search tool should exist")
+	}
+	if len(item.InputSchema) == 0 {
+		t.Fatal("kb_search should expose an input schema")
+	}
+	var hasRequiredQuery bool
+	for _, param := range item.InputSchema {
+		if param.Name == "query" && param.Required {
+			hasRequiredQuery = true
+		}
+	}
+	if !hasRequiredQuery {
+		t.Fatalf("kb_search schema must require query, got %#v", item.InputSchema)
+	}
+}
+
+func TestValidateToolInputReportsMissingRequired(t *testing.T) {
+	schema := toolInputSchema("kb_search")
+	issues := validateToolInput(schema, map[string]any{"top_k": 5})
+	if len(issues) == 0 {
+		t.Fatal("expected schema issues for missing required query")
+	}
+}
+
+func TestValidateToolInputAcceptsValidPayload(t *testing.T) {
+	schema := toolInputSchema("kb_search")
+	issues := validateToolInput(schema, map[string]any{"query": "公司报销流程"})
+	if len(issues) != 0 {
+		t.Fatalf("expected no schema issues, got %#v", issues)
+	}
+}
+
+func TestValidateToolInputFlagsUnknownParam(t *testing.T) {
+	schema := toolInputSchema("kb_search")
+	issues := validateToolInput(schema, map[string]any{"query": "x", "unexpected": true})
+	var flagged bool
+	for _, issue := range issues {
+		if strings.Contains(issue, "unexpected") {
+			flagged = true
+		}
+	}
+	if !flagged {
+		t.Fatalf("expected unknown param to be flagged, got %#v", issues)
+	}
+}
+
+func TestBuildToolTestResultCarriesSchemaValidation(t *testing.T) {
+	item, ok := FindToolCatalogItem("kb_search")
+	if !ok {
+		t.Fatal("kb_search tool should exist")
+	}
+	missing := BuildToolTestResult(item, ToolTestRequest{Input: map[string]any{"top_k": 3}})
+	if missing.SchemaValid {
+		t.Fatal("expected schema invalid when required query missing")
+	}
+	if !missing.Allowed || missing.Status != "dry_run_ok" {
+		t.Fatalf("schema issues must stay non-blocking for read tools, got %#v", missing)
+	}
+	if len(missing.SchemaIssues) == 0 {
+		t.Fatal("expected schema issues to be reported")
+	}
+	valid := BuildToolTestResult(item, ToolTestRequest{Input: map[string]any{"query": "hello"}})
+	if !valid.SchemaValid || len(valid.SchemaIssues) != 0 {
+		t.Fatalf("expected valid schema result, got %#v", valid)
 	}
 }
