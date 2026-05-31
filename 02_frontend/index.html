@@ -562,7 +562,10 @@
             <section class="panel">
               <div class="panel-head">
                 <h3>投递记录</h3>
-                <button id="loadWebhookDeliveriesBtn" class="button small secondary" type="button">刷新</button>
+                <div class="item-actions">
+                  <button id="exportWebhookDeliveriesBtn" class="button small secondary" type="button">导出 CSV</button>
+                  <button id="loadWebhookDeliveriesBtn" class="button small secondary" type="button">刷新</button>
+                </div>
               </div>
               <form id="webhookDeliveryFilterForm" class="filter-form compact">
                 <label>Webhook

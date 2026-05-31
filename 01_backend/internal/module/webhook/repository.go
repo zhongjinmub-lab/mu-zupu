@@ -144,6 +144,15 @@ RETURNING id::text, tenant_id::text, COALESCE(endpoint_id::text, ''), event_type
 
 func (r Repository) ListDeliveries(ctx context.Context, query DeliveryQuery) ([]Delivery, error) {
 	query.Normalize()
+	return r.listDeliveries(ctx, query)
+}
+
+func (r Repository) ExportDeliveries(ctx context.Context, query DeliveryQuery) ([]Delivery, error) {
+	query.NormalizeForExport()
+	return r.listDeliveries(ctx, query)
+}
+
+func (r Repository) listDeliveries(ctx context.Context, query DeliveryQuery) ([]Delivery, error) {
 	if err := query.Validate(); err != nil {
 		return nil, err
 	}

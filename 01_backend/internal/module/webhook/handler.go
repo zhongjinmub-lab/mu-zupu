@@ -1,9 +1,12 @@
 package webhook
 
 import (
+	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -151,6 +154,57 @@ func (h Handler) DeliverySummary(c *gin.Context) {
 	response.OK(c, item)
 }
 
+func (h Handler) ExportDeliveries(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "1000"))
+	query := DeliveryQuery{
+		TenantID:   t.ID,
+		EndpointID: c.Query("endpoint_id"),
+		EventType:  c.Query("event_type"),
+		Status:     c.Query("status"),
+		Limit:      limit,
+	}
+	query.NormalizeForExport()
+	if err := query.Validate(); err != nil {
+		response.Error(c, http.StatusBadRequest, 40002, err.Error())
+		return
+	}
+	items, err := h.Repo.ExportDeliveries(c.Request.Context(), query)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 50092, err.Error())
+		return
+	}
+	filename := "webhook-deliveries-" + time.Now().Format("20060102-150405") + ".csv"
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+	writer := csv.NewWriter(c.Writer)
+	_ = writer.Write([]string{"id", "tenant_id", "endpoint_id", "event_type", "target_url", "status", "http_status", "duration_ms", "retry_count", "next_retry_at", "last_attempt_at", "error_message", "response_body", "request_body", "created_at"})
+	for _, item := range items {
+		_ = writer.Write([]string{
+			item.ID,
+			item.TenantID,
+			item.EndpointID,
+			item.EventType,
+			item.TargetURL,
+			item.Status,
+			strconv.Itoa(item.HTTPStatus),
+			strconv.FormatInt(item.DurationMS, 10),
+			strconv.Itoa(item.RetryCount),
+			formatOptionalTime(item.NextRetryAt),
+			formatOptionalTime(item.LastAttemptAt),
+			item.ErrorMessage,
+			item.ResponseBody,
+			jsonMapString(item.RequestBody),
+			item.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	writer.Flush()
+}
+
 func (h Handler) RetryDelivery(c *gin.Context) {
 	t, ok := tenant.CurrentTenant(c)
 	if !ok {
@@ -168,6 +222,24 @@ func (h Handler) RetryDelivery(c *gin.Context) {
 		return
 	}
 	response.OK(c, item)
+}
+
+func formatOptionalTime(value *time.Time) string {
+	if value == nil {
+		return ""
+	}
+	return value.Format(time.RFC3339)
+}
+
+func jsonMapString(value map[string]any) string {
+	if value == nil {
+		return "{}"
+	}
+	b, err := json.Marshal(value)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
 }
 
 func writeWebhookError(c *gin.Context, err error) {

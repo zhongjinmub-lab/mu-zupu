@@ -117,3 +117,26 @@ func TestDeliveryQueryNormalizeAndValidate(t *testing.T) {
 		t.Fatal("expected invalid endpoint_id error")
 	}
 }
+
+func TestDeliveryQueryNormalizeForExportAllowsLargerLimit(t *testing.T) {
+	query := DeliveryQuery{
+		TenantID:  " tenant-1 ",
+		EventType: " WEBHOOK.TEST ",
+		Status:    " SUCCESS ",
+		Limit:     800,
+	}
+	query.NormalizeForExport()
+
+	if query.TenantID != "tenant-1" || query.EventType != EventWebhookTest || query.Status != "success" {
+		t.Fatalf("unexpected normalized export query: %#v", query)
+	}
+	if query.Limit != 800 {
+		t.Fatalf("expected export limit 800, got %d", query.Limit)
+	}
+
+	query.Limit = 2000
+	query.NormalizeForExport()
+	if query.Limit != 1000 {
+		t.Fatalf("expected export limit capped at 1000, got %d", query.Limit)
+	}
+}

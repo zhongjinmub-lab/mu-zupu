@@ -160,6 +160,16 @@ func (q *DeliveryQuery) Normalize() {
 	}
 }
 
+func (q *DeliveryQuery) NormalizeForExport() {
+	q.TenantID = strings.TrimSpace(q.TenantID)
+	q.EndpointID = strings.TrimSpace(q.EndpointID)
+	q.EventType = strings.ToLower(strings.TrimSpace(q.EventType))
+	q.Status = strings.ToLower(strings.TrimSpace(q.Status))
+	if q.Limit <= 0 || q.Limit > 1000 {
+		q.Limit = 1000
+	}
+}
+
 func (q DeliveryQuery) Validate() error {
 	if q.TenantID == "" {
 		return errors.New("tenant_id is required")

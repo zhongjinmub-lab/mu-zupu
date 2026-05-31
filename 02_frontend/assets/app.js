@@ -1416,6 +1416,34 @@ async function exportAuditLogs() {
   URL.revokeObjectURL(objectURL);
 }
 
+async function exportWebhookDeliveries() {
+  if (!state.tenantId) return;
+  webhookDeliveryFiltersFromForm();
+  const qs = webhookDeliveryQuery().replace(/^\?/, "");
+  const url = `${state.apiBase}/webhook-deliveries/export${qs ? `?${qs}` : ""}`;
+  const headers = {};
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  if (state.tenantId) headers["X-Tenant-ID"] = state.tenantId;
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    let message = `导出失败：HTTP ${response.status}`;
+    try {
+      const payload = await response.json();
+      message = payload.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const blob = await response.blob();
+  const objectURL = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectURL;
+  link.download = `webhook-deliveries-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "")}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectURL);
+}
+
 async function loadInvitations() {
   if (!state.tenantId) return;
   const data = await api("/tenant/invitations");
@@ -2105,6 +2133,7 @@ function bindEvents() {
   $("#loadWebhookDeliverySummaryBtn").addEventListener("click", () => {
     loadWebhookDeliverySummary().then(() => toast("投递摘要已刷新")).catch((err) => renderWebhookDeliverySummary(err.message));
   });
+  $("#exportWebhookDeliveriesBtn").addEventListener("click", () => exportWebhookDeliveries().then(() => toast("Webhook 投递记录已导出")).catch((err) => toast(err.message)));
   $("#loadWebhookDeliveriesBtn").addEventListener("click", () => {
     webhookDeliveryFiltersFromForm();
     Promise.all([loadWebhookDeliverySummary(), loadWebhookDeliveries()]).catch((err) => toast(err.message));

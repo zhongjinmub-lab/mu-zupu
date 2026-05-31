@@ -577,6 +577,21 @@ Generation provider 配置：
 
 管理台设置页已新增“运行配置摘要”，用中文卡片展示环境、上传上限、对象存储模式、模型 Provider、文档 Worker、Webhook Worker 和重试策略，不展示黑色 JSON 原文区域。
 
+## 2026-05-31 增量：Webhook 投递记录 CSV 导出
+
+`GET /webhook-deliveries/export` 已支持按当前租户导出 Webhook 投递记录 CSV。
+
+| 参数 | 说明 |
+|---|---|
+| `endpoint_id` | Webhook 配置 ID，可选，必须是合法 UUID |
+| `event_type` | 事件类型，可选，例如 `webhook.test`、`order.paid` |
+| `status` | 投递状态，可选，支持 `success`、`failed` |
+| `limit` | 导出数量，默认 1000，最大 1000 |
+
+导出字段包括：投递 ID、租户 ID、Webhook ID、事件类型、目标地址、状态、HTTP 状态、耗时、重试次数、下次重试时间、最近尝试时间、错误信息、响应摘要、请求体和创建时间。
+
+管理台 Webhook 投递记录区已新增“导出 CSV”按钮，导出时使用当前筛选条件，不展示黑色 JSON 原文区域。
+
 ## 2026-05-31 增量：Agent SSE 管理台体验增强
 
 `POST /agents/{agent_id}/chat/stream` 接口协议保持不变，管理台多轮会话区已补齐“流式发送”入口和结果摘要展示。
