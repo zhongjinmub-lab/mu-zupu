@@ -26,6 +26,7 @@ const state = {
   health: null,
   analytics: null,
   rateLimitPolicy: null,
+  runtimeSummary: null,
   members: [],
   auditLogs: [],
   auditNextCursor: "",
@@ -175,6 +176,7 @@ function renderShell() {
   renderTenants();
   renderMetrics();
   renderRateLimitPolicy();
+  renderRuntimeSummary();
 }
 
 function renderMetrics() {
@@ -427,6 +429,59 @@ function renderRateLimitPolicy(error = "") {
     <article>
       <strong>故障策略</strong>
       <span>${escapeHtml(item.redis_fallback_label || "异常时保持接口可用优先")}</span>
+    </article>
+  `;
+}
+
+function renderRuntimeSummary(error = "") {
+  const el = $("#runtimeSummaryGrid");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = `
+      <article>
+        <strong>加载失败</strong>
+        <span>${escapeHtml(error)}</span>
+      </article>
+    `;
+    return;
+  }
+  const item = state.runtimeSummary;
+  if (!item) {
+    el.innerHTML = `<article><strong>运行配置</strong><span>等待加载</span></article>`;
+    return;
+  }
+  const providerText = (provider, configured) => {
+    const label = provider === "local" ? "本地" : provider || "未配置";
+    return configured ? `${label}，外部连接已配置` : `${label}，未暴露外部密钥`;
+  };
+  el.innerHTML = `
+    <article>
+      <strong>运行环境</strong>
+      <span>${escapeHtml(item.env || "dev")} / 上传上限 ${Number(item.upload_max_mb || 0).toLocaleString()} MB</span>
+    </article>
+    <article>
+      <strong>对象存储</strong>
+      <span>${escapeHtml(item.storage_mode || "s3/minio")}；公开访问${item.storage_public_enabled ? "已配置" : "未配置"}</span>
+    </article>
+    <article>
+      <strong>Embedding</strong>
+      <span>${escapeHtml(providerText(item.embedding_provider, item.embedding_external_configured))} / ${escapeHtml(item.embedding_model || "-")}</span>
+    </article>
+    <article>
+      <strong>生成模型</strong>
+      <span>${escapeHtml(providerText(item.generation_provider, item.generation_external_configured))} / ${escapeHtml(item.generation_model || "-")}</span>
+    </article>
+    <article>
+      <strong>文档 Worker</strong>
+      <span>每 ${Number(item.document_worker_interval_seconds || 0).toLocaleString()} 秒轮询，批量 ${Number(item.document_worker_batch_size || 0).toLocaleString()} 个任务</span>
+    </article>
+    <article>
+      <strong>Webhook Worker</strong>
+      <span>每 ${Number(item.webhook_worker_interval_seconds || 0).toLocaleString()} 秒轮询，批量 ${Number(item.webhook_worker_batch_size || 0).toLocaleString()} 个任务</span>
+    </article>
+    <article>
+      <strong>Webhook 重试</strong>
+      <span>最多 ${Number(item.webhook_max_retries || 0).toLocaleString()} 次，基础间隔 ${Number(item.webhook_retry_base_seconds || 0).toLocaleString()} 秒</span>
     </article>
   `;
 }
@@ -1259,6 +1314,11 @@ async function loadRateLimitPolicy() {
   renderRateLimitPolicy();
 }
 
+async function loadRuntimeSummary() {
+  state.runtimeSummary = await api("/settings/runtime", { tenant: false });
+  renderRuntimeSummary();
+}
+
 async function loadOrders() {
   if (!state.tenantId) return;
   const data = await api("/orders");
@@ -1550,6 +1610,7 @@ async function refreshAll() {
     loadAnalytics(),
     loadSubscription(),
     loadRateLimitPolicy(),
+    loadRuntimeSummary(),
     loadMembers(),
     loadAuditLogs(),
     loadInvitations(),
@@ -1606,6 +1667,7 @@ function bindEvents() {
       loadAnalytics(),
       loadSubscription(),
       loadRateLimitPolicy(),
+      loadRuntimeSummary(),
       loadMembers(),
       loadAuditLogs(),
       loadInvitations(),
@@ -1668,6 +1730,9 @@ function bindEvents() {
 
   $("#loadRateLimitPolicyBtn").addEventListener("click", () => {
     loadRateLimitPolicy().then(() => toast("限流策略已刷新")).catch((err) => renderRateLimitPolicy(err.message));
+  });
+  $("#loadRuntimeSummaryBtn").addEventListener("click", () => {
+    loadRuntimeSummary().then(() => toast("运行配置已刷新")).catch((err) => renderRuntimeSummary(err.message));
   });
 
   $("#kbForm").addEventListener("submit", async (event) => {

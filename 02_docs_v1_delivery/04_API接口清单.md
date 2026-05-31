@@ -542,6 +542,41 @@ Generation provider 配置：
 
 管理台 Webhook 页面已新增“投递状态摘要”，使用中文摘要卡片展示，不展示黑色 JSON 原文区域。
 
+## 2026-05-31 增量：运行配置只读摘要
+
+`GET /settings/runtime` 用于返回当前后端运行配置摘要，供管理台设置页只读展示。
+
+| 项目 | 说明 |
+|---|---|
+| 权限 | user，需携带 `Authorization: Bearer <token>` |
+| 租户头 | 不强制 `X-Tenant-ID`，该接口返回全局运行配置摘要 |
+| 敏感信息 | 不返回数据库 DSN、Redis 地址、MinIO 密钥、模型 API Key、JWT 密钥或 License 公钥原文 |
+
+响应 `data` 示例：
+
+```json
+{
+  "env": "dev",
+  "upload_max_mb": 50,
+  "storage_mode": "s3/minio http",
+  "storage_public_enabled": false,
+  "embedding_provider": "local",
+  "embedding_model": "local-hash-1536",
+  "embedding_external_configured": false,
+  "generation_provider": "local",
+  "generation_model": "local-rag",
+  "generation_external_configured": false,
+  "document_worker_interval_seconds": 10,
+  "document_worker_batch_size": 5,
+  "webhook_worker_interval_seconds": 15,
+  "webhook_worker_batch_size": 20,
+  "webhook_max_retries": 3,
+  "webhook_retry_base_seconds": 60
+}
+```
+
+管理台设置页已新增“运行配置摘要”，用中文卡片展示环境、上传上限、对象存储模式、模型 Provider、文档 Worker、Webhook Worker 和重试策略，不展示黑色 JSON 原文区域。
+
 ## 2026-05-31 增量：Agent SSE 管理台体验增强
 
 `POST /agents/{agent_id}/chat/stream` 接口协议保持不变，管理台多轮会话区已补齐“流式发送”入口和结果摘要展示。
