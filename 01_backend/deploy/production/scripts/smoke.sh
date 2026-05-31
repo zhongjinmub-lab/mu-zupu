@@ -1,16 +1,57 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="${BASE_URL:-https://zupu.jiangxinnet.com/saas-api/api/v1}"
+APP_DIR="${APP_DIR:-/opt/mu-agent-saas}"
+API_BASE_URL="${API_BASE_URL:-${BASE_URL:-https://zupu.jiangxinnet.com/saas-api/api/v1}}"
+FRONTEND_BASE_URL="${FRONTEND_BASE_URL:-https://zupu.jiangxinnet.com/saas}"
+EXPECTED_MIGRATION="${EXPECTED_MIGRATION:-000004_auth_tenant_kb_mvp applied}"
+CHECK_NGINX="${CHECK_NGINX:-yes}"
 
-curl -kfsS "$BASE/health" >/tmp/mu-agent-health.json
-curl -kfsS "$BASE/ready" >/tmp/mu-agent-ready.json
-systemctl is-active --quiet mu-agent-saas
+check_url() {
+  local name="$1"
+  local url="$2"
+  local expected_type="${3:-}"
+  local meta
+  meta="$(curl -kfsS -o /dev/null -w '%{http_code} %{content_type}' "$url")"
+  local status="${meta%% *}"
+  local content_type="${meta#* }"
+  if [[ "$status" != "200" ]]; then
+    echo "FAIL $name status=$status url=$url"
+    exit 1
+  fi
+  if [[ -n "$expected_type" && "$content_type" != *"$expected_type"* ]]; then
+    echo "FAIL $name content_type=$content_type expected=$expected_type url=$url"
+    exit 1
+  fi
+  echo "OK $name status=$status content_type=$content_type"
+}
 
-cd /opt/mu-agent-saas
+check_service() {
+  local service="$1"
+  systemctl is-active --quiet "$service"
+  echo "OK service $service active"
+}
+
+check_url "api_health" "$API_BASE_URL/health" "application/json"
+check_url "api_ready" "$API_BASE_URL/ready" "application/json"
+check_url "frontend_html" "$FRONTEND_BASE_URL/" "text/html"
+check_url "frontend_js" "$FRONTEND_BASE_URL/assets/app.js" "javascript"
+check_url "frontend_css" "$FRONTEND_BASE_URL/assets/app.css" "text/css"
+
+if [[ "$CHECK_NGINX" == "yes" ]] && command -v nginx >/dev/null 2>&1; then
+  nginx -t >/dev/null
+  echo "OK nginx config"
+fi
+
+check_service "mu-agent-saas"
+check_service "mu-agent-document-worker"
+check_service "mu-agent-webhook-worker"
+
+cd "$APP_DIR"
 set -a
 . ./mu-agent-saas.env
 set +a
-./bin/mu-agent-migrate status | grep -q '000004_auth_tenant_kb_mvp applied'
+./bin/mu-agent-migrate status | grep -q "$EXPECTED_MIGRATION"
+echo "OK migration $EXPECTED_MIGRATION"
 
 echo "smoke ok $(date -Is)"

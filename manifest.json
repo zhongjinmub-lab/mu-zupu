@@ -1,9 +1,9 @@
 ﻿{
     "project":  "智能体族谱SAAS",
-    "generated_at":  "2026-05-31T15:34:28+08:00",
+    "generated_at":  "2026-05-31T15:45:07+08:00",
     "status":  "final_delivery_verified",
     "assigned_to":  "Codex 开发助手",
-    "file_count":  223,
+    "file_count":  224,
     "files":  [
                   {
                       "path":  ".gitignore",
@@ -57,8 +57,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/README.md",
-                      "size":  4130,
-                      "sha256":  "e83d15b95354374e09d1e2929f7522449ac5f262a6080e7acb2bb5c0fb63eb87"
+                      "size":  4887,
+                      "sha256":  "f6eb64bdab1111b0d9ae27c42c118c7df8b34f959896d359d1387b24aad6de3f"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/backup.sh",
@@ -82,8 +82,8 @@
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/smoke.sh",
-                      "size":  415,
-                      "sha256":  "6f6113805abf32ed755313aeeb38c61ae5fff90bb82e5011c7a0126d21106edb"
+                      "size":  1800,
+                      "sha256":  "473f1ac561168768c7fa666e83b776236d0bc10dbeffb469fc74f79853e00fff"
                   },
                   {
                       "path":  "01_backend/deploy/production/scripts/upgrade.sh",
@@ -996,6 +996,11 @@
                       "sha256":  "f274bf813d746414a637b7c475afd55e9f904015970b3607460f7a65be3dd583"
                   },
                   {
+                      "path":  "02_docs_v1_delivery/2026-05-31_生产冒烟检查公网入口增强增量验收.md",
+                      "size":  1261,
+                      "sha256":  "02bafd9204455f65f01127b2f28f769df1a7f38280de6646f1a384b2d90be0e6"
+                  },
+                  {
                       "path":  "02_docs_v1_delivery/2026-05-31_数据分析摘要CSV导出增量验收.md",
                       "size":  1707,
                       "sha256":  "e2dbe562003dbcdae59d9afd41e7a255c064be0771b90eea7dac78c6ff25d6c4"
@@ -1102,8 +1107,8 @@
                   },
                   {
                       "path":  "README.md",
-                      "size":  3194,
-                      "sha256":  "7e486e174fff5b788c95fc592c603b9adef92c4dbe2cd7cd09b81724fa8b7c28"
+                      "size":  3245,
+                      "sha256":  "5c90aea7ddc4614f24213ee09dd220bd96ae17fdf3b5d26467ca46529104d0b4"
                   },
                   {
                       "path":  "verify_delivery.ps1",

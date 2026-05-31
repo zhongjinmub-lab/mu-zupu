@@ -105,6 +105,26 @@ MIGRATION_STEPS=1 ./scripts/rollback.sh
 /opt/mu-agent-saas/scripts/backup.sh
 ```
 
+`smoke.sh` 默认检查：
+
+- `https://zupu.jiangxinnet.com/saas-api/api/v1/health`
+- `https://zupu.jiangxinnet.com/saas-api/api/v1/ready`
+- `https://zupu.jiangxinnet.com/saas/`
+- `https://zupu.jiangxinnet.com/saas/assets/app.js`
+- `https://zupu.jiangxinnet.com/saas/assets/app.css`
+- `nginx -t`
+- `mu-agent-saas`、`mu-agent-document-worker`、`mu-agent-webhook-worker` systemd 状态
+- `mu-agent-migrate status`
+
+可按环境覆盖：
+
+```bash
+API_BASE_URL=https://example.com/saas-api/api/v1 \
+FRONTEND_BASE_URL=https://example.com/saas \
+EXPECTED_MIGRATION='000004_auth_tenant_kb_mvp applied' \
+/opt/mu-agent-saas/scripts/smoke.sh
+```
+
 ## 备份恢复演练
 
 日常演练优先使用 `restore-drill.sh`，它会把备份恢复到临时数据库 `mu_agent_saas_restore_drill`，校验 `schema_migrations` 后自动删除临时库，不影响生产库。
@@ -138,5 +158,6 @@ CONFIRM_RESTORE=yes DB_BACKUP=/opt/mu-agent-saas/backups/mu_agent_saas_202605311
 - `systemctl status mu-agent-saas`
 - `systemctl status mu-agent-document-worker`
 - `systemctl status mu-agent-webhook-worker`
-- `/health` 和 `/ready` 返回正常
+- 公网 `/saas-api/api/v1/health`、`/saas-api/api/v1/ready` 返回正常
+- 公网 `/saas/`、`/saas/assets/app.js`、`/saas/assets/app.css` 返回正常
 - `./bin/mu-agent-migrate status` 输出符合预期
