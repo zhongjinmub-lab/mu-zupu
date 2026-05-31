@@ -1108,6 +1108,30 @@ textarea:focus {
   color: var(--danger);
 }
 
+.tool-test-result {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f6faf8;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tool-test-result strong {
+  color: #26734d;
+}
+
+.tool-test-result.blocked {
+  background: #fff8f0;
+}
+
+.tool-test-result.blocked strong {
+  color: var(--danger);
+}
+
 .item-actions {
   display: flex;
   gap: 8px;

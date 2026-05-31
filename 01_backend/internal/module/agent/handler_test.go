@@ -73,6 +73,44 @@ func TestDefaultToolSafetyPolicyDefaultsToDeny(t *testing.T) {
 	}
 }
 
+func TestDefaultToolCatalogIncludesSafeAndBlockedTools(t *testing.T) {
+	items := DefaultToolCatalog()
+	if len(items) != 4 {
+		t.Fatalf("tool count = %d", len(items))
+	}
+	kbSearch, ok := FindToolCatalogItem(" kb_search ")
+	if !ok || kbSearch.Status != "planned" || kbSearch.RequiresConfirmation {
+		t.Fatalf("unexpected kb_search tool: %#v", kbSearch)
+	}
+	billing, ok := FindToolCatalogItem("billing_operation")
+	if !ok || billing.Status != "blocked" || !billing.RequiresConfirmation || billing.PermissionRole != "tenant_admin" {
+		t.Fatalf("unexpected billing tool: %#v", billing)
+	}
+	if _, ok := FindToolCatalogItem("missing"); ok {
+		t.Fatal("expected missing tool lookup to fail")
+	}
+}
+
+func TestBuildToolTestResultUsesDryRunAndBlocksDangerousTools(t *testing.T) {
+	kbSearch, _ := FindToolCatalogItem("kb_search")
+	result := BuildToolTestResult(kbSearch, ToolTestRequest{Input: map[string]any{"query": "族谱", "top_k": 3}})
+	if !result.Allowed || !result.DryRun || result.Status != "dry_run_ok" {
+		t.Fatalf("unexpected read tool result: %#v", result)
+	}
+	if !strings.Contains(result.InputSummary, "query") || !strings.Contains(result.InputSummary, "top_k") {
+		t.Fatalf("unexpected input summary: %q", result.InputSummary)
+	}
+
+	billing, _ := FindToolCatalogItem("billing_operation")
+	blocked := BuildToolTestResult(billing, ToolTestRequest{})
+	if blocked.Allowed || !blocked.DryRun || blocked.Status != "blocked" || !blocked.RequiresConfirmation {
+		t.Fatalf("unexpected blocked tool result: %#v", blocked)
+	}
+	if !strings.Contains(blocked.Message, "阻断") {
+		t.Fatalf("expected Chinese block message: %q", blocked.Message)
+	}
+}
+
 func TestDefaultConversationOrchestrationPolicySummarizesFlow(t *testing.T) {
 	policy := DefaultConversationOrchestrationPolicy()
 	if !policy.RAGEnabled || !policy.SSEEnabled || policy.ToolPolicy != "deny" {

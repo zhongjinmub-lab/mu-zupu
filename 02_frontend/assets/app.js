@@ -14,6 +14,8 @@ const state = {
   pendingChunks: [],
   agents: [],
   toolSafetyPolicy: null,
+  tools: [],
+  toolTestResults: {},
   agentGenealogy: { nodes: [], edges: [] },
   agentGenealogyFilters: {
     q: "",
@@ -1117,7 +1119,7 @@ function renderToolSafetyPolicy(error = "") {
     el.innerHTML = empty("暂无工具安全策略");
     return;
   }
-  const tools = [...(policy.available_tools || []), ...(policy.dangerous_tools || [])];
+  const tools = state.tools.length ? state.tools : [...(policy.available_tools || []), ...(policy.dangerous_tools || [])];
   el.innerHTML = `
     <div class="summary-grid compact-summary">
       <span>工具状态：${policy.enabled ? "已启用" : "默认关闭"}</span>
@@ -1134,8 +1136,19 @@ function renderToolSafetyPolicy(error = "") {
             <strong>${escapeHtml(tool.name || tool.code)}</strong>
             <span class="badge ${tool.status === "blocked" ? "danger" : "warn"}">${escapeHtml(tool.status || "planned")}</span>
           </div>
-          <div class="item-meta">${escapeHtml(tool.code || "-")} / ${escapeHtml(tool.category || "-")} / ${tool.requires_confirmation ? "需要确认" : "无需确认"}</div>
+          <div class="item-meta">${escapeHtml(tool.code || "-")} / ${escapeHtml(tool.category || "-")} / ${escapeHtml(tool.permission_role || policy.permission_role || "-")} / ${tool.requires_confirmation ? "需要确认" : "无需确认"}</div>
           <div class="item-meta">${escapeHtml(tool.description || "")}</div>
+          <div class="item-meta">${escapeHtml([tool.scope, ...(tool.supported_actions || [])].filter(Boolean).join("；") || "当前版本仅提供安全摘要")}</div>
+          ${state.toolTestResults[tool.code] ? `
+            <div class="tool-test-result ${state.toolTestResults[tool.code].allowed ? "ok" : "blocked"}">
+              <strong>${escapeHtml(state.toolTestResults[tool.code].allowed ? "测试通过" : "测试已阻断")}</strong>
+              <span>${escapeHtml(state.toolTestResults[tool.code].message || "")}</span>
+              <span>${escapeHtml(state.toolTestResults[tool.code].input_summary || "")}</span>
+            </div>
+          ` : ""}
+          <div class="item-actions">
+            <button class="button small secondary" data-tool-test="${escapeHtml(tool.code || "")}" type="button">安全测试</button>
+          </div>
         </article>
       `).join("") || empty("暂无工具配置")}
     </div>
@@ -1787,8 +1800,24 @@ async function loadAgents() {
 
 async function loadToolSafetyPolicy() {
   if (!state.tenantId) return;
-  state.toolSafetyPolicy = await api("/agents/tool-safety-policy");
+  const [policy, tools] = await Promise.all([
+    api("/agents/tool-safety-policy"),
+    api("/tools"),
+  ]);
+  state.toolSafetyPolicy = policy;
+  state.tools = tools.items || [];
   renderToolSafetyPolicy();
+}
+
+async function testTool(toolCode) {
+  if (!toolCode) return;
+  const result = await api(`/tools/${encodeURIComponent(toolCode)}/test`, {
+    method: "POST",
+    body: { input: { source: "admin_console", checked_at: new Date().toISOString() } },
+  });
+  state.toolTestResults[toolCode] = result;
+  renderToolSafetyPolicy();
+  toast(result.allowed ? "工具安全测试通过" : "工具测试已被安全策略阻断");
 }
 
 function agentGenealogyFiltersFromForm() {
@@ -2956,6 +2985,7 @@ function bindEvents() {
     const agentGenealogyDeleteId = target.dataset?.agentGenealogyDelete;
     const conversationSelectId = target.closest("[data-conversation-select]")?.dataset.conversationSelect;
     const agentKbUnbindId = target.dataset?.agentKbUnbind;
+    const toolTestId = target.dataset?.toolTest;
     const viewLink = target.closest("[data-view-link]")?.dataset.viewLink;
 
     try {
@@ -2966,6 +2996,9 @@ function bindEvents() {
       if (editAgentId) {
         fillAgentForm(editAgentId);
         toast("智能体已载入编辑表单");
+      }
+      if (toolTestId) {
+        await testTool(toolTestId);
       }
       if (agentKbUnbindId) {
         const agentID = selectedBindingAgentID();

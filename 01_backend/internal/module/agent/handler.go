@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -89,6 +90,32 @@ func (h Handler) ToolSafetyPolicy(c *gin.Context) {
 		return
 	}
 	response.OK(c, DefaultToolSafetyPolicy())
+}
+
+func (h Handler) ListTools(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, gin.H{"items": DefaultToolCatalog()})
+}
+
+func (h Handler) TestTool(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	item, ok := FindToolCatalogItem(c.Param("tool_id"))
+	if !ok {
+		response.Error(c, http.StatusNotFound, 40420, "工具不存在")
+		return
+	}
+	var req ToolTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	response.OK(c, BuildToolTestResult(item, req))
 }
 
 func (h Handler) ConversationOrchestrationPolicy(c *gin.Context) {

@@ -200,11 +200,11 @@
 | GET | /plugins | 插件列表 |
 | POST | /plugins/{id}/enable | 启用插件 |
 | POST | /plugins/{id}/disable | 禁用插件 |
-| GET | /tools | 工具列表 |
-| POST | /tools/{id}/test | 测试工具 |
+| GET | /tools | Agent 工具目录，返回只读工具、危险工具、安全状态、权限要求和审计动作 |
+| POST | /tools/{id}/test | 工具安全测试，当前只执行 dry-run 预检，不执行真实外部动作 |
 | GET | /tool-call-logs | 工具调用日志 |
 
-当前 Agent 工具执行首版采用安全默认策略：`GET /agents/tool-safety-policy` 返回工具安全摘要，默认 `enabled=false`、`default_action=deny`。知识库检索和文件资料查询仅作为计划中的只读工具展示；知识库写入、账单授权等危险工具默认阻断，后续启用前必须校验 `tenant writer/admin` 权限、要求人工确认，并写入 `agent.tool.call` 审计动作。管理台“Agent 工具安全策略”用中文卡片展示工具状态、危险确认、审计动作和后续执行要求，不展示黑色 JSON 原文。
+当前 Agent 工具执行首版采用安全默认策略：`GET /agents/tool-safety-policy` 返回 Agent 工具安全摘要，默认 `enabled=false`、`default_action=deny`。`GET /tools` 返回同一安全策略下的工具目录；知识库检索和文件资料查询为计划中的只读工具，测试接口只返回 dry-run 中文摘要；知识库写入、账单授权等危险工具默认阻断，测试接口返回“已阻断”中文说明，不执行真实外部动作。后续启用真实工具执行前必须校验 `tenant writer/admin` 权限、要求人工确认，并写入 `agent.tool.call` 审计动作。管理台“Agent 工具安全策略”用中文卡片展示工具状态、测试结果、危险确认、审计动作和后续执行要求，不展示黑色 JSON 原文。
 
 ### 3.6 订单与授权
 
