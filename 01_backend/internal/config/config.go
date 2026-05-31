@@ -52,6 +52,13 @@ type Config struct {
 	AlipayPublicKey               string
 	AlipayGateway                 string
 	AlipaySignType                string
+	WechatAppID                   string
+	WechatMchID                   string
+	WechatSerialNo                string
+	WechatAPIv3Key                string
+	WechatPrivateKey              string
+	WechatPlatformPublicKey       string
+	WechatGateway                 string
 	LicensePublicKeys             string
 }
 
@@ -103,6 +110,13 @@ func Load() Config {
 		AlipayPublicKey:               env("ALIPAY_PUBLIC_KEY", ""),
 		AlipayGateway:                 env("ALIPAY_GATEWAY", ""),
 		AlipaySignType:                env("ALIPAY_SIGN_TYPE", "RSA2"),
+		WechatAppID:                   env("WECHAT_APP_ID", ""),
+		WechatMchID:                   env("WECHAT_MCH_ID", ""),
+		WechatSerialNo:                env("WECHAT_SERIAL_NO", ""),
+		WechatAPIv3Key:                env("WECHAT_API_V3_KEY", ""),
+		WechatPrivateKey:              env("WECHAT_PRIVATE_KEY", ""),
+		WechatPlatformPublicKey:       env("WECHAT_PLATFORM_PUBLIC_KEY", ""),
+		WechatGateway:                 env("WECHAT_GATEWAY", ""),
 		LicensePublicKeys:             env("LICENSE_PUBLIC_KEYS", ""),
 	}
 }

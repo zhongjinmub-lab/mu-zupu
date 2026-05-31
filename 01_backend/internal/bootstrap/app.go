@@ -168,6 +168,15 @@ func NewApp(cfg config.Config) (*App, error) {
 			Gateway:    cfg.AlipayGateway,
 			SignType:   cfg.AlipaySignType,
 		},
+		Wechat: payment.WechatConfig{
+			AppID:          cfg.WechatAppID,
+			MchID:          cfg.WechatMchID,
+			SerialNo:       cfg.WechatSerialNo,
+			APIv3Key:       cfg.WechatAPIv3Key,
+			PrivateKey:     cfg.WechatPrivateKey,
+			PlatformPublic: cfg.WechatPlatformPublicKey,
+			Gateway:        cfg.WechatGateway,
+		},
 	})
 	if err != nil {
 		return nil, err

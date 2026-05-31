@@ -3164,6 +3164,9 @@ function bindEvents() {
           window.open(prepay.pay_url, "_blank", "noopener");
           await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
           toast(prepay.message || "已创建支付单,请在新页面完成支付");
+        } else if (prepay && prepay.qr_content) {
+          await Promise.allSettled([loadOrders(), loadPayments(), loadPaymentEvents(), loadSubscription()]);
+          window.prompt(prepay.message || "请复制以下支付链接并用对应 App 扫码完成支付", prepay.qr_content);
         } else if (channel === "mock") {
           await api("/payment-callbacks/mock", {
             method: "POST",

@@ -1,9 +1,9 @@
 ﻿{
     "project": "智能体族谱SAAS",
-    "generated_at": "2026-05-31T18:20:00+08:00",
+    "generated_at": "2026-05-31T19:10:00+08:00",
     "status": "final_delivery_verified",
     "assigned_to": "Codex 开发助手",
-    "file_count": 239,
+    "file_count": 242,
     "files": [
         {
             "path": ".gitignore",
@@ -62,8 +62,8 @@
         },
         {
             "path": "01_backend/deploy/production/mu-agent-saas.env.example",
-            "size": 1826,
-            "sha256": "9d773141eabab32ff60ace7239f82219aff1199548a94a0aff05c5241aa15aae"
+            "size": 2285,
+            "sha256": "99991147bf04a383b980e8b249484f0bb8d0f9fd5193233b615ad802c95b9391"
         },
         {
             "path": "01_backend/deploy/production/nginx/saas-api-location.conf",
@@ -142,18 +142,18 @@
         },
         {
             "path": "01_backend/internal/bootstrap/app.go",
-            "size": 7622,
-            "sha256": "fd0e37763e3d33c922f20890509efe063895416ad7b1a18680cb59cc34b14702"
+            "size": 7936,
+            "sha256": "3ca40741437221a78d5fe661a3ef1d1d0790f95f7a46a30a56cc01ceb307eab0"
         },
         {
             "path": "01_backend/internal/config/config.go",
-            "size": 5786,
-            "sha256": "108be959b0d2df2623a82f140984558b1d6bc9d70cf4a2eb01718cf6fce34f27"
+            "size": 6491,
+            "sha256": "b6aa7074064fc6108d2afec9c4457647be8641d0b6bf64c4d870abc581289664"
         },
         {
             "path": "01_backend/internal/config/config_test.go",
-            "size": 4322,
-            "sha256": "8509c46c9c84638a3117f63543c7281c4e01390e60fefe54e7a7ed59db03c277"
+            "size": 5187,
+            "sha256": "f1ec6f01f50f1c6acf45ff01934ee68b88ddf31938a6b908e0af54a5be85f071"
         },
         {
             "path": "01_backend/internal/embedding/http_provider.go",
@@ -527,8 +527,8 @@
         },
         {
             "path": "01_backend/internal/payment/crypto.go",
-            "size": 3331,
-            "sha256": "b92d118518cc9b13cc6215e3059b27b174615311c65f2bf50502fe30ea5f89c8"
+            "size": 4198,
+            "sha256": "635e586ad18bdce995ee74a9e745a09b53d96436111eff0a8c0424dd10566130"
         },
         {
             "path": "01_backend/internal/payment/mock.go",
@@ -547,8 +547,18 @@
         },
         {
             "path": "01_backend/internal/payment/registry.go",
-            "size": 2773,
-            "sha256": "3cf8277ee47f8cbc01959985c23f1b4f42f5bd0dda65c98067c9ad8468c55efc"
+            "size": 2989,
+            "sha256": "1bc11a33ae17428541d76edabc6cf59bb0d99691bdeb8eaf4d6e824876156516"
+        },
+        {
+            "path": "01_backend/internal/payment/wechat.go",
+            "size": 9476,
+            "sha256": "ecc149ab5c56f0f572cf7b7639eee6bf4453fd24813e349cb196e1dd82202f71"
+        },
+        {
+            "path": "01_backend/internal/payment/wechat_test.go",
+            "size": 8619,
+            "sha256": "cb4b9a2421317e8c91d95a1c3a563f629094b47664dcf1b48f82006c6d34faab"
         },
         {
             "path": "01_backend/migrations/000001_init.down.sql",
@@ -802,8 +812,8 @@
         },
         {
             "path": "02_docs_v1_delivery/04_API接口清单.md",
-            "size": 47852,
-            "sha256": "4e972324932bb2358b485be4622b1d9db915f0d23ff7ed9c6817b0f0e5f04327"
+            "size": 48405,
+            "sha256": "1ae8d5db6bc0de171c47f954d165a48b2ef43b1ef54b3fdfa65fc285cf0aefae"
         },
         {
             "path": "02_docs_v1_delivery/05_Redis_Key设计.md",
@@ -1046,6 +1056,11 @@
             "sha256": "5884604d553788ae7b5c13e9f072be172665b69537caefdb3a4140d7806640c6"
         },
         {
+            "path": "02_docs_v1_delivery/2026-05-31_微信支付渠道接入增量验收.md",
+            "size": 2682,
+            "sha256": "167fb4d142a863903a6b459f3b92ff3a126aef6c7d205198d8fcc4047703adba"
+        },
+        {
             "path": "02_docs_v1_delivery/2026-05-31_支付回调验签与幂等增量验收.md",
             "size": 1260,
             "sha256": "cc389a729da4890d5b1a1315125930614aaf5510dbd515db54dba7b10ce3bb1c"
@@ -1142,8 +1157,8 @@
         },
         {
             "path": "02_docs_v1_delivery/README.md",
-            "size": 2084,
-            "sha256": "e053e28acbb1d7f48d3af3412bacae364470d689aaf1a97d790bf06eabcb9fbb"
+            "size": 2189,
+            "sha256": "2de8f14ccca339d31ac379db52c87882a48997e1287fffec619bd22d203b6e93"
         },
         {
             "path": "02_frontend/README.md",
@@ -1157,13 +1172,13 @@
         },
         {
             "path": "02_frontend/assets/app.js",
-            "size": 128159,
-            "sha256": "02aa530ed317bc458d0d7cb9e18adb865708ede3bace5bcc0fcc3396cc1fda1c"
+            "size": 128446,
+            "sha256": "fb4749963f5f70fe905a82c513088fd8e41913c81f20c43798eada99be604034"
         },
         {
             "path": "02_frontend/index.html",
-            "size": 40387,
-            "sha256": "2b850cde61d1793067d7b69ce91bae0d4741e80483464e82e606df86c9f042ea"
+            "size": 40454,
+            "sha256": "54407e744fc3f3659509650a78300e6833e40f1e33e5328dc03fc37ee1a3d998"
         },
         {
             "path": "03_智能体族谱SAAS_开发方案.md",
@@ -1172,8 +1187,8 @@
         },
         {
             "path": "04_最终交付验收清单.md",
-            "size": 9805,
-            "sha256": "485fb57d1161028f488d606198d43bc2c4437c443fbe2773ad5249bf46021d7f"
+            "size": 10531,
+            "sha256": "1a6304693a008538299ab058e8673f94a90d549370ae700acaa9d23a00647c5f"
         },
         {
             "path": "README.md",
@@ -1182,8 +1197,8 @@
         },
         {
             "path": "manifest.json",
-            "size": 61541,
-            "sha256": "f24c43a2f437ea3a45b1c198b8f27780e1f0e62806ab1bdf91e56865b5f8ee91"
+            "size": 50923,
+            "sha256": "f6c34a436f4994f039e5359ca1dac49788f049d3e69c975faaf332cb8aa332b7"
         },
         {
             "path": "verify_delivery.ps1",

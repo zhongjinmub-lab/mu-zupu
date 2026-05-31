@@ -38,6 +38,13 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	t.Setenv("ALIPAY_PRIVATE_KEY", "alipay-private-key")
 	t.Setenv("ALIPAY_PUBLIC_KEY", "alipay-public-key")
 	t.Setenv("ALIPAY_GATEWAY", "https://openapi.alipaydev.com/gateway.do")
+	t.Setenv("WECHAT_APP_ID", "wxappid")
+	t.Setenv("WECHAT_MCH_ID", "1900000001")
+	t.Setenv("WECHAT_SERIAL_NO", "SERIAL123")
+	t.Setenv("WECHAT_API_V3_KEY", "0123456789abcdef0123456789abcdef")
+	t.Setenv("WECHAT_PRIVATE_KEY", "wechat-private-key")
+	t.Setenv("WECHAT_PLATFORM_PUBLIC_KEY", "wechat-platform-public-key")
+	t.Setenv("WECHAT_GATEWAY", "https://api.mch.weixin.qq.com")
 	t.Setenv("LICENSE_PUBLIC_KEYS", `{"default":"pubkey"}`)
 
 	cfg := Load()
@@ -94,6 +101,15 @@ func TestLoadReadsJWTConfig(t *testing.T) {
 	}
 	if cfg.AlipayGateway != "https://openapi.alipaydev.com/gateway.do" || cfg.AlipaySignType != "RSA2" {
 		t.Fatalf("alipay gateway config = %#v", cfg)
+	}
+	if cfg.WechatAppID != "wxappid" || cfg.WechatMchID != "1900000001" || cfg.WechatSerialNo != "SERIAL123" {
+		t.Fatalf("wechat base config = %#v", cfg)
+	}
+	if cfg.WechatAPIv3Key != "0123456789abcdef0123456789abcdef" || cfg.WechatPrivateKey != "wechat-private-key" {
+		t.Fatalf("wechat credential config = %#v", cfg)
+	}
+	if cfg.WechatPlatformPublicKey != "wechat-platform-public-key" || cfg.WechatGateway != "https://api.mch.weixin.qq.com" {
+		t.Fatalf("wechat platform config = %#v", cfg)
 	}
 	if cfg.LicensePublicKeys != `{"default":"pubkey"}` {
 		t.Fatalf("LicensePublicKeys = %q", cfg.LicensePublicKeys)

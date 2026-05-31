@@ -2,6 +2,8 @@ package payment
 
 import (
 	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -123,4 +125,29 @@ func buildSignContent(params map[string]string, excludeSignType bool) string {
 		b.WriteString(params[k])
 	}
 	return b.String()
+}
+
+// decryptAESGCM 使用 AES-256-GCM 解密(微信支付 v3 回调资源体的 AEAD_AES_256_GCM)。
+// key 必须为 32 字节;nonce 为 12 字节;ciphertext 为密文与 16 字节认证标签拼接后的字节(已 base64 解码);
+// associatedData 为附加认证数据(可为空)。
+func decryptAESGCM(key, nonce, ciphertext, associatedData []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("aes-256-gcm key must be 32 bytes")
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	if len(nonce) != gcm.NonceSize() {
+		return nil, errors.New("invalid aes-gcm nonce size")
+	}
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, associatedData)
+	if err != nil {
+		return nil, ErrInvalidNotify
+	}
+	return plaintext, nil
 }

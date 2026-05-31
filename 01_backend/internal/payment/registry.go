@@ -57,9 +57,10 @@ func (r *Registry) Channels() []string {
 
 // RegistryConfig 是从应用配置构建注册表所需的参数。
 type RegistryConfig struct {
-	Channels   string // 逗号分隔的启用渠道,例如 "mock,alipay";为空时默认仅 mock
+	Channels   string // 逗号分隔的启用渠道,例如 "mock,alipay,wechat";为空时默认仅 mock
 	MockSecret string // mock 渠道的 HMAC 验签密钥(可为空,开发模式)
 	Alipay     AlipayConfig
+	Wechat     WechatConfig
 }
 
 // BuildRegistry 根据配置构建注册表。未知渠道或渠道配置非法时返回错误。
@@ -79,6 +80,12 @@ func BuildRegistry(cfg RegistryConfig) (*Registry, error) {
 				return nil, fmt.Errorf("payment channel alipay: %w", err)
 			}
 			providers = append(providers, ap)
+		case "wechat":
+			wp, err := NewWechatProvider(cfg.Wechat)
+			if err != nil {
+				return nil, fmt.Errorf("payment channel wechat: %w", err)
+			}
+			providers = append(providers, wp)
 		default:
 			return nil, fmt.Errorf("%w: %s", ErrUnsupportedChannel, name)
 		}
