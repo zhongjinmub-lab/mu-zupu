@@ -96,6 +96,15 @@ func (h Handler) RolePermissions(c *gin.Context) {
 	response.OK(c, RolePermissions(t.RoleCode))
 }
 
+// RBACMatrix 返回完整的角色权限能力矩阵（机器可查版本）。
+func (h Handler) RBACMatrix(c *gin.Context) {
+	if _, ok := CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	response.OK(c, DefaultRolePermissionMatrix())
+}
+
 func (h Handler) AddMember(c *gin.Context) {
 	user, ok := auth.CurrentUser(c)
 	if !ok {
@@ -418,6 +427,7 @@ func RegisterRoutes(private *gin.RouterGroup, h Handler) {
 func RegisterTenantScopedRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/tenant/members", h.ListMembers)
 	rg.GET("/tenant/role-permissions", h.RolePermissions)
+	rg.GET("/tenant/rbac-matrix", h.RBACMatrix)
 	rg.POST("/tenant/members", h.AddMember)
 	rg.PUT("/tenant/members/:member_id/role", h.UpdateMemberRole)
 	rg.DELETE("/tenant/members/:member_id", h.RemoveMember)
