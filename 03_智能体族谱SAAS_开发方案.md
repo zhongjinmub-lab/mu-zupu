@@ -201,6 +201,7 @@ GET  /api/v1/audit-logs
 - 渠道接入代码生成（Web 嵌入脚本 / H5 链接 / API 调用示例，按渠道类型与请求 baseURL 生成，P1 渠道入口）已完成；
 - 渠道公开连接端点（外部接入方凭 channel_key 拉取接入配置，公开 + IP 限流，P1 渠道入口）已完成；
 - 渠道复制（克隆为新渠道，名称自动派生、channel_key 重新生成，P1 渠道入口）已完成；
+- 监控告警阈值规则与状态评估（DefaultAlertPolicy/EvaluateAlerts、alert-policy/alert-status 端点，P0 监控运维"告警"）已完成；
 - 智能体族谱图谱、关系维护、筛选、结构诊断、统计分析和 CSV 导出已完成；
 - 套餐订阅、用量统计、额度限制、订单生命周期和支付回调验签已完成；
 - License 在线/离线验证、签名脱敏和授权生命周期管理已完成；

@@ -1112,3 +1112,13 @@ P1「渠道入口」第一增量，引入 Agent 渠道接入点持久化。新�
 - `DELETE /channels/{channel_id}`：归档（软删除）渠道。
 
 写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`channel_key` 为公开接入凭据（形如 `ch_xxxx`），在租户内唯一。后续将基于 `channel_key` 提供 Web 嵌入脚本、H5 页面与开放 API 接入，并补充公众号/企业微信回调验签。管理台新增“渠道接入”面板，展示渠道类型目录、新建渠道表单与渠道列表（含 channel_key、启用/禁用/删除）。
+
+
+## 2026-05-31 增量：监控告警（阈值规则与状态评估）
+
+方案第 12 节建议③「监控告警增强」落地，加在无 DB 的 settings 模块，纯函数实现：
+
+- `GET /settings/alert-policy`：返回内置告警策略与规则（指标、运算符、阈值、级别、说明）。内置规则覆盖 `heap_alloc_mb`、`goroutines`、`error_rate`、`p95_latency_ms` 的 warning/critical 阈值。
+- `GET /settings/alert-status`：以当前进程运行快照（来自 `BuildMonitoringSnapshot`）评估告警，返回 `snapshot`、`metrics` 与 `evaluation`（`healthy`、`warning_count`、`critical_count`、`triggered[]`）。
+
+告警评估为纯函数 `EvaluateAlerts(metrics, rules)`，按 `> >= < <= == !=` 比较，指标缺失则跳过、不误报。两个端点均为只读、按 settings 模块既有方式挂在登录后路由组。接入真实告警通道（邮件/Webhook/IM）与租户级自定义阈值为后续增强。管理台"设置"视图新增"监控告警"面板，可一键评估当前进程并展示触发的告警。

@@ -456,3 +456,30 @@ func rateLimitShare(base, divisor int) int {
 	}
 	return value
 }
+
+// AlertPolicy 返回内置监控告警默认策略。
+func (h Handler) AlertPolicy(c *gin.Context) {
+	response.OK(c, DefaultAlertPolicy())
+}
+
+// AlertStatus 用当前进程运行快照评估监控告警，返回快照、指标与评估结果。
+func (h Handler) AlertStatus(c *gin.Context) {
+	snapshot := BuildMonitoringSnapshot(time.Now())
+	metrics := MonitoringSnapshotMetrics(snapshot)
+	evaluation := EvaluateAlerts(metrics, DefaultAlertPolicy().Rules)
+	response.OK(c, gin.H{
+		"snapshot":   snapshot,
+		"metrics":    metrics,
+		"evaluation": evaluation,
+	})
+}
+
+// MonitoringSnapshotMetrics 把运行监控快照转为告警评估所需的指标 map。
+func MonitoringSnapshotMetrics(snap MonitoringSnapshot) map[string]float64 {
+	return map[string]float64{
+		"heap_alloc_mb": float64(snap.HeapAllocMB),
+		"heap_sys_mb":   float64(snap.HeapSysMB),
+		"goroutines":    float64(snap.Goroutines),
+		"gc_count":      float64(snap.GCCount),
+	}
+}

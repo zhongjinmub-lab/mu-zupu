@@ -2687,6 +2687,50 @@ async function loadMonitoringSnapshot() {
   renderMonitoringSnapshot();
 }
 
+// loadAlertStatus 按当前进程运行指标评估监控告警并渲染。
+async function loadAlertStatus() {
+  state.alertStatus = await api("/settings/alert-status", { tenant: false });
+  renderAlertStatus();
+}
+
+function renderAlertStatus(error = "") {
+  const el = $("#alertStatusBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`监控告警评估失败：${error}`);
+    return;
+  }
+  const data = state.alertStatus;
+  if (!data) {
+    el.innerHTML = empty('点击"评估"按当前进程运行指标评估告警');
+    return;
+  }
+  const ev = data.evaluation || {};
+  const metrics = data.metrics || {};
+  const triggered = ev.triggered || [];
+  el.innerHTML = `
+    <div class="summary-grid compact-summary">
+      <span>健康状态：${ev.healthy ? "正常" : "存在告警"}</span>
+      <span>警告：${Number(ev.warning_count || 0)}</span>
+      <span>严重：${Number(ev.critical_count || 0)}</span>
+      <span>堆内存：${Number(metrics.heap_alloc_mb || 0)} MB</span>
+      <span>Goroutines：${Number(metrics.goroutines || 0)}</span>
+    </div>
+    <div class="list">
+      ${triggered.map((a) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(a.metric || "")}</strong>
+            <span class="badge ${a.severity === "critical" ? "danger" : "warn"}">${escapeHtml(a.severity || "")}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(a.metric || "")} ${escapeHtml(a.operator || "")} ${Number(a.threshold || 0)}（实际 ${Number(a.actual || 0)}）</div>
+          <div class="item-meta">${escapeHtml(a.description || "")}</div>
+        </article>
+      `).join("") || empty("当前无触发告警，运行健康")}
+    </div>
+  `;
+}
+
 async function loadSensitiveFieldSummary() {
   state.sensitiveFieldSummary = await api("/settings/sensitive-fields", { tenant: false });
   renderSensitiveFieldSummary();
@@ -3237,6 +3281,9 @@ function bindEvents() {
   });
   $("#loadMonitoringSnapshotBtn").addEventListener("click", () => {
     loadMonitoringSnapshot().then(() => toast("运行监控已刷新")).catch((err) => renderMonitoringSnapshot(err.message));
+  });
+  $("#loadAlertStatusBtn").addEventListener("click", () => {
+    loadAlertStatus().then(() => toast("监控告警已评估")).catch((err) => renderAlertStatus(err.message));
   });
   $("#loadSensitiveFieldSummaryBtn").addEventListener("click", () => {
     loadSensitiveFieldSummary().then(() => toast("敏感字段保护摘要已刷新")).catch((err) => renderSensitiveFieldSummary(err.message));
