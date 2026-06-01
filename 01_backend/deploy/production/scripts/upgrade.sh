@@ -40,14 +40,15 @@ install -m 0755 "$STAGE_DIR/bin/mu-agent-server" "$APP_DIR/bin/mu-agent-server"
 install -m 0755 "$STAGE_DIR/bin/mu-agent-migrate" "$APP_DIR/bin/mu-agent-migrate"
 install -m 0755 "$STAGE_DIR/bin/mu-agent-document-worker" "$APP_DIR/bin/mu-agent-document-worker"
 install -m 0755 "$STAGE_DIR/bin/mu-agent-webhook-worker" "$APP_DIR/bin/mu-agent-webhook-worker"
-cp -a "$STAGE_DIR/migrations" "$APP_DIR/migrations"
-cp -a "$STAGE_DIR/scripts" "$APP_DIR/scripts"
-cp -a "$STAGE_DIR/nginx" "$APP_DIR/nginx"
-cp -a "$STAGE_DIR/systemd" "$APP_DIR/systemd"
+for item in migrations scripts nginx systemd; do
+  rm -rf "$APP_DIR/$item"
+  cp -a "$STAGE_DIR/$item" "$APP_DIR/$item"
+done
 if [[ -d "$STAGE_DIR/frontend" ]]; then
   rm -rf "$APP_DIR/frontend"
   cp -a "$STAGE_DIR/frontend" "$APP_DIR/frontend"
 fi
+chmod +x "$APP_DIR"/scripts/*.sh || true
 cp -f "$STAGE_DIR/docker-compose.yml" "$APP_DIR/docker-compose.yml"
 cp -f "$STAGE_DIR/compose.env.example" "$APP_DIR/compose.env.example"
 cp -f "$STAGE_DIR/mu-agent-saas.env.example" "$APP_DIR/mu-agent-saas.env.example"
