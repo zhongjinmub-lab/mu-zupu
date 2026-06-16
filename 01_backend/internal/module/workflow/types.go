@@ -3,6 +3,8 @@ package workflow
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -230,6 +232,28 @@ func ValidateWorkflowGraph(graph WorkflowGraph) WorkflowValidationResult {
 		result.Issues = append(result.Issues, "工作流存在环，无法生成执行顺序")
 	} else {
 		result.ExecutionOrder = order
+	}
+
+	// condition 节点出边的条件标注校验：条件语法非法记为错误，缺少条件标注给出警告。
+	conditionBranches := map[string]int{}
+	for _, e := range graph.Edges {
+		from := strings.TrimSpace(e.From)
+		if nodeType[from] != "condition" {
+			continue
+		}
+		cond := strings.TrimSpace(e.Condition)
+		if cond == "" {
+			continue
+		}
+		conditionBranches[from]++
+		if _, _, _, err := parseCondition(cond); err != nil {
+			result.Issues = append(result.Issues, "condition 节点 "+from+" 的出边条件无效："+cond)
+		}
+	}
+	for _, id := range nodeOrder {
+		if nodeType[id] == "condition" && conditionBranches[id] == 0 {
+			result.Warnings = append(result.Warnings, "建议为 condition 节点的分支出边标注 condition 条件："+id)
+		}
 	}
 
 	result.Valid = len(result.Issues) == 0
@@ -477,4 +501,171 @@ func marshalJSONValue(v any) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+// WorkflowSummary 表示当前租户工作流定义的概览统计。
+type WorkflowSummary struct {
+	Total     int            `json:"total"`
+	Draft     int            `json:"draft"`
+	Published int            `json:"published"`
+	ByStatus  map[string]int `json:"by_status"`
+}
+
+// SummarizeWorkflows 对工作流列表做概览聚合：总数、草稿/已发布数与按状态分布。纯函数。
+func SummarizeWorkflows(workflows []Workflow) WorkflowSummary {
+	summary := WorkflowSummary{ByStatus: map[string]int{}}
+	for _, wf := range workflows {
+		summary.Total++
+		switch wf.Status {
+		case StatusDraft:
+			summary.Draft++
+		case StatusPublished:
+			summary.Published++
+		}
+		if wf.Status != "" {
+			summary.ByStatus[wf.Status]++
+		}
+	}
+	return summary
+}
+
+// DuplicateWorkflowRequest 基于已有工作流构造副本的创建请求：
+// 名称追加"副本"，编码追加 -copy[-suffix] 且不超过 64 字符，定义整体复制。纯函数。
+func DuplicateWorkflowRequest(src Workflow, suffix string) CreateWorkflowRequest {
+	tag := "-copy"
+	if strings.TrimSpace(suffix) != "" {
+		tag = tag + "-" + strings.TrimSpace(suffix)
+	}
+	base := src.Code
+	maxBase := 64 - len(tag)
+	if maxBase < 1 {
+		maxBase = 1
+	}
+	if len(base) > maxBase {
+		base = base[:maxBase]
+	}
+	return CreateWorkflowRequest{
+		Name:        src.Name + " 副本",
+		Code:        base + tag,
+		Description: src.Description,
+		Definition:  src.Definition,
+	}
+}
+
+// EvaluateConditionRequest 是条件求值接口的请求体。
+type EvaluateConditionRequest struct {
+	Expression string         `json:"expression" binding:"required"`
+	Input      map[string]any `json:"input"`
+}
+
+// EvaluateConditionResult 是条件求值结果。
+type EvaluateConditionResult struct {
+	Expression string `json:"expression"`
+	Matched    bool   `json:"matched"`
+}
+
+// parseCondition 解析形如 "key op value" 的条件表达式，返回左操作数、运算符、右操作数。
+// 支持运算符（按先长后短匹配）：>= <= == != > <。
+func parseCondition(expr string) (left, op, right string, err error) {
+	expr = strings.TrimSpace(expr)
+	if expr == "" {
+		return "", "", "", errors.New("condition expression is empty")
+	}
+	for _, candidate := range []string{">=", "<=", "==", "!=", ">", "<"} {
+		if idx := strings.Index(expr, candidate); idx >= 0 {
+			left = strings.TrimSpace(expr[:idx])
+			right = strings.TrimSpace(expr[idx+len(candidate):])
+			op = candidate
+			break
+		}
+	}
+	if op == "" {
+		return "", "", "", errors.New("condition must contain an operator: == != > >= < <=")
+	}
+	if left == "" || right == "" {
+		return "", "", "", errors.New("condition operand is empty")
+	}
+	if strings.ContainsAny(left, " \t") {
+		return "", "", "", errors.New("condition left operand must be a single key without spaces")
+	}
+	return left, op, right, nil
+}
+
+// conditionToFloat 尝试把任意值转为数值，用于条件的数值比较。
+func conditionToFloat(v any) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case float32:
+		return float64(n), true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case json.Number:
+		f, err := n.Float64()
+		return f, err == nil
+	case string:
+		f, err := strconv.ParseFloat(strings.TrimSpace(n), 64)
+		return f, err == nil
+	default:
+		return 0, false
+	}
+}
+
+// EvaluateCondition 对条件表达式按给定 input 求值。
+// 左操作数取自 input[key]；右操作数为字面值（可带引号）。
+// 当两侧均可解析为数值时按数值比较，否则按字符串比较（仅支持 == 和 !=）。
+// 左侧变量不存在时视为不匹配（返回 false，无错误）。纯函数。
+func EvaluateCondition(expr string, input map[string]any) (bool, error) {
+	left, op, right, err := parseCondition(expr)
+	if err != nil {
+		return false, err
+	}
+	right = strings.Trim(right, `"'`)
+	val, ok := input[left]
+	if !ok {
+		return false, nil
+	}
+	lf, lok := conditionToFloat(val)
+	rf, rerr := strconv.ParseFloat(right, 64)
+	if lok && rerr == nil {
+		switch op {
+		case ">":
+			return lf > rf, nil
+		case ">=":
+			return lf >= rf, nil
+		case "<":
+			return lf < rf, nil
+		case "<=":
+			return lf <= rf, nil
+		case "==":
+			return lf == rf, nil
+		case "!=":
+			return lf != rf, nil
+		}
+	}
+	ls := fmt.Sprintf("%v", val)
+	switch op {
+	case "==":
+		return ls == right, nil
+	case "!=":
+		return ls != right, nil
+	default:
+		return false, errors.New("非数值操作数仅支持 == 和 != 运算符")
+	}
+}
+
+// ApproveRejectRequest 是人工审批动作的请求体（可选备注）。
+type ApproveRejectRequest struct {
+	Comment string `json:"comment"`
+}
+
+// ApprovalAction 表示一次人工审批动作记录。
+type ApprovalAction struct {
+	RunID     string `json:"run_id"`
+	Action    string `json:"action"`
+	Comment   string `json:"comment"`
+	ActorID   string `json:"actor_id"`
+	Timestamp string `json:"timestamp"`
 }

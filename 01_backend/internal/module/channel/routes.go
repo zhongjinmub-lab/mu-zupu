@@ -11,12 +11,15 @@ import (
 func RegisterRoutes(rg *gin.RouterGroup, h Handler) {
 	rg.GET("/channel-types", h.ListChannelTypes)
 	rg.GET("/channels", h.ListChannels)
+	rg.GET("/channels/summary", h.ChannelsSummary)
 	rg.GET("/channels/:channel_id", h.GetChannel)
 	rg.GET("/channels/:channel_id/embed", h.ChannelEmbed)
 
 	write := rg.Group("")
 	write.Use(tenant.RequireTenantWriter())
 	write.POST("/channels", h.CreateChannel)
+	write.POST("/channels/:channel_id/duplicate", h.DuplicateChannel)
+	write.PUT("/channels/:channel_id", h.UpdateChannel)
 	write.POST("/channels/:channel_id/enable", h.EnableChannel)
 	write.POST("/channels/:channel_id/disable", h.DisableChannel)
 	write.DELETE("/channels/:channel_id", h.ArchiveChannel)

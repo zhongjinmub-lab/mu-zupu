@@ -286,3 +286,23 @@ func scanWorkflowRun(rows pgx.Rows) (WorkflowRun, error) {
 	}
 	return item, nil
 }
+
+// GetRun 返回指定工作流运行记录（按租户隔离）。
+func (r Repository) GetRun(ctx context.Context, tenantID, runID string) (WorkflowRun, error) {
+	const q = `
+SELECT ` + workflowRunColumns + `
+FROM workflow_runs
+WHERE id = $1 AND tenant_id = $2`
+	rows, err := r.DB.Query(ctx, q, runID, tenantID)
+	if err != nil {
+		return WorkflowRun{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return WorkflowRun{}, rows.Err()
+		}
+		return WorkflowRun{}, ErrWorkflowNotFound
+	}
+	return scanWorkflowRun(rows)
+}

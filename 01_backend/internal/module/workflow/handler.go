@@ -267,3 +267,99 @@ func (h Handler) ListWorkflowRuns(c *gin.Context) {
 	}
 	response.OK(c, gin.H{"items": items})
 }
+
+// WorkflowsSummary 返回当前租户工作流定义的概览统计（复用 List 后做纯函数聚合）。
+func (h Handler) WorkflowsSummary(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	items, err := h.Repo.List(c.Request.Context(), t.ID)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	response.OK(c, SummarizeWorkflows(items))
+}
+
+// DuplicateWorkflow 将已有工作流复制为一个新的草稿工作流。
+func (h Handler) DuplicateWorkflow(c *gin.Context) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	u, _ := auth.CurrentUser(c)
+	src, err := h.Repo.Get(c.Request.Context(), t.ID, c.Param("workflow_id"))
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	req := DuplicateWorkflowRequest(src, time.Now().Format("150405"))
+	req.Normalize()
+	item, err := h.Repo.Create(c.Request.Context(), t.ID, u.ID, req)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	response.OK(c, item)
+}
+
+// EvaluateConditionExpr 对单个条件表达式按给定 input 求值，便于在管理台测试条件分支。
+func (h Handler) EvaluateConditionExpr(c *gin.Context) {
+	if _, ok := tenant.CurrentTenant(c); !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	var req EvaluateConditionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 40001, err.Error())
+		return
+	}
+	matched, err := EvaluateCondition(req.Expression, req.Input)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 40047, err.Error())
+		return
+	}
+	response.OK(c, EvaluateConditionResult{Expression: strings.TrimSpace(req.Expression), Matched: matched})
+}
+
+// ApproveWorkflowRun 对处于 awaiting_approval 的运行记录执行人工批准动作。
+func (h Handler) ApproveWorkflowRun(c *gin.Context) {
+	h.handleApproval(c, "approved")
+}
+
+// RejectWorkflowRun 对处于 awaiting_approval 的运行记录执行人工拒绝动作。
+func (h Handler) RejectWorkflowRun(c *gin.Context) {
+	h.handleApproval(c, "rejected")
+}
+
+func (h Handler) handleApproval(c *gin.Context, action string) {
+	t, ok := tenant.CurrentTenant(c)
+	if !ok {
+		response.Error(c, http.StatusBadRequest, 40010, "tenant context is required")
+		return
+	}
+	u, _ := auth.CurrentUser(c)
+	runID := c.Param("run_id")
+	run, err := h.Repo.GetRun(c.Request.Context(), t.ID, runID)
+	if err != nil {
+		writeWorkflowError(c, err)
+		return
+	}
+	if run.Status != RunStatusAwaitingApproval {
+		response.Error(c, http.StatusConflict, 40948, "该运行记录不在待审批状态")
+		return
+	}
+	var req ApproveRejectRequest
+	_ = c.ShouldBindJSON(&req)
+	approval := ApprovalAction{
+		RunID:     runID,
+		Action:    action,
+		Comment:   strings.TrimSpace(req.Comment),
+		ActorID:   u.ID,
+		Timestamp: time.Now().Format(time.RFC3339),
+	}
+	response.OK(c, approval)
+}

@@ -1073,10 +1073,13 @@ P1「工作流」第一个增量，采用与工具/MCP 一致的安全默认模�
 P1「工作流」第二增量，引入工作流定义持久化，镜像 Agent 的 CRUD/发布/归档/软删除模式。新增 `workflows` 表（唯一约束 `tenant_id + code`，软删除 `deleted_at`，`version` 版本号，`definition` JSONB 存图）。
 
 - `GET /workflows`：当前租户未归档工作流列表。
+- `GET /workflows/summary`：当前租户工作流概览统计（总数、草稿/已发布数、按状态分布）。
 - `GET /workflows/{workflow_id}`：工作流详情（含 definition、status、version）。
 - `POST /workflows`：创建，请求体 `{name, code, description, definition:{nodes,edges}}`，写入前先做图结构校验（不通过返回 40046）。code 规则同 Agent（小写字母数字与 - _，≤64）。
 - `PUT /workflows/{workflow_id}`：更新名称/描述/定义；更新定义会再次图校验；已发布的工作流更新后回到 `draft` 并 `version + 1`。
 - `POST /workflows/{workflow_id}/publish`：发布，发布前要求当前定义通过图结构校验。
+- `POST /workflows/{workflow_id}/duplicate`：将工作流复制为新草稿（名称追加"副本"，编码追加 `-copy-<时间后缀>`，定义整体复制）。
+- `POST /workflows/evaluate-condition`：对单个条件表达式（形如 `key op value`，op 支持 `== != > >= < <=`）按给定 `input` 求值，返回 `{expression, matched}`，用于测试 condition 分支。
 - `DELETE /workflows/{workflow_id}`：归档（软删除）。
 
 所有写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`code` 在租户内唯一，重复创建返回 409。配套新增 `000023_workflows` 迁移（含 down 回滚）。管理台“工作流编排”面板新增“工作流定义”列表与创建表单，支持一键发布/归档。后续增量将基于已发布定义接入执行引擎与执行日志（`workflow_runs`）。
@@ -1098,11 +1101,24 @@ P1「渠道入口」第一增量，引入 Agent 渠道接入点持久化。新�
 
 - `GET /channel-types`：内置渠道类型目录。`web`（网页嵌入）、`h5`（移动 H5）、`api`（开放 API）为 active 可创建；`wechat_official`（微信公众号）、`wechat_work`（企业微信）为 planned，待后续对接回调与凭据。
 - `GET /channels`：当前租户未归档渠道列表。
+- `GET /channels/summary`：当前租户渠道概览统计（总数、启用/禁用数、按类型分布）。
 - `GET /channels/{channel_id}`：渠道详情。
 - `GET /channels/{channel_id}/embed`：返回该渠道的接入代码与说明（按请求推断 baseURL）。`web` 返回 `<script>` 嵌入片段，`h5` 返回页面链接，`api` 返回 curl 调用示例，均含中文接入说明；渠道未启用时追加提示。
 - `GET /channel-connect/{channel_key}`（公开，仅 IP 限流，不经登录与租户中间件）：外部接入方凭 `channel_key` 拉取已启用渠道的接入配置，返回 `channel_key`、`type`、`name`、`agent_id`、`status`、`connected`。仅返回接入所需最小信息；渠道不存在或未启用返回 404。该端点是 Web 嵌入组件 / H5 页面初始化的第一步。
 - `POST /channels`：创建渠道，请求体 `{agent_id, type, name, config}`，仅允许 active 类型；绑定的 agent 不存在返回 404。
 - `POST /channels/{channel_id}/enable`、`/disable`：启用/禁用渠道。
+- `POST /channels/{channel_id}/duplicate`：将渠道复制为新渠道（名称追加"副本"，agent/类型/配置沿用，channel_key 由库重新生成）。
+- `PUT /channels/{channel_id}`：更新渠道名称与配置（名称与配置至少其一）。
 - `DELETE /channels/{channel_id}`：归档（软删除）渠道。
 
 写操作走 `RequireTenantWriter`，按当前 `X-Tenant-ID` 租户隔离；`channel_key` 为公开接入凭据（形如 `ch_xxxx`），在租户内唯一。后续将基于 `channel_key` 提供 Web 嵌入脚本、H5 页面与开放 API 接入，并补充公众号/企业微信回调验签。管理台新增“渠道接入”面板，展示渠道类型目录、新建渠道表单与渠道列表（含 channel_key、启用/禁用/删除）。
+
+
+## 2026-05-31 增量：监控告警（阈值规则与状态评估）
+
+方案第 12 节建议③「监控告警增强」落地，加在无 DB 的 settings 模块，纯函数实现：
+
+- `GET /settings/alert-policy`：返回内置告警策略与规则（指标、运算符、阈值、级别、说明）。内置规则覆盖 `heap_alloc_mb`、`goroutines`、`error_rate`、`p95_latency_ms` 的 warning/critical 阈值。
+- `GET /settings/alert-status`：以当前进程运行快照（来自 `BuildMonitoringSnapshot`）评估告警，返回 `snapshot`、`metrics` 与 `evaluation`（`healthy`、`warning_count`、`critical_count`、`triggered[]`）。
+
+告警评估为纯函数 `EvaluateAlerts(metrics, rules)`，按 `> >= < <= == !=` 比较，指标缺失则跳过、不误报。两个端点均为只读、按 settings 模块既有方式挂在登录后路由组。接入真实告警通道（邮件/Webhook/IM）与租户级自定义阈值为后续增强。管理台"设置"视图新增"监控告警"面板，可一键评估当前进程并展示触发的告警。

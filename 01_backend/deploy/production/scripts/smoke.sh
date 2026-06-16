@@ -35,8 +35,31 @@ check_service() {
 check_url "api_health" "$API_BASE_URL/health" "application/json"
 check_url "api_ready" "$API_BASE_URL/ready" "application/json"
 check_url "frontend_html" "$FRONTEND_BASE_URL/" "text/html"
-check_url "frontend_js" "$FRONTEND_BASE_URL/assets/app.js" "javascript"
-check_url "frontend_css" "$FRONTEND_BASE_URL/assets/app.css" "text/css"
+
+frontend_html="$(curl -kfsS "$FRONTEND_BASE_URL/")"
+frontend_js_path="$(printf '%s' "$frontend_html" | grep -oE 'src="[^"]+\.js"' | head -n 1 | sed -E 's/^src="|"$//g')"
+frontend_css_path="$(printf '%s' "$frontend_html" | grep -oE 'href="[^"]+\.css"' | head -n 1 | sed -E 's/^href="|"$//g')"
+if [[ -z "$frontend_js_path" || -z "$frontend_css_path" ]]; then
+  echo "FAIL frontend assets not found"
+  exit 1
+fi
+frontend_origin="$(printf '%s' "$FRONTEND_BASE_URL" | sed -E 's#^(https?://[^/]+).*#\1#')"
+if [[ "$frontend_js_path" == http* ]]; then
+  frontend_js_url="$frontend_js_path"
+elif [[ "$frontend_js_path" == /* ]]; then
+  frontend_js_url="$frontend_origin$frontend_js_path"
+else
+  frontend_js_url="${FRONTEND_BASE_URL%/}/$frontend_js_path"
+fi
+if [[ "$frontend_css_path" == http* ]]; then
+  frontend_css_url="$frontend_css_path"
+elif [[ "$frontend_css_path" == /* ]]; then
+  frontend_css_url="$frontend_origin$frontend_css_path"
+else
+  frontend_css_url="${FRONTEND_BASE_URL%/}/$frontend_css_path"
+fi
+check_url "frontend_js" "$frontend_js_url" "javascript"
+check_url "frontend_css" "$frontend_css_url" "text/css"
 
 if [[ "$CHECK_NGINX" == "yes" ]] && command -v nginx >/dev/null 2>&1; then
   nginx -t >/dev/null

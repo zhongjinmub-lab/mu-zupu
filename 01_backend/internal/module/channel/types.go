@@ -148,3 +148,62 @@ func BuildChannelEmbed(ch Channel, baseURL string) ChannelEmbed {
 	}
 	return embed
 }
+
+// UpdateChannelRequest 是更新渠道接入点的请求体，名称与配置至少提供其一。
+type UpdateChannelRequest struct {
+	Name   string         `json:"name"`
+	Config map[string]any `json:"config"`
+}
+
+// Normalize 归一化更新请求字段。
+func (r *UpdateChannelRequest) Normalize() {
+	r.Name = strings.TrimSpace(r.Name)
+}
+
+// Validate 校验更新请求：名称与配置至少其一，名称长度不超过 128。
+func (r UpdateChannelRequest) Validate() error {
+	if r.Name == "" && r.Config == nil {
+		return errors.New("name or config is required")
+	}
+	if r.Name != "" && len([]rune(r.Name)) > 128 {
+		return errors.New("name must be at most 128 characters")
+	}
+	return nil
+}
+
+// ChannelSummary 表示当前租户渠道的概览统计。
+type ChannelSummary struct {
+	Total    int            `json:"total"`
+	Enabled  int            `json:"enabled"`
+	Disabled int            `json:"disabled"`
+	ByType   map[string]int `json:"by_type"`
+}
+
+// SummarizeChannels 对渠道列表做概览聚合：总数、启用/禁用数与按类型分布。纯函数。
+func SummarizeChannels(channels []Channel) ChannelSummary {
+	summary := ChannelSummary{ByType: map[string]int{}}
+	for _, ch := range channels {
+		summary.Total++
+		switch ch.Status {
+		case StatusEnabled:
+			summary.Enabled++
+		case StatusDisabled:
+			summary.Disabled++
+		}
+		if ch.Type != "" {
+			summary.ByType[ch.Type]++
+		}
+	}
+	return summary
+}
+
+// DuplicateChannelRequest 基于已有渠道构造副本的创建请求：名称追加"副本"，
+// agent 绑定、类型与配置沿用源渠道；channel_key 由数据库为新渠道重新生成。纯函数。
+func DuplicateChannelRequest(src Channel) CreateChannelRequest {
+	return CreateChannelRequest{
+		AgentID: src.AgentID,
+		Type:    src.Type,
+		Name:    src.Name + " 副本",
+		Config:  src.Config,
+	}
+}

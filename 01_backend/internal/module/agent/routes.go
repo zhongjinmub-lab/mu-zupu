@@ -22,6 +22,8 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler, limiters ...gin.HandlerFunc)
 	rg.GET("/agents/:agent_id/conversations", h.ListConversations)
 	rg.GET("/agents/:agent_id/conversations/:conversation_id/messages", h.ListMessages)
 	rg.GET("/agents/:agent_id/knowledge-bases", h.ListKnowledgeBases)
+	rg.GET("/agents/:agent_id/versions", h.ListVersions)
+	rg.GET("/agents/:agent_id/versions/:version_id", h.GetVersion)
 
 	write := rg.Group("")
 	write.Use(tenant.RequireTenantWriter())
@@ -43,4 +45,9 @@ func RegisterRoutes(rg *gin.RouterGroup, h Handler, limiters ...gin.HandlerFunc)
 	write.DELETE("/agents/:agent_id/knowledge-bases/:kb_id", h.UnbindKnowledgeBase)
 	write.POST("/agent-genealogy/edges", h.CreateGenealogyEdge)
 	write.DELETE("/agent-genealogy/edges/:edge_id", h.DeleteGenealogyEdge)
+
+	// 版本管理路由
+	write.POST("/agents/:agent_id/versions", h.CreateVersion)
+	write.POST("/agents/:agent_id/versions/:version_id/publish", h.PublishVersion)
+	write.POST("/agents/:agent_id/versions/:version_id/rollback", h.RollbackVersion)
 }

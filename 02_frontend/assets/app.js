@@ -2150,6 +2150,36 @@ async function validateWorkflow() {
   renderWorkflow();
 }
 
+// evaluateWorkflowCondition 读取条件表达式与 input JSON，调用后端求值并展示结果。
+async function evaluateWorkflowCondition() {
+  const form = $("#conditionEvalForm");
+  if (!form) return;
+  const expression = (form.querySelector('input[name="expression"]').value || "").trim();
+  if (!expression) throw new Error("请输入条件表达式");
+  const rawInput = (form.querySelector('input[name="input"]').value || "").trim();
+  let input = {};
+  if (rawInput) {
+    try {
+      input = JSON.parse(rawInput);
+    } catch (err) {
+      throw new Error("输入 JSON 解析失败：" + err.message);
+    }
+  }
+  const result = await api("/workflows/evaluate-condition", { method: "POST", body: { expression, input } });
+  const box = $("#conditionEvalBox");
+  if (box) {
+    box.innerHTML = `
+      <article class="item">
+        <div class="item-title">
+          <strong>${escapeHtml(result.expression || expression)}</strong>
+          <span class="badge ${result.matched ? "ok" : "warn"}">${result.matched ? "匹配" : "不匹配"}</span>
+        </div>
+      </article>
+    `;
+  }
+  toast(result.matched ? "条件匹配" : "条件不匹配");
+}
+
 // loadWorkflows 拉取当前租户的工作流定义列表并渲染。
 async function loadWorkflows() {
   if (!state.tenantId) return;
@@ -2160,6 +2190,21 @@ async function loadWorkflows() {
 }
 
 function renderWorkflowList(error = "") {
+  const summaryEl = $("#workflowSummaryBox");
+  if (summaryEl) {
+    const list = state.workflows || [];
+    let draft = 0;
+    let published = 0;
+    list.forEach((wf) => {
+      if (wf.status === "draft") draft += 1;
+      else if (wf.status === "published") published += 1;
+    });
+    summaryEl.innerHTML = `
+      <span>工作流总数：${list.length}</span>
+      <span>草稿：${draft}</span>
+      <span>已发布：${published}</span>
+    `;
+  }
   const el = $("#workflowListBox");
   if (!el) return;
   if (error) {
@@ -2179,6 +2224,7 @@ function renderWorkflowList(error = "") {
         <div class="item-meta">${escapeHtml(wf.description || "")}</div>
         <div class="item-actions">
           ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-run="${escapeHtml(wf.id || "")}" type="button">试运行</button>` : ""}
+          ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-duplicate="${escapeHtml(wf.id || "")}" type="button">复制</button>` : ""}
           ${wf.status === "draft" ? `<button class="button small" data-workflow-publish="${escapeHtml(wf.id || "")}" type="button">发布</button>` : ""}
           ${wf.status !== "archived" ? `<button class="button small secondary" data-workflow-archive="${escapeHtml(wf.id || "")}" type="button">归档</button>` : ""}
         </div>
@@ -2232,9 +2278,16 @@ async function toggleWorkflow(workflowID, action) {
   toast("工作流已发布");
 }
 
-// runWorkflow 对指定工作流做一次 dry-run 试运行，并刷新该工作流的运行记录。
-async function runWorkflow(workflowID) {
+// duplicateWorkflow 复制指定工作流为新草稿并刷新列表。
+async function duplicateWorkflow(workflowID) {
   if (!workflowID) return;
+  await api(`/workflows/${workflowID}/duplicate`, { method: "POST" });
+  await loadWorkflows();
+  toast("工作流已复制为新草稿");
+}
+
+// runWorkflow 对指定工作流做一次 dry-run 试运行，并刷新该工作流的运行记录。
+async function runWorkflow(workflowID) {  if (!workflowID) return;
   const data = await api(`/workflows/${workflowID}/run`, { method: "POST", body: { input: { source: "admin_console" } } });
   await loadWorkflowRuns(workflowID);
   toast("试运行完成：" + workflowRunStatusLabel((data.run || {}).status));
@@ -2307,6 +2360,25 @@ async function loadChannels() {
 }
 
 function renderChannels(error = "") {
+  const summaryEl = $("#channelSummaryBox");
+  if (summaryEl) {
+    const list = state.channels || [];
+    const byType = {};
+    let enabled = 0;
+    let disabled = 0;
+    list.forEach((ch) => {
+      if (ch.status === "enabled") enabled += 1;
+      else if (ch.status === "disabled") disabled += 1;
+      if (ch.type) byType[ch.type] = (byType[ch.type] || 0) + 1;
+    });
+    const dist = Object.keys(byType).map((key) => `${escapeHtml(channelTypeLabel(key))}×${byType[key]}`).join("、");
+    summaryEl.innerHTML = `
+      <span>渠道总数：${list.length}</span>
+      <span>已启用：${enabled}</span>
+      <span>已禁用：${disabled}</span>
+      <span>类型分布：${dist || "-"}</span>
+    `;
+  }
   const typeEl = $("#channelTypeBox");
   if (typeEl) {
     if (error) {
@@ -2338,6 +2410,8 @@ function renderChannels(error = "") {
         <div class="item-meta">接入凭据 channel_key：${escapeHtml(ch.channel_key || "-")}</div>
         <div class="item-actions">
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-embed="${escapeHtml(ch.id || "")}" type="button">接入代码</button>` : ""}
+          ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-rename="${escapeHtml(ch.id || "")}" type="button">重命名</button>` : ""}
+          ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-duplicate="${escapeHtml(ch.id || "")}" type="button">复制</button>` : ""}
           ${ch.status === "disabled" ? `<button class="button small" data-channel-enable="${escapeHtml(ch.id || "")}" type="button">启用</button>` : ""}
           ${ch.status === "enabled" ? `<button class="button small secondary" data-channel-disable="${escapeHtml(ch.id || "")}" type="button">禁用</button>` : ""}
           ${ch.status !== "archived" ? `<button class="button small secondary" data-channel-archive="${escapeHtml(ch.id || "")}" type="button">删除</button>` : ""}
@@ -2407,6 +2481,25 @@ async function loadChannelEmbed(channelID) {
   state.channelEmbeds[channelID] = embed;
   renderChannels();
   toast("已生成接入代码");
+}
+
+// renameChannel 通过弹窗输入新名称并更新渠道。
+async function renameChannel(channelID) {
+  if (!channelID) return;
+  const current = (state.channels || []).find((ch) => ch.id === channelID);
+  const name = (window.prompt("输入新的渠道名称", current ? current.name : "") || "").trim();
+  if (!name) return;
+  await api(`/channels/${channelID}`, { method: "PUT", body: { name } });
+  await loadChannels();
+  toast("渠道已重命名");
+}
+
+// duplicateChannel 复制指定渠道为新渠道并刷新列表。
+async function duplicateChannel(channelID) {
+  if (!channelID) return;
+  await api(`/channels/${channelID}/duplicate`, { method: "POST" });
+  await loadChannels();
+  toast("渠道已复制");
 }
 
 async function loadToolCallLogs() {
@@ -2592,6 +2685,50 @@ async function loadRuntimeSummary() {
 async function loadMonitoringSnapshot() {
   state.monitoringSnapshot = await api("/settings/monitoring", { tenant: false });
   renderMonitoringSnapshot();
+}
+
+// loadAlertStatus 按当前进程运行指标评估监控告警并渲染。
+async function loadAlertStatus() {
+  state.alertStatus = await api("/settings/alert-status", { tenant: false });
+  renderAlertStatus();
+}
+
+function renderAlertStatus(error = "") {
+  const el = $("#alertStatusBox");
+  if (!el) return;
+  if (error) {
+    el.innerHTML = empty(`监控告警评估失败：${error}`);
+    return;
+  }
+  const data = state.alertStatus;
+  if (!data) {
+    el.innerHTML = empty('点击"评估"按当前进程运行指标评估告警');
+    return;
+  }
+  const ev = data.evaluation || {};
+  const metrics = data.metrics || {};
+  const triggered = ev.triggered || [];
+  el.innerHTML = `
+    <div class="summary-grid compact-summary">
+      <span>健康状态：${ev.healthy ? "正常" : "存在告警"}</span>
+      <span>警告：${Number(ev.warning_count || 0)}</span>
+      <span>严重：${Number(ev.critical_count || 0)}</span>
+      <span>堆内存：${Number(metrics.heap_alloc_mb || 0)} MB</span>
+      <span>Goroutines：${Number(metrics.goroutines || 0)}</span>
+    </div>
+    <div class="list">
+      ${triggered.map((a) => `
+        <article class="item">
+          <div class="item-title">
+            <strong>${escapeHtml(a.metric || "")}</strong>
+            <span class="badge ${a.severity === "critical" ? "danger" : "warn"}">${escapeHtml(a.severity || "")}</span>
+          </div>
+          <div class="item-meta">${escapeHtml(a.metric || "")} ${escapeHtml(a.operator || "")} ${Number(a.threshold || 0)}（实际 ${Number(a.actual || 0)}）</div>
+          <div class="item-meta">${escapeHtml(a.description || "")}</div>
+        </article>
+      `).join("") || empty("当前无触发告警，运行健康")}
+    </div>
+  `;
 }
 
 async function loadSensitiveFieldSummary() {
@@ -3145,6 +3282,9 @@ function bindEvents() {
   $("#loadMonitoringSnapshotBtn").addEventListener("click", () => {
     loadMonitoringSnapshot().then(() => toast("运行监控已刷新")).catch((err) => renderMonitoringSnapshot(err.message));
   });
+  $("#loadAlertStatusBtn").addEventListener("click", () => {
+    loadAlertStatus().then(() => toast("监控告警已评估")).catch((err) => renderAlertStatus(err.message));
+  });
   $("#loadSensitiveFieldSummaryBtn").addEventListener("click", () => {
     loadSensitiveFieldSummary().then(() => toast("敏感字段保护摘要已刷新")).catch((err) => renderSensitiveFieldSummary(err.message));
   });
@@ -3548,6 +3688,7 @@ function bindEvents() {
   $("#loadPluginsBtn").addEventListener("click", () => loadPlugins().then(() => toast("插件市场已刷新")).catch((err) => renderPlugins(err.message)));
   $("#loadWorkflowBtn").addEventListener("click", () => loadWorkflow().then(() => toast("工作流编排已刷新")).catch((err) => renderWorkflow(err.message)));
   $("#validateWorkflowBtn").addEventListener("click", () => validateWorkflow().then(() => toast("工作流校验完成")).catch((err) => toast(err.message)));
+  $("#evalConditionBtn").addEventListener("click", () => evaluateWorkflowCondition().catch((err) => toast(err.message)));
   $("#loadWorkflowsBtn").addEventListener("click", () => loadWorkflows().then(() => toast("工作流定义已刷新")).catch((err) => renderWorkflowList(err.message)));
   $("#workflowCreateForm").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -3664,10 +3805,13 @@ function bindEvents() {
     const workflowPublishId = target.dataset?.workflowPublish;
     const workflowArchiveId = target.dataset?.workflowArchive;
     const workflowRunId = target.dataset?.workflowRun;
+    const workflowDuplicateId = target.dataset?.workflowDuplicate;
     const channelEnableId = target.dataset?.channelEnable;
     const channelDisableId = target.dataset?.channelDisable;
     const channelArchiveId = target.dataset?.channelArchive;
     const channelEmbedId = target.dataset?.channelEmbed;
+    const channelRenameId = target.dataset?.channelRename;
+    const channelDuplicateId = target.dataset?.channelDuplicate;
     const toolLogRefresh = target.dataset?.toolLogRefresh !== undefined;
     const toolLogFilter = target.dataset?.toolLogFilter !== undefined;
     const toolLogExport = target.dataset?.toolLogExport !== undefined;
@@ -3703,6 +3847,9 @@ function bindEvents() {
       if (workflowRunId) {
         await runWorkflow(workflowRunId);
       }
+      if (workflowDuplicateId) {
+        await duplicateWorkflow(workflowDuplicateId);
+      }
       if (channelEnableId) {
         await toggleChannel(channelEnableId, "enable");
       }
@@ -3714,6 +3861,12 @@ function bindEvents() {
       }
       if (channelEmbedId) {
         await loadChannelEmbed(channelEmbedId);
+      }
+      if (channelRenameId) {
+        await renameChannel(channelRenameId);
+      }
+      if (channelDuplicateId) {
+        await duplicateChannel(channelDuplicateId);
       }
       if (toolLogRefresh) {
         await loadToolCallLogs();
